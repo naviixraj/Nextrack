@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!--logo added-->
+  <link rel="icon" href="logo nex.jpeg" >
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Student Movement Tracking System — Secure login and registration portal for hostel student movement management.">
+  <title>NexTrack — Student Movement Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --clr-a: #6c63ff;
+      --clr-b: #a855f7;
+      --clr-c: #06b6d4;
+      --surface: rgba(15, 15, 30, 0.72);
+      --surface-2: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.10);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(255, 255, 255, 0.05);
+      --input-border: rgba(255, 255, 255, 0.12);
+      --input-focus: rgba(108, 99, 255, 0.5);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #080818;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 24px 16px;
+    }
+
+    /* ── Animated Background ── */
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 20%, rgba(108, 99, 255, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+
+    .blob-1 {
+      width: 520px;
+      height: 520px;
+      background: var(--clr-a);
+      top: -160px;
+      left: -160px;
+      animation-delay: 0s;
+    }
+
+    .blob-2 {
+      width: 420px;
+      height: 420px;
+      background: var(--clr-b);
+      bottom: -120px;
+      right: -120px;
+      animation-delay: -6s;
+    }
+
+    .blob-3 {
+      width: 300px;
+      height: 300px;
+      background: var(--clr-c);
+      top: 40%;
+      left: 55%;
+      animation-delay: -12s;
+    }
+
+    @keyframes drift {
+      from {
+        transform: translate(0, 0) scale(1);
+      }
+
+      to {
+        transform: translate(40px, 30px) scale(1.08);
+      }
+    }
+
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* ── Auth Container ── */
+    .auth-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    /* ── Brand ── */
+    .brand {
+      text-align: center;
+    }
+
+    .brand-icon-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(108, 99, 255, 0.25), rgba(168, 85, 247, 0.25));
+      border: 1px solid rgba(108, 99, 255, 0.35);
+      margin-bottom: 16px;
+      box-shadow: 0 0 40px rgba(108, 99, 255, 0.25);
+      animation: iconPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 30px rgba(108, 99, 255, 0.25);
+      }
+
+      50% {
+        box-shadow: 0 0 55px rgba(108, 99, 255, 0.45);
+      }
+    }
+
+    .brand-name {
+      font-size: 2.1rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #a5b4fc, #c084fc, #67e8f9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-tagline {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ── Auth Card ── */
+    .auth-card {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 32px 32px 28px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 32px 64px rgba(0, 0, 0, 0.5),
+        0 0 80px rgba(108, 99, 255, 0.08);
+      animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* ── Tabs ── */
+    .auth-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 9px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      transition: color 0.25s;
+      position: relative;
+      z-index: 1;
+    }
+
+    .auth-tab.active {
+      color: #fff;
+    }
+
+    .tab-slider {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      width: calc(50% - 4px);
+      left: 4px;
+      background: linear-gradient(135deg, var(--clr-a), var(--clr-b));
+      border-radius: 9px;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 16px rgba(108, 99, 255, 0.4);
+    }
+
+    .tab-slider.to-register {
+      transform: translateX(calc(100% + 4px));
+    }
+
+    /* ── Forms ── */
+    .auth-form {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .auth-form.active {
+      display: flex;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="email"] {
+      padding: 11px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      width: 100%;
+    }
+
+    input::placeholder {
+      color: rgba(148, 163, 184, 0.5);
+    }
+
+    input:focus {
+      border-color: rgba(108, 99, 255, 0.6);
+      background: rgba(108, 99, 255, 0.06);
+      box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.18);
+    }
+
+    input:focus::placeholder {
+      color: transparent;
+    }
+
+    /* Password input wrapper */
+    .pwd-wrap {
+      position: relative;
+    }
+
+    .pwd-wrap input {
+      padding-right: 44px;
+    }
+
+    .pwd-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pwd-toggle:hover {
+      color: var(--text);
+    }
+
+    /* Photo upload */
+    .photo-upload-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: var(--input-bg);
+      border: 1px dashed rgba(108, 99, 255, 0.35);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .photo-upload-area:hover {
+      border-color: rgba(108, 99, 255, 0.65);
+      background: rgba(108, 99, 255, 0.06);
+    }
+
+    .photo-upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      border: none;
+      background: none;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    .photo-upload-icon {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      background: rgba(108, 99, 255, 0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-upload-text {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .photo-upload-text span {
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+
+    .photo-preview {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 2px solid rgba(108, 99, 255, 0.4);
+      display: none;
+      flex-shrink: 0;
+    }
+
+    /* Messages */
+    .form-msg {
+      font-size: 0.82rem;
+      font-weight: 500;
+      min-height: 18px;
+      padding: 0 2px;
+    }
+
+    .form-msg.error {
+      color: #f87171;
+    }
+
+    .form-msg.success {
+      color: #4ade80;
+    }
+
+    /* Button */
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--clr-a), var(--clr-b));
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(108, 99, 255, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+      letter-spacing: 0.3px;
+      margin-top: 4px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(108, 99, 255, 0.55);
+      filter: brightness(1.08);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 12px rgba(108, 99, 255, 0.35);
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Footer hint */
+    .auth-footer {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 10px 18px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+
+    .auth-footer strong {
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+
+    /* Scrollable register form */
+    #register-form {
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    #register-form::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    #register-form::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #register-form::-webkit-scrollbar-thumb {
+      background: rgba(108, 99, 255, 0.4);
+      border-radius: 4px;
+    }
+
+    /* Spinner for button */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn-primary.loading .spinner {
+      display: block;
+    }
+
+    .btn-primary.loading .btn-label {
+      opacity: 0.7;
+    }
+
+    /* ── Fluid Typography & Spacing ── */
+    html {
+      font-size: clamp(13px, 2.5vw, 16px);
+    }
+
+    .auth-container {
+      gap: clamp(16px, 4vw, 28px);
+    }
+
+    .brand-name {
+      font-size: clamp(1.5rem, 5vw, 2.1rem);
+    }
+
+    .brand-tagline {
+      font-size: clamp(0.68rem, 2vw, 0.82rem);
+    }
+
+    .auth-card {
+      padding: clamp(18px, 4vw, 32px) clamp(16px, 4vw, 32px) clamp(16px, 3.5vw, 28px);
+    }
+
+    #register-form {
+      max-height: clamp(320px, 55vh, 480px);
+    }
+
+    /* ── Large Desktops (≥1200px) ── */
+    @media (min-width: 1200px) {
+      .auth-container {
+        max-width: 480px;
+      }
+
+      .auth-card {
+        padding: 36px 40px 32px;
+        border-radius: 28px;
+      }
+
+      .brand-icon-wrap {
+        width: 80px;
+        height: 80px;
+        border-radius: 24px;
+      }
+
+      .brand-icon-wrap svg {
+        width: 36px;
+        height: 36px;
+      }
+
+      .btn-primary {
+        padding: 15px;
+        font-size: 1rem;
+      }
+    }
+
+    /* ── Tablets (≤768px) ── */
+    @media (max-width: 768px) {
+      body {
+        padding: 20px 14px;
+      }
+
+      .auth-container {
+        max-width: 420px;
+      }
+
+      .blob-1 {
+        width: 380px;
+        height: 380px;
+      }
+
+      .blob-2 {
+        width: 300px;
+        height: 300px;
+      }
+
+      .blob-3 {
+        width: 220px;
+        height: 220px;
+      }
+    }
+
+    /* ── Phones (≤480px) ── */
+    @media (max-width: 480px) {
+      body {
+        padding: 16px 12px;
+      }
+
+      .auth-container {
+        max-width: 100%;
+        gap: 18px;
+      }
+
+      .auth-card {
+        border-radius: 18px;
+      }
+
+      .brand-icon-wrap {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        margin-bottom: 10px;
+      }
+
+      .brand-icon-wrap svg {
+        width: 26px;
+        height: 26px;
+      }
+
+      .auth-tabs {
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+
+      .auth-tab {
+        padding: 9px;
+        font-size: 0.85rem;
+      }
+
+      .tab-slider {
+        border-radius: 8px;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      input[type="text"],
+      input[type="password"],
+      input[type="tel"],
+      input[type="number"],
+      input[type="email"] {
+        padding: 10px 12px;
+        font-size: 0.88rem;
+      }
+
+      label {
+        font-size: 0.72rem;
+      }
+
+      .btn-primary {
+        padding: 12px;
+        font-size: 0.9rem;
+      }
+
+      .photo-upload-area {
+        padding: 10px 12px;
+        gap: 10px;
+      }
+
+      .photo-upload-icon {
+        width: 32px;
+        height: 32px;
+      }
+
+      .photo-upload-text {
+        font-size: 0.75rem;
+      }
+
+      .photo-preview {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+      }
+
+      .auth-footer {
+        font-size: 0.72rem;
+        padding: 8px 14px;
+      }
+
+      .blob-1 {
+        width: 280px;
+        height: 280px;
+        top: -100px;
+        left: -100px;
+      }
+
+      .blob-2 {
+        width: 220px;
+        height: 220px;
+        bottom: -80px;
+        right: -80px;
+      }
+
+      .blob-3 {
+        width: 160px;
+        height: 160px;
+      }
+    }
+
+    /* ── Very Small Phones (≤350px) ── */
+    @media (max-width: 350px) {
+      body {
+        padding: 10px 8px;
+      }
+
+      .auth-card {
+        border-radius: 14px;
+      }
+
+      .brand-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        margin-bottom: 8px;
+      }
+
+      .brand-icon-wrap svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .auth-tabs {
+        margin-bottom: 16px;
+        padding: 3px;
+      }
+
+      .auth-tab {
+        padding: 8px;
+        font-size: 0.8rem;
+      }
+
+      input[type="text"],
+      input[type="password"],
+      input[type="tel"],
+      input[type="number"],
+      input[type="email"] {
+        padding: 9px 10px;
+        font-size: 0.82rem;
+      }
+
+      .btn-primary {
+        padding: 11px;
+        font-size: 0.85rem;
+      }
+
+      .photo-upload-area {
+        flex-direction: column;
+        text-align: center;
+        padding: 10px;
+      }
+
+      .photo-upload-text {
+        font-size: 0.7rem;
+      }
+
+      .pwd-toggle {
+        right: 8px;
+      }
+
+      .auth-footer {
+        font-size: 0.68rem;
+        padding: 6px 10px;
+      }
+    }
+
+    /* ── Landscape on phones ── */
+    @media (max-height: 500px) and (orientation: landscape) {
+      body {
+        padding: 10px 16px;
+        align-items: flex-start;
+      }
+
+      .auth-container {
+        gap: 12px;
+      }
+
+      .brand-icon-wrap {
+        width: 44px;
+        height: 44px;
+        margin-bottom: 6px;
+      }
+
+      .brand-icon-wrap svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .brand-tagline {
+        display: none;
+      }
+
+      .auth-card {
+        border-radius: 14px;
+      }
+
+      .auth-tabs {
+        margin-bottom: 14px;
+      }
+
+      #register-form {
+        max-height: 50vh;
+      }
+
+      .btn-primary {
+        padding: 10px;
+      }
+
+      .auth-footer {
+        display: none;
+      }
+
+      .blob {
+        opacity: 0.2;
+      }
+    }
+
+    /* ── Tall phones (narrow & tall) ── */
+    @media (min-height: 700px) and (max-width: 480px) {
+      .auth-container {
+        justify-content: center;
+        min-height: calc(100vh - 32px);
+      }
+
+      #register-form {
+        max-height: 55vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg" aria-hidden="true">
+    <div class="grid-overlay"></div>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <main class="auth-container">
+
+    <div class="brand">
+      <div class="brand-icon-wrap">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+          <defs>
+            <linearGradient id="igrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#a5b4fc" />
+              <stop offset="100%" stop-color="#c084fc" />
+            </linearGradient>
+          </defs>
+          <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" stroke="url(#igrad)"
+            fill="rgba(108,99,255,0.15)" />
+          <circle cx="12" cy="10" r="3" stroke="url(#igrad)" fill="rgba(168,85,247,0.2)" />
+        </svg>
+      </div>
+      <h1 class="brand-name">NexTrack</h1>
+      <p class="brand-tagline">Student Movement Tracking System</p>
+    </div>
+
+    <div class="auth-card">
+
+      <div class="auth-tabs" role="tablist">
+        <div class="tab-slider" id="tab-slider"></div>
+        <button class="auth-tab active" id="tab-login" role="tab" aria-selected="true" aria-controls="login-form">Sign
+          In</button>
+        <button class="auth-tab" id="tab-register" role="tab" aria-selected="false"
+          aria-controls="register-form">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form active" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label for="login-id">Student / Admin ID</label>
+          <input type="text" id="login-id" placeholder="e.g. STU-M1234 or admin" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="login-pwd">Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="login-pwd" placeholder="Enter your password" required
+              autocomplete="current-password">
+            <button type="button" class="pwd-toggle" data-target="login-pwd" aria-label="Toggle visibility">
+              <svg id="eye-login" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <p id="login-msg" class="form-msg" role="alert"></p>
+        <button type="submit" class="btn-primary">
+          <span class="spinner"></span>
+          <span class="btn-label">Sign In</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="auth-form" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label for="reg-name">Full Name</label>
+          <input type="text" id="reg-name" placeholder="John Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-photo">Profile Photo</label>
+          <div class="photo-upload-area">
+            <input type="file" id="reg-photo" accept="image/*" required>
+            <img id="reg-photo-preview" class="photo-preview" alt="Preview">
+            <div class="photo-upload-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <div class="photo-upload-text"><span>Choose photo</span> or drag here<br>JPG, PNG, WEBP</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reg-room">Room No.</label>
+            <input type="text" id="reg-room" placeholder="A-101" required>
+          </div>
+          <div class="form-group">
+            <label for="reg-phone">Phone</label>
+            <input type="tel" id="reg-phone" placeholder="9876543210" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reg-age">Age</label>
+            <input type="number" id="reg-age" placeholder="19" min="15" max="99" required>
+          </div>
+          <div class="form-group">
+            <label for="reg-dept">Department</label>
+            <input type="text" id="reg-dept" placeholder="CSE" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-year">Current Year</label>
+          <select id="reg-year" required
+            style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(108,99,255,0.18);border-radius:10px;color:#e0e7ff;font-family:inherit;font-size:0.88rem;outline:none;cursor:pointer;">
+            <option value="" disabled selected>Select Year</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-pwd">Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="reg-pwd" placeholder="Min 4 characters" required>
+            <button type="button" class="pwd-toggle" data-target="reg-pwd" aria-label="Toggle visibility">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-pwd-confirm">Confirm Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="reg-pwd-confirm" placeholder="Re-enter password" required>
+            <button type="button" class="pwd-toggle" data-target="reg-pwd-confirm" aria-label="Toggle visibility">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <p id="register-msg" class="form-msg" role="alert"></p>
+        <button type="submit" class="btn-primary">
+          <span class="spinner"></span>
+          <span class="btn-label">Create Account</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="22" y1="11" x2="16" y2="11" />
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <p class="auth-footer">
+      Admin access: ID <strong>admin</strong> &nbsp;/&nbsp; password <strong>admin123</strong>
+    </p>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    /* ── Tab switching ── */
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const formLogin = document.getElementById('login-form');
+    const formReg = document.getElementById('register-form');
+    const slider = document.getElementById('tab-slider');
+
+    function setTab(tab) {
+      const isLogin = tab === 'login';
+      tabLogin.classList.toggle('active', isLogin);
+      tabRegister.classList.toggle('active', !isLogin);
+      tabLogin.setAttribute('aria-selected', isLogin);
+      tabRegister.setAttribute('aria-selected', !isLogin);
+      formLogin.classList.toggle('active', isLogin);
+      formReg.classList.toggle('active', !isLogin);
+      slider.classList.toggle('to-register', !isLogin);
+      clearMessages();
+    }
+
+    tabLogin.addEventListener('click', () => setTab('login'));
+    tabRegister.addEventListener('click', () => setTab('register'));
+
+    function clearMessages() {
+      document.getElementById('login-msg').textContent = '';
+      document.getElementById('login-msg').className = 'form-msg';
+      document.getElementById('register-msg').textContent = '';
+      document.getElementById('register-msg').className = 'form-msg';
+    }
+
+    /* ── Password toggle ── */
+    document.querySelectorAll('.pwd-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const inp = document.getElementById(btn.dataset.target);
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+        btn.querySelector('svg').style.opacity = inp.type === 'text' ? '0.5' : '1';
+      });
+    });
+
+    /* ── Photo preview ── */
+    document.getElementById('reg-photo').addEventListener('change', function () {
+      const preview = document.getElementById('reg-photo-preview');
+      const uploadText = document.querySelector('.photo-upload-text');
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          if (uploadText) uploadText.style.display = 'none';
+        };
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+
+    /* ── Helper: set message ── */
+    function setMsg(id, text, type) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'form-msg ' + type;
+    }
+
+    /* ── Button loading state ── */
+    function setLoading(btn, on) {
+      btn.classList.toggle('loading', on);
+      btn.disabled = on;
+    }
+  </script>
+</body>
+
+</html>

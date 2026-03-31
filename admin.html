@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="logo nex.jpeg"
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Admin Dashboard — Monitor student movements, manage accounts, and view analytics.">
+  <title>NexTrack — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-page admin-page">
+
+  <!-- Background -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- Top Bar -->
+  <header class="topbar glass">
+    <div class="topbar-brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#grad3)" stroke-width="2">
+        <defs><linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/></linearGradient></defs>
+        <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      <span>NexTrack <small class="admin-label">Admin</small></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="openAdminProfile()">👤 Profile</button>
+      <button class="btn btn-ghost" onclick="changeAdminPassword()">🔐 Password</button>
+      <button class="btn btn-ghost" onclick="refreshDashboard()">🔄 Refresh</button>
+      <button class="btn btn-ghost" onclick="logout()">🚪 Logout</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <!-- ═══ Status Cards ═══ -->
+    <section class="cards-row">
+      <div class="stat-card glass" id="total-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-body">
+          <span class="stat-value" id="card-total">0</span>
+          <span class="stat-label">Total Registered</span>
+        </div>
+      </div>
+      <div class="stat-card glass card-inside" id="inside-card">
+        <div class="stat-icon">🏠</div>
+        <div class="stat-body">
+          <span class="stat-value" id="card-inside">0</span>
+          <span class="stat-label">Currently Inside</span>
+        </div>
+      </div>
+      <div class="stat-card glass card-outside" id="outside-card" onclick="showOutsideStudents()" style="cursor:pointer;" title="Click to view list">
+        <div class="stat-icon">🚶</div>
+        <div class="stat-body">
+          <span class="stat-value" id="card-outside">0</span>
+          <span class="stat-label">Currently Outside</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Tab Navigation ═══ -->
+    <nav class="admin-tabs-bar glass">
+      <button class="admin-tab active" data-panel="panel-monitor">📊 Monitoring</button>
+      <button class="admin-tab" data-panel="panel-directory">📁 Directory</button>
+      <button class="admin-tab" data-panel="panel-history">📜 History</button>
+      <button class="admin-tab" data-panel="panel-recovery">🔑 Recovery</button>
+      <button class="admin-tab" data-panel="panel-admins">👥 Admins</button>
+      <button class="admin-tab" data-panel="panel-settings">⚙️ Settings</button>
+    </nav>
+
+    <!-- ═══ PANEL: Monitoring ═══ -->
+    <section class="tab-panel active" id="panel-monitor">
+      <!-- Date Filters -->
+      <div class="date-filters">
+        <button class="date-filter-btn active" id="filter-today">Today</button>
+        <button class="date-filter-btn" id="filter-yesterday">Yesterday</button>
+        <div class="date-custom-wrap">
+          <input type="date" id="filter-custom-date" class="date-input">
+          <button class="date-filter-btn" id="filter-custom-btn">Go</button>
+        </div>
+        <span class="date-label" id="table-date-label"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="monitor-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Room</th>
+              <th>Out-Time</th>
+              <th>In-Time</th>
+              <th>Duration</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="monitor-body">
+            <tr><td colspan="8" class="empty-row">No movements recorded</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ PANEL: Directory ═══ -->
+    <section class="tab-panel" id="panel-directory">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Photo</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Room</th>
+              <th>Phone</th>
+              <th>Last Updated</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="directory-body">
+            <tr><td colspan="8" class="empty-row">No students</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ PANEL: History ═══ -->
+    <section class="tab-panel" id="panel-history">
+      <div class="recovery-search-bar">
+        <input type="text" id="history-search" placeholder="Search student by ID, Name, or Room..." class="search-input" oninput="searchStudentHistory()">
+      </div>
+      <div id="history-search-results"></div>
+    </section>
+
+    <!-- ═══ PANEL: Recovery ═══ -->
+    <section class="tab-panel" id="panel-recovery">
+      <div class="recovery-search-bar">
+        <input type="text" id="recovery-search" placeholder="Search by ID, Name, or Room..." class="search-input" oninput="searchStudent()">
+      </div>
+      <div id="recovery-results"></div>
+    </section>
+
+    <!-- ═══ PANEL: Admins ═══ -->
+    <section class="tab-panel" id="panel-admins">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 style="font-size:1rem;">Registered Admins</h3>
+        <button class="btn btn-primary btn-small" onclick="registerNewAdmin()">+ New Admin</button>
+      </div>
+      <div id="admin-list-body"></div>
+    </section>
+
+    <!-- ═══ PANEL: Settings ═══ -->
+    <section class="tab-panel" id="panel-settings">
+      <div class="settings-section glass" style="padding:1.5rem;border-radius:14px;">
+        <h3 style="font-size:1rem;margin-bottom:1rem;">📍 Hostel Geofence Settings</h3>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">Set your hostel's GPS coordinates and radius. Students can only check-in when inside this zone. They will be auto-checked-in when they open the app within the zone.</p>
+        <div class="form-row" style="margin-bottom:0.8rem;">
+          <div class="form-group">
+            <label for="geo-lat">Latitude</label>
+            <input type="number" id="geo-lat" step="any" placeholder="e.g. 13.0827">
+          </div>
+          <div class="form-group">
+            <label for="geo-lng">Longitude</label>
+            <input type="number" id="geo-lng" step="any" placeholder="e.g. 80.2707">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:1rem;">
+          <div class="form-group">
+            <label for="geo-radius">Radius (meters)</label>
+            <input type="number" id="geo-radius" placeholder="100" min="10" max="5000">
+          </div>
+          <div class="form-group" style="justify-content:flex-end;">
+            <button class="btn btn-accent btn-small" onclick="detectMyLocation()" style="margin-top:auto;">📱 Use My Location</button>
+          </div>
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-primary btn-small" onclick="saveGeofenceSettings()">Save Geofence</button>
+          <button class="btn btn-warning btn-small" onclick="clearGeofenceSettings()">🗑 Remove Geofence</button>
+        </div>
+        <div id="geo-status" style="margin-top:1rem;font-size:0.82rem;"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Outside Students Modal -->
+  <div class="modal-overlay" id="outside-modal">
+    <div class="modal glass" style="max-width:500px;">
+      <button class="modal-x-btn" onclick="document.getElementById('outside-modal').classList.remove('visible')">&times;</button>
+      <h3 style="margin-bottom:1rem;">🚶 Students Currently Outside</h3>
+      <div id="outside-list"></div>
+    </div>
+  </div>
+
+  <!-- Student Detail Modal -->
+  <div class="modal-overlay" id="student-detail-modal">
+    <div class="modal glass student-detail-modal">
+      <button class="modal-x-btn" onclick="closeStudentModal()">&times;</button>
+      <div class="detail-header">
+        <div class="detail-photo-wrap" id="detail-photo"></div>
+        <div class="detail-name-wrap">
+          <h2 id="detail-name">—</h2>
+          <span class="status-badge badge-in" id="detail-status">IN</span>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-item"><span class="detail-label">Student ID</span><span class="detail-value" id="detail-id">—</span></div>
+        <div class="detail-item"><span class="detail-label">Room</span><span class="detail-value" id="detail-room">—</span></div>
+        <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="detail-phone">—</span></div>
+        <div class="detail-item"><span class="detail-label">Last Updated</span><span class="detail-value" id="detail-updated">—</span></div>
+      </div>
+      <div class="detail-actions">
+        <a href="#" id="detail-call-btn" class="btn btn-primary btn-small">📞 Call</a>
+        <button class="btn btn-accent btn-small" id="detail-edit-room">✏️ Edit Room</button>
+        <button class="btn btn-warning btn-small" id="detail-reset-pwd">🔑 Reset Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Lightbox -->
+  <div class="lightbox-overlay" id="photo-lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Full size photo">
+  </div>
+
+  <!-- Admin Profile Modal -->
+  <div class="modal-overlay" id="admin-profile-modal">
+    <div class="modal glass" style="max-width:420px;">
+      <button class="modal-x-btn" onclick="closeAdminProfile()">&times;</button>
+      <h3 style="margin-bottom:1.2rem;">Admin Profile</h3>
+      <form id="admin-profile-form">
+        <div class="form-group" style="text-align:center;">
+          <div class="detail-photo-wrap" id="admin-avatar" style="margin:0 auto 0.8rem;"></div>
+          <label for="admin-photo-input" class="btn btn-small btn-accent" style="cursor:pointer;">📷 Change Photo</label>
+          <input type="file" id="admin-photo-input" accept="image/*" style="display:none;">
+        </div>
+        <div class="form-group">
+          <label for="admin-prof-id">Admin ID</label>
+          <input type="text" id="admin-prof-id" required>
+        </div>
+        <div class="form-group">
+          <label for="admin-prof-name">Name</label>
+          <input type="text" id="admin-prof-name" required>
+        </div>
+        <div class="form-group">
+          <label for="admin-prof-phone">Phone</label>
+          <input type="tel" id="admin-prof-phone" required>
+        </div>
+        <div class="modal-btns">
+          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-ghost" onclick="closeAdminProfile()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
