@@ -184,7 +184,10 @@
     <div class="chat-container glass">
       <div class="chat-header">
         <h3>💬 Hostel Group Chat</h3>
-        <button class="modal-x-btn" onclick="toggleChat()" style="position:static;font-size:1.3rem;">&times;</button>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <button class="btn btn-ghost btn-small" onclick="deleteAllChats()" style="font-size:0.7rem;padding:0.3rem 0.5rem;color:#ef4444;">🗑 Clear All</button>
+          <button class="modal-x-btn" onclick="toggleChat()" style="position:static;font-size:1.3rem;">&times;</button>
+        </div>
       </div>
       <div class="chat-messages" id="admin-chat-messages">
         <div class="chat-empty">No messages yet. Start the conversation!</div>

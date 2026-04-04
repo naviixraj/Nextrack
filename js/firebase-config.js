@@ -91,3 +91,10 @@ function editFirebaseMessage(firebaseKey, newText) {
     .then(() => console.log('✏️ Message edited'))
     .catch((err) => console.error('❌ Edit failed:', err));
 }
+
+function deleteAllFirebaseMessages() {
+  if (!firebaseDB) return;
+  return firebaseDB.ref('messages').remove()
+    .then(() => console.log('🗑 All messages deleted'))
+    .catch((err) => console.error('❌ Delete all failed:', err));
+}

@@ -966,6 +966,12 @@ document.addEventListener('click', () => {
   document.getElementById('msg-context-menu').style.display = 'none';
 });
 
+window.deleteAllChats = function () {
+  if (!confirm('⚠️ Delete ALL messages from everyone?\nThis cannot be undone!')) return;
+  if (!confirm('Are you really sure? This will permanently delete all chat history.')) return;
+  deleteAllFirebaseMessages();
+};
+
 window.sendAdminMessage = function (e) {
   e.preventDefault();
   const input = document.getElementById('admin-chat-input');
