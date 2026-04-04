@@ -27,6 +27,7 @@ function initDashboard() {
   renderDirectory();
   trackAdminLogin();
   renderAdminList();
+  initGeofenceUI();
 }
 
 function renderCards() {
@@ -233,7 +234,10 @@ function renderDirectory() {
         <td>${s.room}</td>
         <td>${s.phone}</td>
         <td class="${stale}">${formatDate(s.last_updated)} (${days}d ago)</td>
-        <td><button class="btn btn-small btn-warning" onclick="event.stopPropagation(); removeStudent('${s.id}')">🗑 Remove</button></td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-small btn-accent" onclick="event.stopPropagation(); adminEditStudent('${s.id}')">✏️ Edit</button>
+          <button class="btn btn-small btn-warning" onclick="event.stopPropagation(); removeStudent('${s.id}')">🗑 Remove</button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -273,10 +277,6 @@ window.showStudentDetail = function (id) {
 
   // Actions
   document.getElementById('detail-call-btn').href = `tel:${s.phone}`;
-  document.getElementById('detail-edit-room').onclick = () => { closeStudentModal(); editRoom(s.id); };
-
-  // Hide reset pwd button for students
-  document.getElementById('detail-reset-pwd').style.display = 'none';
 
   modal.classList.add('visible');
 };
@@ -310,6 +310,119 @@ window.removeStudent = function (id) {
   renderMonitoringTable();
   renderDirectory();
 };
+
+/* ═══════════════════════════════════════════════
+   ADMIN EDIT STUDENT (Password-Verified)
+   ═══════════════════════════════════════════════ */
+let editingStudentId = null;
+
+window.adminEditStudent = function (studentId) {
+  const adminPwd = prompt('🔐 Enter your admin password to edit this student:');
+  if (!adminPwd) return;
+
+  const session = getSession();
+  const admin = getStudentById(session.userId);
+  if (!admin || adminPwd !== admin.password) {
+    alert('❌ Incorrect admin password!');
+    // Set warning alert on student profile
+    updateStudent(studentId, { editAlert: 'warning', editAlertMsg: '⚠️ Someone attempted unauthorized access to your profile.' });
+    return;
+  }
+
+  const s = getStudentById(studentId);
+  if (!s) return;
+
+  // Set editing alert on student profile
+  updateStudent(studentId, { editAlert: 'editing', editAlertMsg: '🔒 Your account is currently under editing by an admin.' });
+  editingStudentId = studentId;
+
+  // Populate the edit form
+  const photoWrap = document.getElementById('edit-stu-photo');
+  if (s.photo) {
+    photoWrap.innerHTML = `<img src="${s.photo}" class="detail-photo-img">`;
+  } else {
+    photoWrap.innerHTML = '<span class="detail-photo-placeholder">👤</span>';
+  }
+
+  document.getElementById('edit-stu-name').value = s.name || '';
+  document.getElementById('edit-stu-id').value = s.id || '';
+  document.getElementById('edit-stu-age').value = s.age || '';
+  document.getElementById('edit-stu-dept').value = s.department || '';
+  document.getElementById('edit-stu-room').value = s.room || '';
+  document.getElementById('edit-stu-phone').value = s.phone || '';
+  document.getElementById('edit-stu-year').value = s.year || '';
+  document.getElementById('edit-stu-pwd').value = s.password || '';
+
+  const alertEl = document.getElementById('admin-edit-alert');
+  alertEl.style.display = 'block';
+  alertEl.style.background = 'rgba(52,211,153,0.1)';
+  alertEl.style.color = '#4ade80';
+  alertEl.style.border = '1px solid rgba(52,211,153,0.2)';
+  alertEl.textContent = '✅ Admin verified. You can now edit this student\'s profile and password.';
+
+  document.getElementById('admin-edit-modal').classList.add('visible');
+};
+
+window.closeAdminEditModal = function () {
+  document.getElementById('admin-edit-modal').classList.remove('visible');
+  // Clear editing alert from student
+  if (editingStudentId) {
+    updateStudent(editingStudentId, { editAlert: null, editAlertMsg: null });
+    editingStudentId = null;
+  }
+};
+
+// Save edited student
+document.addEventListener('DOMContentLoaded', () => {
+  const editForm = document.getElementById('admin-edit-form');
+  if (editForm) {
+    editForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!editingStudentId) return;
+
+      const newId = document.getElementById('edit-stu-id').value.trim();
+      const name = document.getElementById('edit-stu-name').value.trim();
+      const age = document.getElementById('edit-stu-age').value.trim();
+      const dept = document.getElementById('edit-stu-dept').value.trim();
+      const room = document.getElementById('edit-stu-room').value.trim();
+      const phone = document.getElementById('edit-stu-phone').value.trim();
+      const year = document.getElementById('edit-stu-year').value;
+      const pwd = document.getElementById('edit-stu-pwd').value;
+
+      if (!name || !newId || !room || !phone || !pwd) {
+        alert('⚠️ Name, ID, Room, Phone, and Password are required.');
+        return;
+      }
+
+      const oldId = editingStudentId;
+      const updates = { name, age, department: dept, room, phone, year, password: pwd, last_updated: new Date().toISOString(), editAlert: null, editAlertMsg: null };
+
+      // Handle ID change
+      if (newId !== oldId) {
+        const students = getStudents();
+        const existing = students.find(s => s.id === newId);
+        if (existing) { alert('⚠️ That ID is already taken.'); return; }
+        const idx = students.findIndex(s => s.id === oldId);
+        if (idx !== -1) {
+          Object.assign(students[idx], updates);
+          students[idx].id = newId;
+          saveStudents(students);
+          // Update movements
+          const movs = getMovements();
+          movs.forEach(m => { if (m.studentId === oldId) m.studentId = newId; });
+          saveMovements(movs);
+        }
+      } else {
+        updateStudent(oldId, updates);
+      }
+
+      editingStudentId = null;
+      document.getElementById('admin-edit-modal').classList.remove('visible');
+      alert('✅ Student profile updated successfully.');
+      renderDirectory();
+    });
+  }
+});
 
 /* ═══════════════════════════════════════════════
    ADMIN LIST & MULTI-ADMIN
@@ -570,4 +683,165 @@ window.refreshDashboard = function () {
   renderMonitoringTable();
   renderDirectory();
   renderAdminList();
+};
+
+/* ═══════════════════════════════════════════════
+   STUDENT HISTORY SEARCH
+   ═══════════════════════════════════════════════ */
+window.searchStudentHistory = function () {
+  const query = document.getElementById('history-search').value.trim().toLowerCase();
+  const container = document.getElementById('history-search-results');
+
+  if (!query) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const students = getStudents().filter(s => s.role !== 'admin');
+  const matches = students.filter(s =>
+    s.id.toLowerCase().includes(query) ||
+    s.name.toLowerCase().includes(query) ||
+    s.room.toLowerCase().includes(query)
+  );
+
+  if (matches.length === 0) {
+    container.innerHTML = '<p class="empty-row">No matching students found.</p>';
+    return;
+  }
+
+  container.innerHTML = matches.map(s => {
+    const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '<span class="table-avatar-placeholder">👤</span>';
+    const movements = getMovements().filter(m => m.studentId === s.id);
+
+    let status = 'IN';
+    if (movements.length > 0 && !movements[movements.length - 1].inTime) status = 'OUT';
+
+    let historyHTML = '';
+    if (movements.length === 0) {
+      historyHTML = '<p class="empty-row" style="margin:0.5rem 0;">No movement history.</p>';
+    } else {
+      const reversed = [...movements].reverse();
+      historyHTML = `
+        <div class="table-wrap" style="margin-top:0.8rem;">
+          <table class="monitor-table" style="font-size:0.8rem;">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Out-Time</th>
+                <th>In-Time</th>
+                <th>Duration</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reversed.map((m, i) => {
+                const durText = calcDuration(m.outTime, m.inTime);
+                const durMin = durationMinutes(m.outTime, m.inTime);
+                const durClass = durMin > 240 ? 'duration-alert' : '';
+                const mStatus = m.inTime ? 'Returned' : 'Outside';
+                const dateStr = formatDate(m.outTime);
+                return `
+                  <tr>
+                    <td>${i + 1}</td>
+                    <td>${dateStr}</td>
+                    <td>${formatTime(m.outTime)}</td>
+                    <td>${formatTime(m.inTime)}</td>
+                    <td class="${durClass}">${durText}</td>
+                    <td><span class="status-badge ${m.inTime ? 'badge-in' : 'badge-out'}">${mStatus}</span></td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="history-card glass" style="margin-bottom:1.2rem;padding:1rem;border-radius:12px;">
+        <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem;">
+          ${photo}
+          <div class="recovery-info">
+            <strong>${s.name}</strong>
+            <span class="recovery-meta">${s.id} · Room ${s.room} · ${s.department || ''} · ${s.year || ''}</span>
+          </div>
+          <span class="status-badge ${status === 'IN' ? 'badge-in' : 'badge-out'}" style="margin-left:auto;">${status}</span>
+        </div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem;">Total movements: ${movements.length}</div>
+        ${historyHTML}
+      </div>
+    `;
+  }).join('');
+};
+
+/* ═══════════════════════════════════════════════
+   GEOFENCE SETTINGS
+   ═══════════════════════════════════════════════ */
+function initGeofenceUI() {
+  const geo = getGeofence();
+  const status = document.getElementById('geo-status');
+  if (!status) return;
+  if (geo) {
+    document.getElementById('geo-lat').value = geo.lat || '';
+    document.getElementById('geo-lng').value = geo.lng || '';
+    document.getElementById('geo-radius').value = geo.radius || '';
+    status.innerHTML = `<span style="color:#4ade80;">✅ Geofence active — ${geo.radius}m radius around (${geo.lat.toFixed(5)}, ${geo.lng.toFixed(5)})</span>`;
+  } else {
+    status.innerHTML = '<span style="color:var(--text-muted);">No geofence configured. Check-in allowed from anywhere.</span>';
+  }
+}
+
+window.saveGeofenceSettings = function () {
+  const lat = parseFloat(document.getElementById('geo-lat').value);
+  const lng = parseFloat(document.getElementById('geo-lng').value);
+  const radius = parseInt(document.getElementById('geo-radius').value);
+  const status = document.getElementById('geo-status');
+
+  if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
+    status.innerHTML = '<span style="color:#f87171;">⚠️ Please fill all fields with valid numbers.</span>';
+    return;
+  }
+  if (radius < 10 || radius > 5000) {
+    status.innerHTML = '<span style="color:#f87171;">⚠️ Radius must be between 10 and 5000 meters.</span>';
+    return;
+  }
+
+  saveGeofence({ lat, lng, radius });
+  status.innerHTML = `<span style="color:#4ade80;">✅ Geofence saved — ${radius}m radius around (${lat.toFixed(5)}, ${lng.toFixed(5)})</span>`;
+  alert('✅ Geofence settings saved successfully!');
+};
+
+window.clearGeofenceSettings = function () {
+  if (!confirm('Remove geofence? Students will be able to check-in from anywhere.')) return;
+  localStorage.removeItem('smt_geofence');
+  document.getElementById('geo-lat').value = '';
+  document.getElementById('geo-lng').value = '';
+  document.getElementById('geo-radius').value = '';
+  document.getElementById('geo-status').innerHTML = '<span style="color:var(--text-muted);">Geofence removed. Check-in allowed from anywhere.</span>';
+  alert('🗑 Geofence removed.');
+};
+
+window.detectMyLocation = function () {
+  const status = document.getElementById('geo-status');
+  if (!navigator.geolocation) {
+    status.innerHTML = '<span style="color:#f87171;">⚠️ Geolocation is not supported by your browser.</span>';
+    return;
+  }
+
+  status.innerHTML = '<span style="color:#fbbf24;">📡 Detecting location...</span>';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      document.getElementById('geo-lat').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('geo-lng').value = pos.coords.longitude.toFixed(6);
+      if (!document.getElementById('geo-radius').value) {
+        document.getElementById('geo-radius').value = '100';
+      }
+      status.innerHTML = `<span style="color:#4ade80;">📍 Location detected: (${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}) — Accuracy: ~${Math.round(pos.coords.accuracy)}m. Click "Save Geofence" to apply.</span>`;
+    },
+    (err) => {
+      status.innerHTML = `<span style="color:#f87171;">❌ Location error: ${err.message}. Please enter coordinates manually or allow location access in browser settings.</span>`;
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
 };

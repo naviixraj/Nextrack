@@ -62,12 +62,10 @@
       </div>
     </section>
 
-    <!-- ═══ Tab Navigation ═══ -->
     <nav class="admin-tabs-bar glass">
       <button class="admin-tab active" data-panel="panel-monitor">📊 Monitoring</button>
       <button class="admin-tab" data-panel="panel-directory">📁 Directory</button>
       <button class="admin-tab" data-panel="panel-history">📜 History</button>
-      <button class="admin-tab" data-panel="panel-recovery">🔑 Recovery</button>
       <button class="admin-tab" data-panel="panel-admins">👥 Admins</button>
       <button class="admin-tab" data-panel="panel-settings">⚙️ Settings</button>
     </nav>
@@ -135,14 +133,6 @@
         <input type="text" id="history-search" placeholder="Search student by ID, Name, or Room..." class="search-input" oninput="searchStudentHistory()">
       </div>
       <div id="history-search-results"></div>
-    </section>
-
-    <!-- ═══ PANEL: Recovery ═══ -->
-    <section class="tab-panel" id="panel-recovery">
-      <div class="recovery-search-bar">
-        <input type="text" id="recovery-search" placeholder="Search by ID, Name, or Room..." class="search-input" oninput="searchStudent()">
-      </div>
-      <div id="recovery-results"></div>
     </section>
 
     <!-- ═══ PANEL: Admins ═══ -->
@@ -216,9 +206,69 @@
       </div>
       <div class="detail-actions">
         <a href="#" id="detail-call-btn" class="btn btn-primary btn-small">📞 Call</a>
-        <button class="btn btn-accent btn-small" id="detail-edit-room">✏️ Edit Room</button>
-        <button class="btn btn-warning btn-small" id="detail-reset-pwd">🔑 Reset Password</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Admin Edit Student Modal -->
+  <div class="modal-overlay" id="admin-edit-modal">
+    <div class="modal glass" style="max-width:440px;">
+      <button class="modal-x-btn" onclick="closeAdminEditModal()">&times;</button>
+      <h3 style="margin-bottom:1rem;">✏️ Edit Student Profile</h3>
+      <div id="admin-edit-alert" style="display:none;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.82rem;font-weight:500;margin-bottom:1rem;"></div>
+      <form id="admin-edit-form">
+        <div class="form-group" style="text-align:center;">
+          <div class="detail-photo-wrap" id="edit-stu-photo" style="margin:0 auto 0.8rem;"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-stu-name">Name</label>
+            <input type="text" id="edit-stu-name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-stu-id">Student ID</label>
+            <input type="text" id="edit-stu-id" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-stu-age">Age</label>
+            <input type="number" id="edit-stu-age" min="15" max="99">
+          </div>
+          <div class="form-group">
+            <label for="edit-stu-dept">Department</label>
+            <input type="text" id="edit-stu-dept">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-stu-room">Room No.</label>
+            <input type="text" id="edit-stu-room" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-stu-phone">Phone</label>
+            <input type="tel" id="edit-stu-phone" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-stu-year">Year</label>
+          <select id="edit-stu-year" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(100,120,255,0.12);border-radius:8px;color:#e8ecf5;font-family:inherit;font-size:0.92rem;outline:none;cursor:pointer;">
+            <option value="">Select Year</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-stu-pwd">🔑 Password</label>
+          <input type="text" id="edit-stu-pwd" required>
+        </div>
+        <div class="modal-btns">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-ghost" onclick="closeAdminEditModal()">Cancel</button>
+        </div>
+      </form>
     </div>
   </div>
 

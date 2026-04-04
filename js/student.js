@@ -34,6 +34,31 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function renderStudentUI(student) {
+  // Re-fetch student to get latest data (e.g. edit alerts from admin)
+  const freshStudent = getStudentById(student.id);
+  if (freshStudent) Object.assign(student, freshStudent);
+
+  // Show admin edit alert if any
+  let alertBanner = document.getElementById('admin-edit-banner');
+  if (student.editAlert) {
+    if (!alertBanner) {
+      alertBanner = document.createElement('div');
+      alertBanner.id = 'admin-edit-banner';
+      const main = document.querySelector('.stu-main');
+      main.insertBefore(alertBanner, main.firstChild);
+    }
+    if (student.editAlert === 'warning') {
+      alertBanner.className = 'geo-banner geo-outside';
+      alertBanner.textContent = student.editAlertMsg || '⚠️ Unauthorized access attempt detected on your profile.';
+    } else if (student.editAlert === 'editing') {
+      alertBanner.className = 'geo-banner geo-detecting';
+      alertBanner.textContent = student.editAlertMsg || '🔒 Your account is currently under editing by an admin.';
+    }
+    alertBanner.style.display = 'block';
+  } else if (alertBanner) {
+    alertBanner.style.display = 'none';
+  }
+
   document.getElementById('stu-name').textContent = student.name;
   document.getElementById('stu-id').textContent = student.id;
   document.getElementById('stu-room').textContent = student.room;
