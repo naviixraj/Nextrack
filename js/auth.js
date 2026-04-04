@@ -91,11 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const phone = document.getElementById('reg-phone').value.trim();
     const age = document.getElementById('reg-age').value.trim();
     const dept = document.getElementById('reg-dept').value.trim();
-    const year = document.getElementById('reg-year').value;
+    const year = document.getElementById('reg-year') ? document.getElementById('reg-year').value : '';
     const pwd = document.getElementById('reg-pwd').value;
     const pwdC = document.getElementById('reg-pwd-confirm').value;
 
-    if (!name || !room || !phone || !age || !dept || !year || !pwd || !photoBase64) {
+    if (!name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
       registerMsg.textContent = '⚠️ All fields including photo are required.';
       registerMsg.className = 'form-msg error';
       return;

@@ -27,7 +27,6 @@ function initDashboard() {
   renderDirectory();
   trackAdminLogin();
   renderAdminList();
-  initGeofenceUI();
 }
 
 function renderCards() {
@@ -381,98 +380,6 @@ window.registerNewAdmin = function () {
 };
 
 /* ═══════════════════════════════════════════════
-   STUDENT HISTORY SEARCH
-   ═══════════════════════════════════════════════ */
-window.searchStudentHistory = function () {
-  const query = document.getElementById('history-search').value.trim().toLowerCase();
-  const container = document.getElementById('history-search-results');
-
-  if (!query) {
-    container.innerHTML = '';
-    return;
-  }
-
-  const students = getStudents().filter(s => s.role !== 'admin');
-  const matches = students.filter(s =>
-    s.id.toLowerCase().includes(query) ||
-    s.name.toLowerCase().includes(query) ||
-    s.room.toLowerCase().includes(query)
-  );
-
-  if (matches.length === 0) {
-    container.innerHTML = '<p class="empty-row">No matching students found.</p>';
-    return;
-  }
-
-  container.innerHTML = matches.map(s => {
-    const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '<span class="table-avatar-placeholder">👤</span>';
-    const movements = getMovements().filter(m => m.studentId === s.id);
-
-    // Current status
-    let status = 'IN';
-    if (movements.length > 0 && !movements[movements.length - 1].inTime) status = 'OUT';
-
-    let historyHTML = '';
-    if (movements.length === 0) {
-      historyHTML = '<p class="empty-row" style="margin:0.5rem 0;">No movement history.</p>';
-    } else {
-      // Show latest first
-      const reversed = [...movements].reverse();
-      historyHTML = `
-        <div class="table-wrap" style="margin-top:0.8rem;">
-          <table class="monitor-table" style="font-size:0.8rem;">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Out-Time</th>
-                <th>In-Time</th>
-                <th>Duration</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${reversed.map((m, i) => {
-                const durText = calcDuration(m.outTime, m.inTime);
-                const durMin = durationMinutes(m.outTime, m.inTime);
-                const durClass = durMin > 240 ? 'duration-alert' : '';
-                const mStatus = m.inTime ? 'Returned' : 'Outside';
-                const dateStr = formatDate(m.outTime);
-                return `
-                  <tr>
-                    <td>${i + 1}</td>
-                    <td>${dateStr}</td>
-                    <td>${formatTime(m.outTime)}</td>
-                    <td>${formatTime(m.inTime)}</td>
-                    <td class="${durClass}">${durText}</td>
-                    <td><span class="status-badge ${m.inTime ? 'badge-in' : 'badge-out'}">${mStatus}</span></td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="history-card glass" style="margin-bottom:1.2rem;padding:1rem;border-radius:12px;">
-        <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem;">
-          ${photo}
-          <div class="recovery-info">
-            <strong>${s.name}</strong>
-            <span class="recovery-meta">${s.id} · Room ${s.room} · ${s.department || ''} · ${s.year || ''}</span>
-          </div>
-          <span class="status-badge ${status === 'IN' ? 'badge-in' : 'badge-out'}" style="margin-left:auto;">${status}</span>
-        </div>
-        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem;">Total movements: ${movements.length}</div>
-        ${historyHTML}
-      </div>
-    `;
-  }).join('');
-};
-
-/* ═══════════════════════════════════════════════
    ACCOUNT RECOVERY
    ═══════════════════════════════════════════════ */
 window.searchStudent = function () {
@@ -663,74 +570,4 @@ window.refreshDashboard = function () {
   renderMonitoringTable();
   renderDirectory();
   renderAdminList();
-};
-
-/* ═══════════════════════════════════════════════
-   GEOFENCE SETTINGS
-   ═══════════════════════════════════════════════ */
-function initGeofenceUI() {
-  const geo = getGeofence();
-  const status = document.getElementById('geo-status');
-  if (geo) {
-    document.getElementById('geo-lat').value = geo.lat || '';
-    document.getElementById('geo-lng').value = geo.lng || '';
-    document.getElementById('geo-radius').value = geo.radius || '';
-    status.innerHTML = `<span style="color:#4ade80;">✅ Geofence active — ${geo.radius}m radius around (${geo.lat.toFixed(5)}, ${geo.lng.toFixed(5)})</span>`;
-  } else {
-    status.innerHTML = '<span style="color:var(--text-muted);">No geofence configured. Check-in allowed from anywhere.</span>';
-  }
-}
-
-window.saveGeofenceSettings = function () {
-  const lat = parseFloat(document.getElementById('geo-lat').value);
-  const lng = parseFloat(document.getElementById('geo-lng').value);
-  const radius = parseInt(document.getElementById('geo-radius').value);
-  const status = document.getElementById('geo-status');
-
-  if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
-    status.innerHTML = '<span style="color:#f87171;">⚠️ Please fill all fields with valid numbers.</span>';
-    return;
-  }
-  if (radius < 10 || radius > 5000) {
-    status.innerHTML = '<span style="color:#f87171;">⚠️ Radius must be between 10 and 5000 meters.</span>';
-    return;
-  }
-
-  saveGeofence({ lat, lng, radius });
-  status.innerHTML = `<span style="color:#4ade80;">✅ Geofence saved — ${radius}m radius around (${lat.toFixed(5)}, ${lng.toFixed(5)})</span>`;
-  alert('✅ Geofence settings saved successfully!');
-};
-
-window.clearGeofenceSettings = function () {
-  if (!confirm('Remove geofence? Students will be able to check-in from anywhere.')) return;
-  localStorage.removeItem('smt_geofence');
-  document.getElementById('geo-lat').value = '';
-  document.getElementById('geo-lng').value = '';
-  document.getElementById('geo-radius').value = '';
-  document.getElementById('geo-status').innerHTML = '<span style="color:var(--text-muted);">Geofence removed. Check-in allowed from anywhere.</span>';
-  alert('🗑 Geofence removed.');
-};
-
-window.detectMyLocation = function () {
-  const status = document.getElementById('geo-status');
-  if (!navigator.geolocation) {
-    status.innerHTML = '<span style="color:#f87171;">⚠️ Geolocation is not supported by your browser.</span>';
-    return;
-  }
-
-  status.innerHTML = '<span style="color:#fbbf24;">📡 Detecting location...</span>';
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      document.getElementById('geo-lat').value = pos.coords.latitude.toFixed(6);
-      document.getElementById('geo-lng').value = pos.coords.longitude.toFixed(6);
-      if (!document.getElementById('geo-radius').value) {
-        document.getElementById('geo-radius').value = '100';
-      }
-      status.innerHTML = `<span style="color:#4ade80;">📍 Location detected: (${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}) — Accuracy: ~${Math.round(pos.coords.accuracy)}m. Click "Save Geofence" to apply.</span>`;
-    },
-    (err) => {
-      status.innerHTML = `<span style="color:#f87171;">❌ Location error: ${err.message}. Please enter coordinates manually.</span>`;
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
 };
