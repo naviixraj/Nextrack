@@ -29,6 +29,7 @@
     </div>
     <div class="topbar-actions">
       <button class="btn btn-ghost" onclick="openAdminProfile()">👤 Profile</button>
+      <button class="btn btn-ghost chat-btn" id="chat-toggle-btn" onclick="toggleChat()">💬 Chat <span class="chat-badge" id="chat-badge" style="display:none;">0</span></button>
       <button class="btn btn-ghost" onclick="changeAdminPassword()">🔐 Password</button>
       <button class="btn btn-ghost" onclick="refreshDashboard()">🔄 Refresh</button>
       <button class="btn btn-ghost" onclick="logout()">🚪 Logout</button>
@@ -177,6 +178,23 @@
     </section>
 
   </main>
+
+  <!-- Floating Chat Panel -->
+  <div class="chat-floating-panel" id="chat-panel" style="display:none;">
+    <div class="chat-container glass">
+      <div class="chat-header">
+        <h3>💬 Hostel Group Chat</h3>
+        <button class="modal-x-btn" onclick="toggleChat()" style="position:static;font-size:1.3rem;">&times;</button>
+      </div>
+      <div class="chat-messages" id="admin-chat-messages">
+        <div class="chat-empty">No messages yet. Start the conversation!</div>
+      </div>
+      <form class="chat-input-bar" id="admin-chat-form" onsubmit="sendAdminMessage(event)">
+        <input type="text" id="admin-chat-input" placeholder="Type a message..." autocomplete="off" required>
+        <button type="submit" class="btn btn-primary btn-small">➤</button>
+      </form>
+    </div>
+  </div>
 
   <!-- Outside Students Modal -->
   <div class="modal-overlay" id="outside-modal">

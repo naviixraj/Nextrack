@@ -845,3 +845,124 @@ window.detectMyLocation = function () {
     { enableHighAccuracy: true, timeout: 15000 }
   );
 };
+
+/* ═══════════════════════════════════════════════
+   CHAT SYSTEM (Admin Side)
+   ═══════════════════════════════════════════════ */
+let lastMsgCount = 0;
+
+function renderAdminChat() {
+  const container = document.getElementById('admin-chat-messages');
+  if (!container) return;
+
+  const msgs = getMessages();
+  const session = getSession();
+
+  if (msgs.length === 0) {
+    container.innerHTML = '<div class="chat-empty">No messages yet. Start the conversation!</div>';
+    lastMsgCount = 0;
+    return;
+  }
+
+  // Only re-render if message count changed
+  if (msgs.length === lastMsgCount) return;
+  lastMsgCount = msgs.length;
+
+  container.innerHTML = msgs.map(m => {
+    const isMine = m.senderId === session.userId;
+    const isAdminMsg = m.senderRole === 'admin';
+    let bubbleClass = 'chat-bubble ';
+    if (isMine) {
+      bubbleClass += 'chat-bubble-sent';
+    } else if (isAdminMsg) {
+      bubbleClass += 'chat-bubble-admin';
+    } else {
+      bubbleClass += 'chat-bubble-received';
+    }
+
+    const time = new Date(m.timestamp);
+    const timeStr = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateStr = time.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
+    return `
+      <div class="${bubbleClass}">
+        ${!isMine ? `<span class="chat-sender">${m.senderName}${isAdminMsg ? ' 🛡️' : ''}</span>` : ''}
+        <span>${escapeHtml(m.text)}</span>
+        <span class="chat-time">${dateStr} ${timeStr}</span>
+      </div>
+    `;
+  }).join('');
+
+  container.scrollTop = container.scrollHeight;
+}
+
+window.sendAdminMessage = function (e) {
+  e.preventDefault();
+  const input = document.getElementById('admin-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const session = getSession();
+  const admin = getStudentById(session.userId);
+
+  addMessage({
+    id: generateId(),
+    senderId: session.userId,
+    senderName: admin ? admin.name : 'Admin',
+    senderRole: 'admin',
+    text: text,
+    timestamp: new Date().toISOString()
+  });
+
+  input.value = '';
+  lastMsgCount = 0; // Force re-render
+  renderAdminChat();
+};
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Toggle floating chat panel
+window.toggleChat = function () {
+  const panel = document.getElementById('chat-panel');
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+    lastMsgCount = 0; // Force re-render
+    renderAdminChat();
+    // Mark all messages as read
+    const msgs = getMessages();
+    sessionStorage.setItem('smt_chat_last_seen', msgs.length.toString());
+    updateChatBadge();
+  } else {
+    panel.style.display = 'none';
+  }
+};
+
+function updateChatBadge() {
+  const badge = document.getElementById('chat-badge');
+  if (!badge) return;
+  const msgs = getMessages();
+  const lastSeen = parseInt(sessionStorage.getItem('smt_chat_last_seen') || '0');
+  const unread = Math.max(0, msgs.length - lastSeen);
+  if (unread > 0) {
+    badge.textContent = unread > 99 ? '99+' : unread;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Auto-refresh chat every 1 second + update badge
+setInterval(() => {
+  renderAdminChat();
+  const panel = document.getElementById('chat-panel');
+  if (!panel || panel.style.display === 'none') {
+    updateChatBadge();
+  }
+}, 1000);
+
+// Initial badge check
+document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });

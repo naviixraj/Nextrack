@@ -141,6 +141,23 @@ function clearSession() {
   sessionStorage.removeItem(DB.SESSION);
 }
 
+/* ── Chat Messages ───────────────────────────── */
+function getMessages() {
+  return JSON.parse(localStorage.getItem('smt_messages') || '[]');
+}
+
+function saveMessages(arr) {
+  localStorage.setItem('smt_messages', JSON.stringify(arr));
+}
+
+function addMessage(msg) {
+  const msgs = getMessages();
+  msgs.push(msg);
+  // Keep only last 200 messages to avoid localStorage overflow
+  if (msgs.length > 200) msgs.splice(0, msgs.length - 200);
+  saveMessages(msgs);
+}
+
 /* ── Geofence Settings ───────────────────────── */
 function getGeofence() {
   return JSON.parse(localStorage.getItem('smt_geofence') || 'null');
