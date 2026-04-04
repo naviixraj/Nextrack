@@ -847,26 +847,24 @@ window.detectMyLocation = function () {
 };
 
 /* ═══════════════════════════════════════════════
-   CHAT SYSTEM (Admin Side)
+   CHAT SYSTEM (Admin Side — Firebase)
    ═══════════════════════════════════════════════ */
-let lastMsgCount = 0;
+let firebaseMessages = [];
+let selectedMsgKey = null;
+let longPressTimer = null;
 
-function renderAdminChat() {
+function renderAdminChatFromMessages(msgs) {
   const container = document.getElementById('admin-chat-messages');
   if (!container) return;
-
-  const msgs = getMessages();
   const session = getSession();
+
+  firebaseMessages = msgs;
 
   if (msgs.length === 0) {
     container.innerHTML = '<div class="chat-empty">No messages yet. Start the conversation!</div>';
-    lastMsgCount = 0;
+    updateChatBadge();
     return;
   }
-
-  // Only re-render if message count changed
-  if (msgs.length === lastMsgCount) return;
-  lastMsgCount = msgs.length;
 
   container.innerHTML = msgs.map(m => {
     const isMine = m.senderId === session.userId;
@@ -883,18 +881,90 @@ function renderAdminChat() {
     const time = new Date(m.timestamp);
     const timeStr = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     const dateStr = time.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    const editedTag = m.edited ? ' <span class="chat-edited">(edited)</span>' : '';
 
     return `
-      <div class="${bubbleClass}">
-        ${!isMine ? `<span class="chat-sender">${m.senderName}${isAdminMsg ? ' 🛡️' : ''}</span>` : ''}
-        <span>${escapeHtml(m.text)}</span>
+      <div class="${bubbleClass}" data-key="${m.firebaseKey}" data-sender="${m.senderId}"
+           oncontextmenu="showMsgMenu(event, '${m.firebaseKey}', '${m.senderId}')"
+           ontouchstart="startLongPress(event, '${m.firebaseKey}', '${m.senderId}')"
+           ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">
+        ${!isMine ? `<span class="chat-sender">${escapeHtml(m.senderName)}${isAdminMsg ? ' 🛡️' : ''}</span>` : ''}
+        <span>${escapeHtml(m.text)}${editedTag}</span>
         <span class="chat-time">${dateStr} ${timeStr}</span>
       </div>
     `;
   }).join('');
 
   container.scrollTop = container.scrollHeight;
+
+  const panel = document.getElementById('chat-panel');
+  if (!panel || panel.style.display === 'none') {
+    updateChatBadge();
+  } else {
+    sessionStorage.setItem('smt_chat_last_seen', msgs.length.toString());
+    updateChatBadge();
+  }
 }
+
+// Context menu handlers
+window.showMsgMenu = function (e, key, senderId) {
+  e.preventDefault();
+  const session = getSession();
+  if (senderId !== session.userId) return; // Only own messages
+
+  selectedMsgKey = key;
+  const menu = document.getElementById('msg-context-menu');
+  menu.style.display = 'block';
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 150) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 100) + 'px';
+};
+
+window.startLongPress = function (e, key, senderId) {
+  const session = getSession();
+  if (senderId !== session.userId) return;
+
+  longPressTimer = setTimeout(() => {
+    selectedMsgKey = key;
+    const touch = e.touches[0];
+    const menu = document.getElementById('msg-context-menu');
+    menu.style.display = 'block';
+    menu.style.left = Math.min(touch.clientX, window.innerWidth - 150) + 'px';
+    menu.style.top = Math.min(touch.clientY, window.innerHeight - 100) + 'px';
+  }, 500);
+};
+
+window.cancelLongPress = function () {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+};
+
+window.editSelectedMessage = function () {
+  document.getElementById('msg-context-menu').style.display = 'none';
+  if (!selectedMsgKey) return;
+
+  const msg = firebaseMessages.find(m => m.firebaseKey === selectedMsgKey);
+  if (!msg) return;
+
+  const newText = prompt('Edit message:', msg.text);
+  if (newText === null || newText.trim() === '') return;
+
+  editFirebaseMessage(selectedMsgKey, newText.trim());
+  selectedMsgKey = null;
+};
+
+window.deleteSelectedMessage = function () {
+  document.getElementById('msg-context-menu').style.display = 'none';
+  if (!selectedMsgKey) return;
+
+  if (!confirm('Delete this message?')) { selectedMsgKey = null; return; }
+
+  deleteFirebaseMessage(selectedMsgKey);
+  selectedMsgKey = null;
+};
+
+// Hide menu on click outside
+document.addEventListener('click', () => {
+  document.getElementById('msg-context-menu').style.display = 'none';
+});
 
 window.sendAdminMessage = function (e) {
   e.preventDefault();
@@ -905,8 +975,7 @@ window.sendAdminMessage = function (e) {
   const session = getSession();
   const admin = getStudentById(session.userId);
 
-  addMessage({
-    id: generateId(),
+  sendFirebaseMessage({
     senderId: session.userId,
     senderName: admin ? admin.name : 'Admin',
     senderRole: 'admin',
@@ -915,8 +984,6 @@ window.sendAdminMessage = function (e) {
   });
 
   input.value = '';
-  lastMsgCount = 0; // Force re-render
-  renderAdminChat();
 };
 
 function escapeHtml(str) {
@@ -930,11 +997,7 @@ window.toggleChat = function () {
   const panel = document.getElementById('chat-panel');
   if (panel.style.display === 'none' || !panel.style.display) {
     panel.style.display = 'block';
-    lastMsgCount = 0; // Force re-render
-    renderAdminChat();
-    // Mark all messages as read
-    const msgs = getMessages();
-    sessionStorage.setItem('smt_chat_last_seen', msgs.length.toString());
+    sessionStorage.setItem('smt_chat_last_seen', firebaseMessages.length.toString());
     updateChatBadge();
   } else {
     panel.style.display = 'none';
@@ -944,9 +1007,8 @@ window.toggleChat = function () {
 function updateChatBadge() {
   const badge = document.getElementById('chat-badge');
   if (!badge) return;
-  const msgs = getMessages();
   const lastSeen = parseInt(sessionStorage.getItem('smt_chat_last_seen') || '0');
-  const unread = Math.max(0, msgs.length - lastSeen);
+  const unread = Math.max(0, firebaseMessages.length - lastSeen);
   if (unread > 0) {
     badge.textContent = unread > 99 ? '99+' : unread;
     badge.style.display = 'inline-block';
@@ -955,14 +1017,10 @@ function updateChatBadge() {
   }
 }
 
-// Auto-refresh chat every 1 second + update badge
-setInterval(() => {
-  renderAdminChat();
-  const panel = document.getElementById('chat-panel');
-  if (!panel || panel.style.display === 'none') {
-    updateChatBadge();
-  }
-}, 1000);
+// Start listening to Firebase messages (real-time!)
+if (typeof listenForMessages === 'function') {
+  listenForMessages(renderAdminChatFromMessages);
+}
 
 // Initial badge check
 document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });

@@ -196,6 +196,12 @@
     </div>
   </div>
 
+  <!-- Message Context Menu -->
+  <div class="msg-context-menu" id="msg-context-menu" style="display:none;">
+    <button onclick="editSelectedMessage()">✏️ Edit</button>
+    <button onclick="deleteSelectedMessage()">🗑️ Delete</button>
+  </div>
+
   <!-- Outside Students Modal -->
   <div class="modal-overlay" id="outside-modal">
     <div class="modal glass" style="max-width:500px;">
@@ -326,6 +332,10 @@
     </div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
   <script src="js/data.js"></script>
   <script src="js/admin.js"></script>
 </body>

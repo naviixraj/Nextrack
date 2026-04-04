@@ -389,28 +389,25 @@ window.logout = () => {
   clearSession();
   window.location.href = 'index.html';
 };
-
 /* ═══════════════════════════════════════════════
-   CHAT SYSTEM (Student Side)
+   CHAT SYSTEM (Student Side — Firebase)
    ═══════════════════════════════════════════════ */
-let lastStuMsgCount = 0;
+let firebaseStudentMessages = [];
+let selectedMsgKey = null;
+let longPressTimer = null;
 
-function renderStudentChat() {
+function renderStudentChatFromMessages(msgs) {
   const container = document.getElementById('student-chat-messages');
   if (!container) return;
-
-  const msgs = getMessages();
   const session = getSession();
+
+  firebaseStudentMessages = msgs;
 
   if (msgs.length === 0) {
     container.innerHTML = '<div class="chat-empty">No messages yet. Start the conversation!</div>';
-    lastStuMsgCount = 0;
+    updateChatBadge();
     return;
   }
-
-  // Only re-render if message count changed
-  if (msgs.length === lastStuMsgCount) return;
-  lastStuMsgCount = msgs.length;
 
   container.innerHTML = msgs.map(m => {
     const isMine = m.senderId === session.userId;
@@ -427,18 +424,90 @@ function renderStudentChat() {
     const time = new Date(m.timestamp);
     const timeStr = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     const dateStr = time.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    const editedTag = m.edited ? ' <span class="chat-edited">(edited)</span>' : '';
 
     return `
-      <div class="${bubbleClass}">
-        ${!isMine ? `<span class="chat-sender">${m.senderName}${isAdminMsg ? ' 🛡️' : ''}</span>` : ''}
-        <span>${escapeHtmlStu(m.text)}</span>
+      <div class="${bubbleClass}" data-key="${m.firebaseKey}" data-sender="${m.senderId}"
+           oncontextmenu="showMsgMenu(event, '${m.firebaseKey}', '${m.senderId}')"
+           ontouchstart="startLongPress(event, '${m.firebaseKey}', '${m.senderId}')"
+           ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">
+        ${!isMine ? `<span class="chat-sender">${escapeHtmlStu(m.senderName)}${isAdminMsg ? ' 🛡️' : ''}</span>` : ''}
+        <span>${escapeHtmlStu(m.text)}${editedTag}</span>
         <span class="chat-time">${dateStr} ${timeStr}</span>
       </div>
     `;
   }).join('');
 
   container.scrollTop = container.scrollHeight;
+
+  const panel = document.getElementById('chat-panel');
+  if (!panel || panel.style.display === 'none') {
+    updateChatBadge();
+  } else {
+    sessionStorage.setItem('smt_chat_last_seen', msgs.length.toString());
+    updateChatBadge();
+  }
 }
+
+// Context menu handlers
+window.showMsgMenu = function (e, key, senderId) {
+  e.preventDefault();
+  const session = getSession();
+  if (senderId !== session.userId) return;
+
+  selectedMsgKey = key;
+  const menu = document.getElementById('msg-context-menu');
+  menu.style.display = 'block';
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 150) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 100) + 'px';
+};
+
+window.startLongPress = function (e, key, senderId) {
+  const session = getSession();
+  if (senderId !== session.userId) return;
+
+  longPressTimer = setTimeout(() => {
+    selectedMsgKey = key;
+    const touch = e.touches[0];
+    const menu = document.getElementById('msg-context-menu');
+    menu.style.display = 'block';
+    menu.style.left = Math.min(touch.clientX, window.innerWidth - 150) + 'px';
+    menu.style.top = Math.min(touch.clientY, window.innerHeight - 100) + 'px';
+  }, 500);
+};
+
+window.cancelLongPress = function () {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+};
+
+window.editSelectedMessage = function () {
+  document.getElementById('msg-context-menu').style.display = 'none';
+  if (!selectedMsgKey) return;
+
+  const msg = firebaseStudentMessages.find(m => m.firebaseKey === selectedMsgKey);
+  if (!msg) return;
+
+  const newText = prompt('Edit message:', msg.text);
+  if (newText === null || newText.trim() === '') return;
+
+  editFirebaseMessage(selectedMsgKey, newText.trim());
+  selectedMsgKey = null;
+};
+
+window.deleteSelectedMessage = function () {
+  document.getElementById('msg-context-menu').style.display = 'none';
+  if (!selectedMsgKey) return;
+
+  if (!confirm('Delete this message?')) { selectedMsgKey = null; return; }
+
+  deleteFirebaseMessage(selectedMsgKey);
+  selectedMsgKey = null;
+};
+
+// Hide menu on click outside
+document.addEventListener('click', () => {
+  document.getElementById('msg-context-menu').style.display = 'none';
+});
 
 window.sendStudentMessage = function (e) {
   e.preventDefault();
@@ -449,8 +518,7 @@ window.sendStudentMessage = function (e) {
   const session = getSession();
   const student = getStudentById(session.userId);
 
-  addMessage({
-    id: generateId(),
+  sendFirebaseMessage({
     senderId: session.userId,
     senderName: student ? student.name : 'Student',
     senderRole: 'student',
@@ -459,8 +527,6 @@ window.sendStudentMessage = function (e) {
   });
 
   input.value = '';
-  lastStuMsgCount = 0; // Force re-render
-  renderStudentChat();
 };
 
 function escapeHtmlStu(str) {
@@ -474,11 +540,7 @@ window.toggleChat = function () {
   const panel = document.getElementById('chat-panel');
   if (panel.style.display === 'none' || !panel.style.display) {
     panel.style.display = 'block';
-    lastStuMsgCount = 0; // Force re-render
-    renderStudentChat();
-    // Mark all messages as read
-    const msgs = getMessages();
-    sessionStorage.setItem('smt_chat_last_seen', msgs.length.toString());
+    sessionStorage.setItem('smt_chat_last_seen', firebaseStudentMessages.length.toString());
     updateChatBadge();
   } else {
     panel.style.display = 'none';
@@ -488,9 +550,8 @@ window.toggleChat = function () {
 function updateChatBadge() {
   const badge = document.getElementById('chat-badge');
   if (!badge) return;
-  const msgs = getMessages();
   const lastSeen = parseInt(sessionStorage.getItem('smt_chat_last_seen') || '0');
-  const unread = Math.max(0, msgs.length - lastSeen);
+  const unread = Math.max(0, firebaseStudentMessages.length - lastSeen);
   if (unread > 0) {
     badge.textContent = unread > 99 ? '99+' : unread;
     badge.style.display = 'inline-block';
@@ -499,14 +560,10 @@ function updateChatBadge() {
   }
 }
 
-// Auto-refresh chat every 1 second + update badge
-setInterval(() => {
-  renderStudentChat();
-  const panel = document.getElementById('chat-panel');
-  if (!panel || panel.style.display === 'none') {
-    updateChatBadge();
-  }
-}, 1000);
+// Start listening to Firebase messages (real-time!)
+if (typeof listenForMessages === 'function') {
+  listenForMessages(renderStudentChatFromMessages);
+}
 
 // Initial badge check
 document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });
