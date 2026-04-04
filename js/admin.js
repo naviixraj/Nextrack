@@ -212,14 +212,12 @@ function renderMonitoringTable() {
 /* ═══════════════════════════════════════════════
    STUDENT DIRECTORY
    ═══════════════════════════════════════════════ */
-function renderDirectory(filteredStudents) {
-  const students = filteredStudents || getStudents().filter(s => s.role !== 'admin');
+function renderDirectory() {
+  const students = getStudents().filter(s => s.role !== 'admin');
   const tbody = document.getElementById('directory-body');
 
   if (students.length === 0) {
-    const searchVal = document.getElementById('directory-search') ? document.getElementById('directory-search').value.trim() : '';
-    const msg = searchVal ? 'No students match your search.' : 'No students registered';
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-row">${msg}</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">No students registered</td></tr>';
     return;
   }
 
@@ -244,27 +242,6 @@ function renderDirectory(filteredStudents) {
     `;
   }).join('');
 }
-
-/* ── Directory Search ────────────────────────── */
-window.searchDirectory = function () {
-  const query = document.getElementById('directory-search').value.trim().toLowerCase();
-  const students = getStudents().filter(s => s.role !== 'admin');
-
-  if (!query) {
-    renderDirectory(students);
-    return;
-  }
-
-  const filtered = students.filter(s =>
-    s.name.toLowerCase().includes(query) ||
-    s.id.toLowerCase().includes(query) ||
-    s.room.toLowerCase().includes(query) ||
-    (s.phone && s.phone.toLowerCase().includes(query))
-  );
-
-  renderDirectory(filtered);
-};
-
 
 /* ═══════════════════════════════════════════════
    STUDENT DETAIL MODAL
@@ -759,12 +736,12 @@ window.searchStudentHistory = function () {
             </thead>
             <tbody>
               ${reversed.map((m, i) => {
-                const durText = calcDuration(m.outTime, m.inTime);
-                const durMin = durationMinutes(m.outTime, m.inTime);
-                const durClass = durMin > 240 ? 'duration-alert' : '';
-                const mStatus = m.inTime ? 'Returned' : 'Outside';
-                const dateStr = formatDate(m.outTime);
-                return `
+        const durText = calcDuration(m.outTime, m.inTime);
+        const durMin = durationMinutes(m.outTime, m.inTime);
+        const durClass = durMin > 240 ? 'duration-alert' : '';
+        const mStatus = m.inTime ? 'Returned' : 'Outside';
+        const dateStr = formatDate(m.outTime);
+        return `
                   <tr>
                     <td>${i + 1}</td>
                     <td>${dateStr}</td>
@@ -774,7 +751,7 @@ window.searchStudentHistory = function () {
                     <td><span class="status-badge ${m.inTime ? 'badge-in' : 'badge-out'}">${mStatus}</span></td>
                   </tr>
                 `;
-              }).join('')}
+      }).join('')}
             </tbody>
           </table>
         </div>
