@@ -67,61 +67,108 @@ function isNowPastCurfew() {
   return now.getHours() > 19 || (now.getHours() === 19 && now.getMinutes() >= 1);
 }
 
-/* ── Students CRUD ───────────────────────────── */
+// Cloud Cache
+let fbStudents = [];
+let fbMovements = [];
+let fbAdminLogins = [];
+let isCloudReady = false;
+
+/* ── Cloud Sync Engine ───────────────────────── */
+function initCloudSync(onReadyCallback) {
+  if (!window.firebaseDB) {
+    console.error('❌ Firebase DB missing!');
+    if (onReadyCallback) onReadyCallback();
+    return;
+  }
+
+  // Ensure Firebase Auth is ready before fetching data
+  firebase.auth().onAuthStateChanged((user) => {
+    if (!user) return; // Wait until signed in (anonymous or otherwise)
+
+    // Initial Fetch (Block UI until data loads)
+    Promise.all([
+      firebaseDB.ref('students').once('value'),
+      firebaseDB.ref('movements').once('value'),
+      firebaseDB.ref('admin_logins').once('value')
+    ]).then(snapshots => {
+      fbStudents = snapshots[0].val() ? Object.values(snapshots[0].val()) : [];
+      fbMovements = snapshots[1].val() ? Object.values(snapshots[1].val()) : [];
+      fbAdminLogins = snapshots[2].val() ? Object.values(snapshots[2].val()) : [];
+      isCloudReady = true;
+
+      // Attach Real-Time Observers for Cross-Device Sync
+      firebaseDB.ref('students').on('value', snap => {
+        fbStudents = snap.val() ? Object.values(snap.val()) : [];
+        window.dispatchEvent(new Event('db_updated'));
+      });
+      firebaseDB.ref('movements').on('value', snap => {
+        fbMovements = snap.val() ? Object.values(snap.val()) : [];
+        window.dispatchEvent(new Event('db_updated'));
+      });
+      firebaseDB.ref('admin_logins').on('value', snap => {
+        fbAdminLogins = snap.val() ? Object.values(snap.val()) : [];
+        window.dispatchEvent(new Event('db_updated'));
+      });
+
+      if (onReadyCallback) onReadyCallback();
+    }).catch(err => {
+      console.error('❌ Cloud sync failed:', err);
+      // Give a highly visible alert if this was a true security rule error
+      if (err.code === 'PERMISSION_DENIED') {
+        alert("⚠️ Firebase Security Rules are blocking access! Please go to your Firebase Console -> Realtime Database -> Rules, and set read and write to true.");
+      }
+      if (onReadyCallback) onReadyCallback();
+    });
+  });
+}
+
+/* ── Students CRUD (Cloud) ───────────────────── */
 function getStudents() {
-  return JSON.parse(localStorage.getItem(DB.STUDENTS) || '[]');
+  return fbStudents;
 }
 
 function saveStudents(arr) {
-  localStorage.setItem(DB.STUDENTS, JSON.stringify(arr));
+  // Legacy function: We should overwrite the node but as an object map for safety.
+  // Converting array back to object keyed by ID
+  const map = {};
+  arr.forEach(s => { map[s.id] = s; });
+  firebaseDB.ref('students').set(map);
 }
 
 function getStudentById(id) {
-  return getStudents().find(s => s.id === id) || null;
+  return fbStudents.find(s => s.id === id) || null;
 }
 
 function addStudent(student) {
-  const students = getStudents();
-  students.push(student);
-  saveStudents(students);
+  firebaseDB.ref('students/' + student.id).set(student);
 }
 
 function updateStudent(id, updates) {
-  const students = getStudents();
-  const idx = students.findIndex(s => s.id === id);
-  if (idx === -1) return false;
-  Object.assign(students[idx], updates);
-  saveStudents(students);
-  return true;
+  firebaseDB.ref('students/' + id).update(updates);
 }
 
-/* ── Movements CRUD ──────────────────────────── */
+/* ── Movements CRUD (Cloud) ──────────────────── */
 function getMovements() {
-  return JSON.parse(localStorage.getItem(DB.MOVEMENTS) || '[]');
+  return fbMovements.sort((a, b) => new Date(a.outTime) - new Date(b.outTime));
 }
 
 function saveMovements(arr) {
-  localStorage.setItem(DB.MOVEMENTS, JSON.stringify(arr));
+  const map = {};
+  arr.forEach(m => { map[m.id] = m; });
+  firebaseDB.ref('movements').set(map);
 }
 
 function addMovement(mov) {
-  const movs = getMovements();
-  movs.push(mov);
-  saveMovements(movs);
+  firebaseDB.ref('movements/' + mov.id).set(mov);
 }
 
 function updateMovement(movId, updates) {
-  const movs = getMovements();
-  const idx = movs.findIndex(m => m.id === movId);
-  if (idx === -1) return false;
-  Object.assign(movs[idx], updates);
-  saveMovements(movs);
-  return true;
+  firebaseDB.ref('movements/' + movId).update(updates);
 }
 
 /** Get movements for a specific date string (YYYY-MM-DD) */
 function getMovementsByDate(dateStr) {
-  return getMovements().filter(m => {
+  return fbMovements.filter(m => {
     const d = new Date(m.outTime);
     const mDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return mDate === dateStr;
@@ -201,7 +248,7 @@ function seedIfNeeded() {
       name: 'Warden Admin',
       room: '—',
       phone: '—',
-      password: 'admin123',
+      password: 'admin1234',
       role: 'admin',
       last_updated: new Date().toISOString(),
     });

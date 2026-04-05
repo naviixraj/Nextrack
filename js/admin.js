@@ -7,15 +7,20 @@ let customDate = '';
 let curfewInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const session = getSession();
-  if (!session || session.role !== 'admin') {
-    window.location.href = 'index.html';
-    return;
-  }
+  initCloudSync(() => {
+    const session = getSession();
+    if (!session || session.role !== 'admin') {
+      window.location.href = 'index.html';
+      return;
+    }
 
-  initDashboard();
-  initTabs();
-  startCurfewCheck();
+    initDashboard();
+    initTabs();
+    startCurfewCheck();
+
+    // The Magic: Listen for any cloud updates and instantly re-render!
+    window.addEventListener('db_updated', refreshDashboard);
+  });
 });
 
 /* ═══════════════════════════════════════════════
@@ -429,20 +434,16 @@ document.addEventListener('DOMContentLoaded', () => {
    ═══════════════════════════════════════════════ */
 function trackAdminLogin() {
   const session = getSession();
-  if (!session) return;
-  const admins = JSON.parse(localStorage.getItem('smt_admin_logins') || '[]');
-  const existing = admins.findIndex(a => a.id === session.userId);
+  if (!session || !window.firebaseDB) return;
   const entry = { id: session.userId, name: getStudentById(session.userId)?.name || 'Admin', lastSeen: new Date().toISOString() };
-  if (existing !== -1) admins[existing] = entry;
-  else admins.push(entry);
-  localStorage.setItem('smt_admin_logins', JSON.stringify(admins));
+  firebaseDB.ref('admin_logins/' + session.userId).set(entry);
 }
 
 function renderAdminList() {
   const container = document.getElementById('admin-list-body');
   if (!container) return;
   const allStudents = getStudents().filter(s => s.role === 'admin');
-  const logins = JSON.parse(localStorage.getItem('smt_admin_logins') || '[]');
+  const logins = typeof fbAdminLogins !== 'undefined' ? fbAdminLogins : [];
   const session = getSession();
 
   if (allStudents.length === 0) {

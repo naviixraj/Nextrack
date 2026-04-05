@@ -3,138 +3,141 @@
    ────────────────────────────────────────────── */
 
 document.addEventListener('DOMContentLoaded', () => {
-  const loginTab = document.getElementById('tab-login');
-  const registerTab = document.getElementById('tab-register');
-  const loginForm = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
-  const loginMsg = document.getElementById('login-msg');
-  const registerMsg = document.getElementById('register-msg');
+  initCloudSync(() => {
+    // If already logged in, redirect
+    const session = getSession();
+    if (session) {
+      if (session.role === 'admin') window.location.href = 'admin.html';
+      else window.location.href = 'student.html';
+      return;
+    }
 
-  // Tab switching
-  loginTab.addEventListener('click', () => {
-    loginTab.classList.add('active');
-    registerTab.classList.remove('active');
-    loginForm.classList.add('active');
-    registerForm.classList.remove('active');
-    loginMsg.textContent = '';
-  });
+    const loginTab = document.getElementById('tab-login');
+    const registerTab = document.getElementById('tab-register');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const loginMsg = document.getElementById('login-msg');
+    const registerMsg = document.getElementById('register-msg');
 
-  registerTab.addEventListener('click', () => {
-    registerTab.classList.add('active');
-    loginTab.classList.remove('active');
-    registerForm.classList.add('active');
-    loginForm.classList.remove('active');
-    registerMsg.textContent = '';
-  });
-
-  // ── Photo Preview ──
-  const photoInput = document.getElementById('reg-photo');
-  const photoPreview = document.getElementById('reg-photo-preview');
-  let photoBase64 = '';
-
-  photoInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) { photoBase64 = ''; photoPreview.style.display = 'none'; return; }
-    compressImage(file, 200, (dataUrl) => {
-      photoBase64 = dataUrl;
-      photoPreview.src = dataUrl;
-      photoPreview.style.display = 'block';
+    // Tab switching
+    loginTab.addEventListener('click', () => {
+      loginTab.classList.add('active');
+      registerTab.classList.remove('active');
+      loginForm.classList.add('active');
+      registerForm.classList.remove('active');
+      loginMsg.textContent = '';
     });
-  });
 
-  function compressImage(file, maxSize, callback) {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
-        if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
-        else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        callback(canvas.toDataURL('image/jpeg', 0.7));
+    registerTab.addEventListener('click', () => {
+      registerTab.classList.add('active');
+      loginTab.classList.remove('active');
+      registerForm.classList.add('active');
+      loginForm.classList.remove('active');
+      registerMsg.textContent = '';
+    });
+
+    // ── Photo Preview ──
+    const photoInput = document.getElementById('reg-photo');
+    const photoPreview = document.getElementById('reg-photo-preview');
+    let photoBase64 = '';
+
+    photoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) { photoBase64 = ''; photoPreview.style.display = 'none'; return; }
+      compressImage(file, 200, (dataUrl) => {
+        photoBase64 = dataUrl;
+        photoPreview.src = dataUrl;
+        photoPreview.style.display = 'block';
+      });
+    });
+
+    function compressImage(file, maxSize, callback) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
+          else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          callback(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.src = ev.target.result;
       };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // ── Login ──
-  loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const uid = document.getElementById('login-id').value.trim();
-    const pwd = document.getElementById('login-pwd').value;
-
-    const students = getStudents();
-    const user = students.find(s => s.id === uid && s.password === pwd);
-    if (!user) {
-      loginMsg.textContent = '❌ Invalid ID or password.';
-      loginMsg.className = 'form-msg error';
-      return;
+      reader.readAsDataURL(file);
     }
 
-    setSession({ userId: user.id, role: user.role || 'student' });
+    // ── Login ──
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const uid = document.getElementById('login-id').value.trim();
+      const pwd = document.getElementById('login-pwd').value;
 
-    if (user.role === 'admin') {
-      window.location.href = 'admin.html';
-    } else {
-      window.location.href = 'student.html';
-    }
-  });
+      const students = getStudents();
+      const user = students.find(s => s.id === uid && s.password === pwd);
+      if (!user) {
+        loginMsg.textContent = '❌ Invalid ID or password.';
+        loginMsg.className = 'form-msg error';
+        return;
+      }
 
-  // ── Register ──
-  registerForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('reg-name').value.trim();
-    const room = document.getElementById('reg-room').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
-    const age = document.getElementById('reg-age').value.trim();
-    const dept = document.getElementById('reg-dept').value.trim();
-    const year = document.getElementById('reg-year') ? document.getElementById('reg-year').value : '';
-    const pwd = document.getElementById('reg-pwd').value;
-    const pwdC = document.getElementById('reg-pwd-confirm').value;
+      setSession({ userId: user.id, role: user.role || 'student' });
 
-    if (!name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
-      registerMsg.textContent = '⚠️ All fields including photo are required.';
-      registerMsg.className = 'form-msg error';
-      return;
-    }
-    if (pwd !== pwdC) {
-      registerMsg.textContent = '⚠️ Passwords do not match.';
-      registerMsg.className = 'form-msg error';
-      return;
-    }
-    if (pwd.length < 4) {
-      registerMsg.textContent = '⚠️ Password must be at least 4 characters.';
-      registerMsg.className = 'form-msg error';
-      return;
-    }
-
-    const id = 'STU-' + Date.now().toString(36).toUpperCase();
-    addStudent({
-      id,
-      name,
-      room,
-      phone,
-      age,
-      department: dept,
-      year,
-      password: pwd,
-      photo: photoBase64,
-      role: 'student',
-      last_updated: new Date().toISOString(),
+      if (user.role === 'admin') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'student.html';
+      }
     });
 
-    // Auto-login and redirect
-    setSession({ userId: id, role: 'student' });
-    window.location.href = 'student.html';
-  });
+    // ── Register ──
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const room = document.getElementById('reg-room').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const age = document.getElementById('reg-age').value.trim();
+      const dept = document.getElementById('reg-dept').value.trim();
+      const year = document.getElementById('reg-year') ? document.getElementById('reg-year').value : '';
+      const pwd = document.getElementById('reg-pwd').value;
+      const pwdC = document.getElementById('reg-pwd-confirm').value;
 
-  // If already logged in, redirect
-  const session = getSession();
-  if (session) {
-    if (session.role === 'admin') window.location.href = 'admin.html';
-    else window.location.href = 'student.html';
-  }
+      if (!name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
+        registerMsg.textContent = '⚠️ All fields including photo are required.';
+        registerMsg.className = 'form-msg error';
+        return;
+      }
+      if (pwd !== pwdC) {
+        registerMsg.textContent = '⚠️ Passwords do not match.';
+        registerMsg.className = 'form-msg error';
+        return;
+      }
+      if (pwd.length < 4) {
+        registerMsg.textContent = '⚠️ Password must be at least 4 characters.';
+        registerMsg.className = 'form-msg error';
+        return;
+      }
+
+      const id = 'STU-' + Date.now().toString(36).toUpperCase();
+      addStudent({
+        id,
+        name,
+        room,
+        phone,
+        age,
+        department: dept,
+        year,
+        password: pwd,
+        photo: photoBase64,
+        role: 'student',
+        last_updated: new Date().toISOString(),
+      });
+
+      // Auto-login and redirect
+      setSession({ userId: id, role: 'student' });
+      window.location.href = 'student.html';
+    });
+  });
 });

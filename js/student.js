@@ -8,29 +8,43 @@ let studentLocation = null; // { lat, lng } or null
 let geoCheckDone = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const session = getSession();
-  if (!session || session.role === 'admin') {
-    window.location.href = 'index.html';
-    return;
-  }
+  initCloudSync(() => {
+    const session = getSession();
+    if (!session || session.role === 'admin') {
+      window.location.href = 'index.html';
+      return;
+    }
 
-  const student = getStudentById(session.userId);
-  if (!student) {
-    clearSession();
-    window.location.href = 'index.html';
-    return;
-  }
+    const student = getStudentById(session.userId);
+    if (!student) {
+      clearSession();
+      window.location.href = 'index.html';
+      return;
+    }
 
-  // ── 90-Day Rule ──
-  const daysSinceUpdate = Math.floor((Date.now() - new Date(student.last_updated).getTime()) / 86400000);
-  if (daysSinceUpdate > 90) {
-    showProfileModal(student, true);
-  }
+    // ── 90-Day Rule ──
+    const daysSinceUpdate = Math.floor((Date.now() - new Date(student.last_updated).getTime()) / 86400000);
+    if (daysSinceUpdate > 90) {
+      showProfileModal(student, true);
+    }
 
-  renderStudentUI(student);
+    renderStudentUI(student);
 
-  // ── Geolocation Check ──
-  checkStudentLocation(student);
+    // ── Geolocation Check ──
+    checkStudentLocation(student);
+
+    // The Magic: Live UI updates via Cloud Sync
+    window.addEventListener('db_updated', () => {
+      const liveStudent = getStudentById(session.userId);
+      if (!liveStudent) {
+        // Admin deleted you!
+        clearSession();
+        window.location.href = 'index.html';
+      } else {
+        renderStudentUI(liveStudent);
+      }
+    });
+  });
 });
 
 function renderStudentUI(student) {
