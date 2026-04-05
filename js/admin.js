@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
    ═══════════════════════════════════════════════ */
 function trackAdminLogin() {
   const session = getSession();
-  if (!session || !window.firebaseDB) return;
+  if (!session || typeof firebaseDB === 'undefined' || !firebaseDB) return;
   const entry = { id: session.userId, name: getStudentById(session.userId)?.name || 'Admin', lastSeen: new Date().toISOString() };
   firebaseDB.ref('admin_logins/' + session.userId).set(entry);
 }

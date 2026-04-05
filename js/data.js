@@ -75,7 +75,7 @@ let isCloudReady = false;
 
 /* ── Cloud Sync Engine ───────────────────────── */
 function initCloudSync(onReadyCallback) {
-  if (!window.firebaseDB) {
+  if (typeof firebaseDB === 'undefined' || !firebaseDB) {
     console.error('❌ Firebase DB missing!');
     if (onReadyCallback) onReadyCallback();
     return;
@@ -132,7 +132,7 @@ function saveStudents(arr) {
   // Converting array back to object keyed by ID
   const map = {};
   arr.forEach(s => { map[s.id] = s; });
-  firebaseDB.ref('students').set(map);
+  return firebaseDB.ref('students').set(map);
 }
 
 function getStudentById(id) {
@@ -140,11 +140,11 @@ function getStudentById(id) {
 }
 
 function addStudent(student) {
-  firebaseDB.ref('students/' + student.id).set(student);
+  return firebaseDB.ref('students/' + student.id).set(student);
 }
 
 function updateStudent(id, updates) {
-  firebaseDB.ref('students/' + id).update(updates);
+  return firebaseDB.ref('students/' + id).update(updates);
 }
 
 /* ── Movements CRUD (Cloud) ──────────────────── */
@@ -155,15 +155,15 @@ function getMovements() {
 function saveMovements(arr) {
   const map = {};
   arr.forEach(m => { map[m.id] = m; });
-  firebaseDB.ref('movements').set(map);
+  return firebaseDB.ref('movements').set(map);
 }
 
 function addMovement(mov) {
-  firebaseDB.ref('movements/' + mov.id).set(mov);
+  return firebaseDB.ref('movements/' + mov.id).set(mov);
 }
 
 function updateMovement(movId, updates) {
-  firebaseDB.ref('movements/' + movId).update(updates);
+  return firebaseDB.ref('movements/' + movId).update(updates);
 }
 
 /** Get movements for a specific date string (YYYY-MM-DD) */

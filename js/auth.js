@@ -121,6 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const id = 'STU-' + Date.now().toString(36).toUpperCase();
+      
+      const submitBtn = registerForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
+      submitBtn.disabled = true;
+
       addStudent({
         id,
         name,
@@ -133,11 +139,17 @@ document.addEventListener('DOMContentLoaded', () => {
         photo: photoBase64,
         role: 'student',
         last_updated: new Date().toISOString(),
+      }).then(() => {
+        // Auto-login and redirect ONLY AFTER cloud write succeeds!
+        setSession({ userId: id, role: 'student' });
+        window.location.href = 'student.html';
+      }).catch(err => {
+        console.error(err);
+        registerMsg.textContent = '❌ Registration failed (Network error).';
+        registerMsg.className = 'form-msg error';
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
       });
-
-      // Auto-login and redirect
-      setSession({ userId: id, role: 'student' });
-      window.location.href = 'student.html';
     });
   });
 });
