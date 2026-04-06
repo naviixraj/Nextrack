@@ -222,12 +222,12 @@ function renderMonitoringTable() {
 /* ═══════════════════════════════════════════════
    STUDENT DIRECTORY
    ═══════════════════════════════════════════════ */
-function renderDirectory() {
-  const students = getStudents().filter(s => s.role !== 'admin');
+function renderDirectory(filteredStudents) {
+  const students = filteredStudents || getStudents().filter(s => s.role !== 'admin');
   const tbody = document.getElementById('directory-body');
 
   if (students.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">No students registered</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">No students found</td></tr>';
     return;
   }
 
@@ -252,6 +252,88 @@ function renderDirectory() {
     `;
   }).join('');
 }
+
+window.searchDirectory = function() {
+  const query = document.getElementById('directory-search').value.toLowerCase().trim();
+  const students = getStudents().filter(s => s.role !== 'admin');
+  
+  if (!query) {
+    renderDirectory();
+    return;
+  }
+
+  const filtered = students.filter(s => 
+    s.id.toLowerCase().includes(query) || 
+    s.name.toLowerCase().includes(query) || 
+    s.room.toLowerCase().includes(query) ||
+    (s.phone && s.phone.includes(query))
+  );
+
+  renderDirectory(filtered);
+};
+
+window.searchStudentHistory = function() {
+  const query = document.getElementById('history-search').value.toLowerCase().trim();
+  const resultsBox = document.getElementById('history-search-results');
+  
+  if (!query) {
+    resultsBox.innerHTML = '';
+    return;
+  }
+
+  const students = getStudents().filter(s => s.role !== 'admin');
+  const matching = students.filter(s => 
+    s.id.toLowerCase().includes(query) || 
+    s.name.toLowerCase().includes(query) || 
+    s.room.toLowerCase().includes(query)
+  );
+
+  if (matching.length === 0) {
+    resultsBox.innerHTML = '<p class="empty-row" style="margin-top:1rem;">No matching students found.</p>';
+    return;
+  }
+
+  resultsBox.innerHTML = matching.map(s => {
+    const movs = getMovements().filter(m => m.studentId === s.id).reverse();
+    const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '👤';
+    
+    return `
+      <div class="history-student-card glass" style="margin-top:1.5rem; padding:1.5rem; border-radius:14px;">
+        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+          <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;">${photo}</div>
+          <div>
+            <h4 style="font-size:1.1rem; color:#fff;">${s.name}</h4>
+            <span style="font-size:0.82rem; color:var(--text-muted);">${s.id} · Room ${s.room}</span>
+          </div>
+        </div>
+        
+        <h5 style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.8rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.4rem;">Recent Movements</h5>
+        <div class="table-wrap">
+          <table style="font-size:0.82rem;">
+            <thead>
+              <tr>
+                <th>Out-Time</th>
+                <th>In-Time</th>
+                <th>Duration</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${movs.length === 0 ? '<tr><td colspan="4" class="empty-row">No history found</td></tr>' : movs.slice(0, 10).map(m => `
+                <tr>
+                  <td>${formatDate(m.outTime)} ${formatTime(m.outTime)}</td>
+                  <td>${formatTime(m.inTime)}</td>
+                  <td>${calcDuration(m.outTime, m.inTime)}</td>
+                  <td><span class="status-badge ${m.inTime ? 'badge-in' : 'badge-out'}">${m.inTime ? 'Returned' : 'Outside'}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
 
 /* ═══════════════════════════════════════════════
    STUDENT DETAIL MODAL
