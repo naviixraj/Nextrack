@@ -465,6 +465,10 @@ function renderAdminList() {
             <span class="recovery-meta">${a.id} · Last seen: ${lastSeen}</span>
           </div>
         </div>
+        ${!isCurrent ? `
+        <div class="recovery-actions">
+          <button class="btn btn-small" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2);" onclick="removeAdmin('${a.id}')">🗑 Remove</button>
+        </div>` : ''}
       </div>
     `;
   }).join('');
@@ -491,6 +495,34 @@ window.registerNewAdmin = function () {
   });
   alert(`✅ Admin "${name.trim()}" created with ID: ${id.trim()}`);
   renderAdminList();
+};
+
+window.removeAdmin = function (targetAdminId) {
+  const session = getSession();
+  const currentAdmin = getStudentById(session.userId);
+  
+  if (!currentAdmin) return;
+
+  const pwd = prompt(`🔐 SECURITY VERIFICATION\nEnter YOUR admin password to delete admin "${targetAdminId}":`);
+  if (pwd !== currentAdmin.password) {
+    alert('❌ Incorrect password! Unauthorized deletion blocked.');
+    return;
+  }
+
+  if (!confirm(`⚠️ Are you absolutely sure you want to permanently delete the admin account "${targetAdminId}"?`)) {
+    return;
+  }
+
+  // Remove from Firebase completely
+  if (typeof firebaseDB !== 'undefined' && firebaseDB) {
+    firebaseDB.ref('students/' + targetAdminId).remove().then(() => {
+      firebaseDB.ref('admin_logins/' + targetAdminId).remove();
+      alert(`✅ Admin "${targetAdminId}" has been deleted.`);
+      renderAdminList();
+    }).catch(err => {
+      alert('❌ Failed to delete admin: ' + err.message);
+    });
+  }
 };
 
 /* ═══════════════════════════════════════════════
