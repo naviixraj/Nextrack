@@ -110,6 +110,9 @@ function initCloudSync(onReadyCallback) {
         window.dispatchEvent(new Event('db_updated'));
       });
 
+      // Run seed only after initial data is completely loaded
+      seedIfNeeded();
+
       if (onReadyCallback) onReadyCallback();
     }).catch(err => {
       console.error('❌ Cloud sync failed:', err);
@@ -254,6 +257,3 @@ function seedIfNeeded() {
     });
   }
 }
-
-// Run seed on load
-seedIfNeeded();
