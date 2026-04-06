@@ -187,15 +187,15 @@ function getMovementsByDate(dateStr) {
 
 /* ── Session ─────────────────────────────────── */
 function getSession() {
-  return JSON.parse(sessionStorage.getItem(DB.SESSION) || 'null');
+  return JSON.parse(localStorage.getItem(DB.SESSION) || 'null');
 }
 
 function setSession(obj) {
-  sessionStorage.setItem(DB.SESSION, JSON.stringify(obj));
+  localStorage.setItem(DB.SESSION, JSON.stringify(obj));
 }
 
 function clearSession() {
-  sessionStorage.removeItem(DB.SESSION);
+  localStorage.removeItem(DB.SESSION);
 }
 
 /* ── Chat Messages ───────────────────────────── */
