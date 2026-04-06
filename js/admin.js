@@ -712,10 +712,23 @@ window.logout = function () {
 
 /* ── Refresh dashboard ───────────────────────── */
 window.refreshDashboard = function () {
+  const session = getSession();
+  if (session && session.userId) {
+    const liveAdmin = getStudentById(session.userId);
+    if (!liveAdmin || liveAdmin.role !== 'admin') {
+      // Another admin just deleted us!
+      alert('⚠️ Your admin privileges have been revoked or your account was deleted. Logging out.');
+      clearSession();
+      window.location.href = 'index.html';
+      return;
+    }
+  }
+
   renderCards();
   renderMonitoringTable();
   renderDirectory();
   renderAdminList();
+  initGeofenceUI();
 };
 
 /* ═══════════════════════════════════════════════
@@ -847,7 +860,9 @@ window.saveGeofenceSettings = function () {
 
 window.clearGeofenceSettings = function () {
   if (!confirm('Remove geofence? Students will be able to check-in from anywhere.')) return;
-  localStorage.removeItem('smt_geofence');
+  if (typeof firebaseDB !== 'undefined' && firebaseDB) {
+    firebaseDB.ref('settings/geofence').remove();
+  }
   document.getElementById('geo-lat').value = '';
   document.getElementById('geo-lng').value = '';
   document.getElementById('geo-radius').value = '';

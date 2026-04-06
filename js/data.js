@@ -71,6 +71,7 @@ function isNowPastCurfew() {
 let fbStudents = [];
 let fbMovements = [];
 let fbAdminLogins = [];
+let fbGeofence = null;
 let isCloudReady = false;
 
 /* ── Cloud Sync Engine ───────────────────────── */
@@ -89,11 +90,13 @@ function initCloudSync(onReadyCallback) {
     Promise.all([
       firebaseDB.ref('students').once('value'),
       firebaseDB.ref('movements').once('value'),
-      firebaseDB.ref('admin_logins').once('value')
+      firebaseDB.ref('admin_logins').once('value'),
+      firebaseDB.ref('settings/geofence').once('value')
     ]).then(snapshots => {
       fbStudents = snapshots[0].val() ? Object.values(snapshots[0].val()) : [];
       fbMovements = snapshots[1].val() ? Object.values(snapshots[1].val()) : [];
       fbAdminLogins = snapshots[2].val() ? Object.values(snapshots[2].val()) : [];
+      fbGeofence = snapshots[3].val() || null;
       isCloudReady = true;
 
       // Attach Real-Time Observers for Cross-Device Sync
@@ -107,6 +110,10 @@ function initCloudSync(onReadyCallback) {
       });
       firebaseDB.ref('admin_logins').on('value', snap => {
         fbAdminLogins = snap.val() ? Object.values(snap.val()) : [];
+        window.dispatchEvent(new Event('db_updated'));
+      });
+      firebaseDB.ref('settings/geofence').on('value', snap => {
+        fbGeofence = snap.val() || null;
         window.dispatchEvent(new Event('db_updated'));
       });
 
@@ -210,11 +217,12 @@ function addMessage(msg) {
 
 /* ── Geofence Settings ───────────────────────── */
 function getGeofence() {
-  return JSON.parse(localStorage.getItem('smt_geofence') || 'null');
+  return fbGeofence;
 }
 
 function saveGeofence(settings) {
-  localStorage.setItem('smt_geofence', JSON.stringify(settings));
+  if (typeof firebaseDB === 'undefined' || !firebaseDB) return;
+  firebaseDB.ref('settings/geofence').set(settings);
 }
 
 /**
