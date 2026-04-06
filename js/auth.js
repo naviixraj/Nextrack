@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Register ──
     registerForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      const newId = document.getElementById('reg-id').value.trim();
       const name = document.getElementById('reg-name').value.trim();
       const room = document.getElementById('reg-room').value.trim();
       const phone = document.getElementById('reg-phone').value.trim();
@@ -104,8 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const pwd = document.getElementById('reg-pwd').value;
       const pwdC = document.getElementById('reg-pwd-confirm').value;
 
-      if (!name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
-        registerMsg.textContent = '⚠️ All fields including photo are required.';
+      if (!newId || !name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
+        registerMsg.textContent = '⚠️ All fields including Student ID and photo are required.';
         registerMsg.className = 'form-msg error';
         return;
       }
@@ -120,8 +121,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const id = 'STU-' + Date.now().toString(36).toUpperCase();
+      // Verify ID is unique
+      const existing = getStudentById(newId);
+      if (existing) {
+        registerMsg.textContent = '⚠️ This Student ID is already registered.';
+        registerMsg.className = 'form-msg error';
+        return;
+      }
       
+      const id = newId;
       const submitBtn = registerForm.querySelector('button[type="submit"]');
       const originalText = submitBtn.innerHTML;
       submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
