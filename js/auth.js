@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pwdC = document.getElementById('reg-pwd-confirm').value;
 
       if (!newId || !name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
-        registerMsg.textContent = '⚠️ All fields including Student ID and photo are required.';
+        registerMsg.textContent = '⚠️ All fields including Registration No. and photo are required.';
         registerMsg.className = 'form-msg error';
         return;
       }
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Verify ID is unique
       const existing = getStudentById(newId);
       if (existing) {
-        registerMsg.textContent = '⚠️ This Student ID is already registered.';
+        registerMsg.textContent = '⚠️ This Registration No. is already registered.';
         registerMsg.className = 'form-msg error';
         return;
       }
