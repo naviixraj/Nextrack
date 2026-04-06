@@ -128,16 +128,25 @@ function checkStudentLocation(student) {
   const geo = getGeofence();
   if (!geo) {
     geoCheckDone = true;
+    updateLocationBanner();
     return; // no geofence, allow everything
   }
 
   if (!navigator.geolocation) {
     geoCheckDone = true;
-    showLocationBanner('⚠️ GPS not supported. Check-in may be restricted.', 'warning');
+    showLocationBanner('⚠️ GPS not supported on this browser. Check-in restricted.', 'warning');
     return;
   }
 
-  showLocationBanner('📡 Detecting your location...', 'detecting');
+  // Security Check: Geolocation requires HTTPS (unless localhost)
+  const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (!isSecure) {
+    geoCheckDone = true;
+    showLocationBanner('⚠️ <strong>Secure Connection Required:</strong> Geolocation is blocked on non-HTTPS sites. Please use a secure link or contact admin.', 'warning');
+    return;
+  }
+
+  showLocationBanner('📡 Detecting your precise location...', 'detecting');
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
@@ -145,7 +154,7 @@ function checkStudentLocation(student) {
       geoCheckDone = true;
       const result = checkGeofence(studentLocation.lat, studentLocation.lng);
 
-      if (result.inside) {
+      if (result && result.inside) {
         showLocationBanner(`📍 Inside hostel zone (${result.distance}m from center)`, 'inside');
 
         // Auto check-in if student is OUT and inside zone
@@ -154,17 +163,31 @@ function checkStudentLocation(student) {
           autoCheckIn(student);
         }
       } else {
-        showLocationBanner(`📍 Outside hostel zone (${result.distance}m away). Check-In disabled.`, 'outside');
+        const dist = result ? result.distance : '?';
+        showLocationBanner(`📍 Outside hostel zone (${dist}m away). Check-In disabled.`, 'outside');
       }
 
       renderStudentUI(student);
     },
     (err) => {
       geoCheckDone = true;
-      showLocationBanner('⚠️ Could not detect location. Check-In may be restricted.', 'warning');
+      let msg = '⚠️ Could not detect location. ';
+      
+      if (err.code === 1) { // PERMISSION_DENIED
+        msg += '<strong>Permission denied!</strong> Please enable location access in your browser settings.';
+      } else if (err.code === 3) { // TIMEOUT
+        msg += '<strong>Request timed out.</strong> Check your network/GPS signal.';
+      } else {
+        msg += 'Check-In may be restricted.';
+      }
+
+      // Add a retry action
+      const studentObj = getStudentById(student.id); // ensure fresh copy
+      showLocationBanner(`${msg} <button class="btn btn-small" style="margin-left:1rem;background:rgba(255,255,255,0.2);padding:0.2rem 0.5rem;font-size:0.75rem;" onclick="checkStudentLocation(${JSON.stringify(studentObj).replace(/"/g, '&quot;')})">🔄 Retry Discovery</button>`, 'warning');
+      
       renderStudentUI(student);
     },
-    { enableHighAccuracy: true, timeout: 10000 }
+    { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
   );
 }
 
@@ -188,9 +211,10 @@ function showLocationBanner(text, type) {
     banner.id = 'geo-banner';
     banner.className = 'geo-banner';
     const main = document.querySelector('.stu-main');
-    main.insertBefore(banner, main.firstChild);
+    if (main) main.insertBefore(banner, main.firstChild);
+    else return; // Should not happen
   }
-  banner.textContent = text;
+  banner.innerHTML = text; // support HTML for buttons/styling
   banner.className = 'geo-banner geo-' + type;
   banner.style.display = 'block';
 }

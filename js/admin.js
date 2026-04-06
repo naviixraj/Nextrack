@@ -33,6 +33,11 @@ function initDashboard() {
   trackAdminLogin();
   renderAdminList();
   initGeofenceUI();
+
+  // Reactive Geofence UI updates
+  window.addEventListener('db_updated', () => {
+    initGeofenceUI();
+  });
 }
 
 function renderCards() {
@@ -728,7 +733,6 @@ window.refreshDashboard = function () {
   renderMonitoringTable();
   renderDirectory();
   renderAdminList();
-  initGeofenceUI();
 };
 
 /* ═══════════════════════════════════════════════
@@ -860,14 +864,18 @@ window.saveGeofenceSettings = function () {
 
 window.clearGeofenceSettings = function () {
   if (!confirm('Remove geofence? Students will be able to check-in from anywhere.')) return;
+  
   if (typeof firebaseDB !== 'undefined' && firebaseDB) {
-    firebaseDB.ref('settings/geofence').remove();
+    firebaseDB.ref('geofence').remove().then(() => {
+      alert('🗑 Geofence removed from cloud.');
+    });
   }
+  
+  localStorage.removeItem('smt_geofence');
   document.getElementById('geo-lat').value = '';
   document.getElementById('geo-lng').value = '';
   document.getElementById('geo-radius').value = '';
   document.getElementById('geo-status').innerHTML = '<span style="color:var(--text-muted);">Geofence removed. Check-in allowed from anywhere.</span>';
-  alert('🗑 Geofence removed.');
 };
 
 window.detectMyLocation = function () {

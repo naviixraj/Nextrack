@@ -91,7 +91,7 @@ function initCloudSync(onReadyCallback) {
       firebaseDB.ref('students').once('value'),
       firebaseDB.ref('movements').once('value'),
       firebaseDB.ref('admin_logins').once('value'),
-      firebaseDB.ref('settings/geofence').once('value')
+      firebaseDB.ref('geofence').once('value')
     ]).then(snapshots => {
       fbStudents = snapshots[0].val() ? Object.values(snapshots[0].val()) : [];
       fbMovements = snapshots[1].val() ? Object.values(snapshots[1].val()) : [];
@@ -112,7 +112,7 @@ function initCloudSync(onReadyCallback) {
         fbAdminLogins = snap.val() ? Object.values(snap.val()) : [];
         window.dispatchEvent(new Event('db_updated'));
       });
-      firebaseDB.ref('settings/geofence').on('value', snap => {
+      firebaseDB.ref('geofence').on('value', snap => {
         fbGeofence = snap.val() || null;
         window.dispatchEvent(new Event('db_updated'));
       });
@@ -215,14 +215,17 @@ function addMessage(msg) {
   saveMessages(msgs);
 }
 
-/* ── Geofence Settings ───────────────────────── */
+/* ── Geofence Settings (Synced) ────────────────── */
 function getGeofence() {
   return fbGeofence;
 }
 
 function saveGeofence(settings) {
-  if (typeof firebaseDB === 'undefined' || !firebaseDB) return;
-  firebaseDB.ref('settings/geofence').set(settings);
+  if (typeof firebaseDB !== 'undefined' && firebaseDB) {
+    return firebaseDB.ref('geofence').set(settings);
+  }
+  // Fallback (for offline or local testing)
+  localStorage.setItem('smt_geofence', JSON.stringify(settings));
 }
 
 /**
