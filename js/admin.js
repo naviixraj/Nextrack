@@ -1145,3 +1145,27 @@ document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge
 function refreshDashboard() {
   initDashboard();
 }
+
+/* ── Admin Dropdown Logic ── */
+window.toggleAdminMenu = function (event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('admin-dropdown-menu');
+  const trigger = document.getElementById('admin-menu-trigger');
+  
+  if (menu) {
+    menu.classList.toggle('visible');
+    if (trigger) trigger.classList.toggle('active');
+  }
+};
+
+// Close dropdown on click outside
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('admin-dropdown-menu');
+  const trigger = document.getElementById('admin-menu-trigger');
+  if (menu && menu.classList.contains('visible')) {
+    if (!menu.contains(e.target) && !trigger.contains(e.target)) {
+      menu.classList.remove('visible');
+      if (trigger) trigger.classList.remove('active');
+    }
+  }
+});
