@@ -751,12 +751,12 @@ function startMotionGuard(student) {
       const status = getCurrentStatus(student.id);
 
       if (result && result.inside) {
-        showLocationBanner(`📍 Inside hostel zone (v54)`, 'inside');
+        showLocationBanner(`📍 Inside hostel zone (v57)`, 'inside');
         if (status === 'OUT' && !debounceTimer) {
           handleCheckIn(student, true); // Auto check-in
         }
       } else if (result && !result.inside) {
-        showLocationBanner(`🚶 Outside hostel (v54)`, 'outside');
+        showLocationBanner(`🚶 Outside hostel (v57)`, 'outside');
         if (status === 'IN' && !debounceTimer) {
           handleCheckOut(student, true); // Auto check-out
         }
@@ -767,7 +767,7 @@ function startMotionGuard(student) {
       if (err.code === 1) { // PERMISSION_DENIED
         try {
           // Log Diagnostic
-          console.log(`🛡️ GPS Refusal for ${student.name} (v54). Syncing to Warden...`);
+          console.log(`🛡️ GPS Refusal for ${student.name} (v57). Syncing to Warden...`);
           
           // Force database sync first
           await updateStudent(student.id, { 

@@ -100,14 +100,15 @@ function renderCards() {
   const movements = getMovements();
   const total = students.length;
 
-  // A student is "outside" if their latest movement has no inTime
+  // A student is "outside" if their latest movement has no inTime OR they blocked GPS
   let outsideCount = 0;
   students.forEach(s => {
+    const isWait = s.location_status === 'REFUSED';
     const stuMovs = movements.filter(m => m.studentId === s.id);
-    if (stuMovs.length > 0) {
-      const latest = stuMovs[stuMovs.length - 1];
-      if (!latest.inTime) outsideCount++;
-    }
+    const latest = stuMovs.length > 0 ? stuMovs[stuMovs.length - 1] : null;
+    const isOut = latest && !latest.inTime;
+
+    if (isOut || isWait) outsideCount++;
   });
 
   const insideCount = total - outsideCount;
