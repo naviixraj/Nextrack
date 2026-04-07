@@ -8,6 +8,7 @@ let globalYearFilter = 'All';
 let curfewInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.body.style.overflow = 'hidden'; // Lock scroll during startup
   const loader = document.getElementById('startup-loader');
   const msgEl = document.getElementById('startup-msg');
   const messages = [
@@ -53,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       clearInterval(msgInterval);
       if (loader) loader.classList.add('fade-out');
+      document.body.style.overflow = ''; // Unlock scroll
     }, remaining);
   });
 });
