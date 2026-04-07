@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nextrack-v24';
+const CACHE_NAME = 'nextrack-v27';
 const ASSETS = [
   '/',
   '/index.html',
@@ -11,7 +11,8 @@ const ASSETS = [
   '/js/student.js',
   '/js/pwa.js',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/version.json'
 ];
 
 self.addEventListener('install', (event) => {

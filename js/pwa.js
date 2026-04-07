@@ -6,8 +6,13 @@
 let deferredPrompt;
 
 // 1. Register Service Worker
+const CURRENT_VERSION = 'v27';
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // 1. Check for aggressive version updates before registering
+    checkServerVersion();
+
     navigator.serviceWorker.register('sw.js').then(reg => {
       console.log('🚀 NexTrack PWA Active!', reg.scope);
       
@@ -39,7 +44,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-function showPremiumUpdateModal(worker) {
+window.showPremiumUpdateModal = function(worker) {
   if (document.getElementById('pwa-update-modal')) return;
 
   const overlay = document.createElement('div');
@@ -51,17 +56,44 @@ function showPremiumUpdateModal(worker) {
       <h2 class="update-title">Feature Update</h2>
       <p class="update-desc">We've added some powerful new features to NexTrack. Refresh now to experience the latest version.</p>
       <button class="update-btn" id="pwa-refresh-btn">Update Now</button>
+      <button class="btn btn-ghost btn-small" onclick="document.getElementById('pwa-update-modal').remove()" style="margin-top:1.5rem; opacity:0.5; font-size:0.75rem;">Close Preview</button>
     </div>
   `;
   document.body.appendChild(overlay);
   
-  document.getElementById('pwa-refresh-btn').addEventListener('click', () => {
-    worker.postMessage({ type: 'SKIP_WAITING' });
-    overlay.classList.remove('visible');
-  });
+  const refreshBtn = document.getElementById('pwa-refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      if (worker) {
+        worker.postMessage({ type: 'SKIP_WAITING' });
+      } else {
+        window.location.reload();
+      }
+      overlay.classList.remove('visible');
+    });
+  }
 
   // Show with minor delay for animation smoothness
   setTimeout(() => overlay.classList.add('visible'), 100);
+}
+
+// ── Version Guard (Mobile Cache Busting) ──────
+async function checkServerVersion() {
+  try {
+    const res = await fetch(`version.json?t=${Date.now()}`);
+    const data = await res.json();
+    
+    if (data.version !== CURRENT_VERSION) {
+      console.log(`🔄 Version Mismatch! Current: ${CURRENT_VERSION}, Server: ${data.version}. Reloading...`);
+      // Update local version tracking and force refresh
+      if (typeof window.localStorage !== 'undefined') {
+        localStorage.setItem('pwa_version', data.version);
+      }
+      window.location.reload();
+    }
+  } catch (err) {
+    console.log('⚠️ Version check skipped:', err);
+  }
 }
 
 // 2. Listen for the Android/Chrome Install Prompt
