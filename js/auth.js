@@ -277,5 +277,21 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = false;
       });
     });
+    // ── Password Visibility Toggle ──
+    document.addEventListener('click', (e) => {
+      const toggle = e.target.closest('.pwd-toggle');
+      if (!toggle) return;
+      
+      const targetId = toggle.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (!input) return;
+      
+      const isPwd = input.type === 'password';
+      input.type = isPwd ? 'text' : 'password';
+      
+      // Update SVG opacity or icon if needed
+      const icon = toggle.querySelector('svg');
+      if (icon) icon.style.opacity = isPwd ? '1' : '0.5';
+    });
   });
 });

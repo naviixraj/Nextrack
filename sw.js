@@ -1,10 +1,11 @@
-const CACHE_NAME = 'nextrack-v43';
+const CACHE_NAME = 'nextrack-v46';
 const ASSETS = [
   '/',
   '/index.html',
   '/admin.html',
   '/student.html',
-  '/style.css',
+  '/css/style.css',
+  '/irn.png',
   '/js/data.js',
   '/js/auth.js',
   '/js/admin.js',
@@ -13,6 +14,9 @@ const ASSETS = [
   '/icon-192.png',
   '/icon-512.png'
 ];
+
+// Cache strategy for different types of requests
+const NETWORK_FIRST_ASSETS = ['index.html', 'admin.html', 'student.html', 'js/auth.js', 'js/admin.js', 'js/student.js'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -43,9 +47,26 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+  const url = new URL(event.request.url);
+  const isNetworkFirst = NETWORK_FIRST_ASSETS.some(asset => url.pathname.endsWith(asset));
+
+  if (isNetworkFirst) {
+    // Network First Strategy
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clon = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clon));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache First Strategy for static assets
+    event.respondWith(
+      caches.match(event.request).then((response) => {
+        return response || fetch(event.request);
+      })
+    );
+  }
 });

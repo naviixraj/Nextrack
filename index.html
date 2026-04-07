@@ -931,11 +931,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.8rem;
+      overflow: hidden; /* Added for logo image */
       box-shadow: 0 0 40px rgba(129, 140, 248, 0.15);
       position: relative;
       z-index: 2;
       backdrop-filter: blur(10px);
+    }
+
+    .startup-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform: scale(1.1);
+      filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.3));
     }
 
     .startup-logo-glow {
@@ -1021,7 +1029,6 @@
       }
       
       .startup-logo-inner {
-        font-size: 2rem;
         border-radius: 26px;
       }
       
@@ -1057,7 +1064,9 @@
     <div class="startup-content">
       <div class="startup-logo-wrap">
         <div class="startup-logo-glow"></div>
-        <div class="startup-logo-inner">🚀</div>
+        <div class="startup-logo-inner">
+          <img src="irn.png?v=46" class="startup-logo-img" alt="Titans Logo">
+        </div>
       </div>
       <h1 class="startup-title">NexTrack Hub</h1>
       <p class="startup-subtitle">Precision Entry</p>
@@ -1277,10 +1286,10 @@
 
   <!-- App Scripts -->
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="js/firebase-config.js?v=35"></script>
-  <script src="js/data.js?v=35"></script>
-  <script src="js/auth.js?v=36"></script>
-  <script src="js/pwa-v32.js?v=36"></script>
+  <script src="js/firebase-config.js?v=46"></script>
+  <script src="js/data.js?v=46"></script>
+  <script src="js/auth.js?v=46"></script>
+  <script src="js/pwa-v32.js?v=46"></script>
 </body>
 
 </html>
