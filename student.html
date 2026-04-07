@@ -263,34 +263,56 @@
 
   <!-- Support Modal -->
   <div class="modal-overlay" id="support-modal">
-    <div class="modal glass" style="max-width:420px; text-align:center; padding: 2.2rem 1.8rem;">
+    <div class="modal glass" style="max-width:440px; text-align:center; padding: 2.5rem 2rem; border-radius: 32px;">
       <button class="modal-x-btn" onclick="closeSupportModal()">&times;</button>
-      <div style="margin-bottom:1.5rem;">
-        <div class="brand-icon-wrap" style="width:70px; height:70px; margin: 0 auto 0.8rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden;">
+      
+      <div style="margin-bottom:2rem;">
+        <div style="display:inline-flex; align-items:center; gap:0.5rem; background:rgba(52, 211, 153, 0.15); color:var(--green); padding:0.4rem 1rem; border-radius:50px; font-size:0.75rem; font-weight:800; margin-bottom:1.2rem; border:1px solid rgba(52, 211, 153, 0.2);">
+          <span style="width:8px; height:8px; background:var(--green); border-radius:50%; box-shadow:0 0 10px var(--green);"></span>
+          RESPONSE TIME: ~24 HOURS
+        </div>
+        
+        <div class="brand-icon-wrap" style="width:90px; height:90px; margin: 0 auto 1.2rem; background: rgba(255, 255, 255, 0.05); border: 4px solid #fff; border-radius: 50%; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
           <img src="prosupport.jpeg" alt="Support" style="width:100%; height:100%; object-fit:cover;">
         </div>
-        <h2 style="font-size:1.5rem; font-weight:800; color: var(--text-primary);">Need Support?</h2>
-        <p style="font-size:0.88rem; color:var(--text-secondary); margin-top:0.4rem;">Team Titans is here to help you.</p>
+        <h2 style="font-size:1.7rem; font-weight:900; color: var(--text-primary); letter-spacing:-0.5px;">NexTrack Support Center</h2>
+        <p style="font-size:0.9rem; color:var(--text-secondary); margin-top:0.4rem;">Official Help & Technical Desk</p>
       </div>
 
-      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius:14px; padding:1.2rem; margin-bottom:1.5rem; text-align:left;">
-        <p style="font-size:0.9rem; line-height:1.5; color:var(--text-secondary);">
-          If you have any doubts, queries, or technical issues with NexTrack, please feel free to reach out to us. We will get back to you as soon as possible!
+      <div style="display:grid; grid-template-columns: 1fr; gap:1rem; margin-bottom:2rem; text-align:left;">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:1.2rem; position:relative; overflow:hidden;">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:0.8rem;">Technical Lead</div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div style="width:40px; height:40px; border-radius:10px; background:var(--accent-grad); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👨‍💻</div>
+            <div>
+              <div style="font-size:1rem; font-weight:800; color:var(--text-primary);">Naveenraj</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Lead Systems Architect</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:1.2rem;">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:0.8rem;">Engineering Team</div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(168,85,247,0.2); display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:#c084fc;">⚡</div>
+            <div>
+              <div style="font-size:1rem; font-weight:800; color:var(--text-primary);">Titans</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Class of 2026 · Development</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:rgba(239, 68, 68, 0.05); border:1px solid rgba(239, 68, 68, 0.1); border-radius:15px; padding:1rem; margin-bottom:1.8rem; text-align:left;">
+        <p style="font-size:0.82rem; line-height:1.5; color:var(--text-secondary);">
+          ⚠️ <strong>Guideline:</strong> Please include your <strong>System Role</strong> and a <strong>Screenshot</strong> of any errors for a faster resolution.
         </p>
       </div>
 
-      <div style="margin-bottom:1.5rem; text-align:left;">
-        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:0.6rem;">Contact Team</div>
-        <div style="display:flex; flex-direction:column; gap:0.4rem;">
-          <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">Naveenraj <span style="font-weight:400; color:var(--text-muted); font-size:0.8rem;">(Leader)</span></div>
-          <div style="font-size:0.85rem; color:var(--text-secondary);">Vishnu Varathan, Rishab, Maheshwaran</div>
-        </div>
-      </div>
-
-      <a href="mailto:nextrack.lim@gmail.com?subject=NexTrack%20Support%20Request" class="btn btn-primary btn-full" style="text-decoration:none;">
-        ✉️ Email Us
+      <a href="mailto:nextrack.lim@gmail.com?subject=[NexTrack-Support]%20Technical%20Issue%20Report" class="btn btn-primary btn-full" style="text-decoration:none; height:55px; border-radius:18px; font-size:1rem; letter-spacing:0.5px; box-shadow:0 8px 20px rgba(102,126,234,0.3);">
+        📩 Open Support Ticket
       </a>
-      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:1rem;">Email: nextrack.lim@gmail.com</p>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:1.2rem;">Direct Email: nextrack.lim@gmail.com</p>
     </div>
   </div>
 
