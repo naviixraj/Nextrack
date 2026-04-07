@@ -8,6 +8,30 @@ let globalYearFilter = 'All';
 let curfewInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  const loader = document.getElementById('startup-loader');
+  const msgEl = document.getElementById('startup-msg');
+  const messages = [
+    "Securely Synchronizing...",
+    "NexTrack | Enterprise Intelligence",
+    "Verifying Admin Credentials...",
+    "Team Titans | Precision Systems",
+    "Welcome back. — Provided by Team Titans"
+  ];
+  
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    if (msgEl) {
+      msgEl.style.opacity = 0;
+      setTimeout(() => {
+        msgEl.textContent = messages[msgIdx % messages.length];
+        msgEl.style.opacity = 1;
+        msgIdx++;
+      }, 300);
+    }
+  }, 800);
+
+  const startTime = Date.now();
+
   initCloudSync(() => {
     const session = getSession();
     if (!session || session.role !== 'admin') {
@@ -21,6 +45,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // The Magic: Listen for any cloud updates and instantly re-render!
     window.addEventListener('db_updated', refreshDashboard);
+
+    // Fade out loader after min 1.5s
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, 1800 - elapsed);
+
+    setTimeout(() => {
+      clearInterval(msgInterval);
+      if (loader) loader.classList.add('fade-out');
+    }, remaining);
   });
 });
 

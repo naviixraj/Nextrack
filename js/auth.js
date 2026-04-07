@@ -10,6 +10,30 @@
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
+  const loader = document.getElementById('startup-loader');
+  const msgEl = document.getElementById('startup-msg');
+  const messages = [
+    "Securely Synchronizing...",
+    "NexTrack | Enterprise Intelligence",
+    "Verifying Credentials...",
+    "Team Titans | Cloud Syncing",
+    "Welcome to the Hub — Titans"
+  ];
+  
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    if (msgEl) {
+      msgEl.style.opacity = 0;
+      setTimeout(() => {
+        msgEl.textContent = messages[msgIdx % messages.length];
+        msgEl.style.opacity = 1;
+        msgIdx++;
+      }, 300);
+    }
+  }, 800);
+
+  const startTime = Date.now();
+
   initCloudSync(() => {
     // If already logged in, redirect
     const session = getSession();
@@ -18,6 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
       else window.location.href = 'student.html';
       return;
     }
+
+    // No session: Fade out loader after min 1.8s
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, 1800 - elapsed);
+
+    setTimeout(() => {
+      clearInterval(msgInterval);
+      if (loader) loader.classList.add('fade-out');
+    }, remaining);
 
     const loginTab = document.getElementById('tab-login');
     const registerTab = document.getElementById('tab-register');

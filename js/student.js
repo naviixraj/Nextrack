@@ -8,6 +8,30 @@ let studentLocation = null; // { lat, lng } or null
 let geoCheckDone = false;
 
 document.addEventListener('DOMContentLoaded', () => {
+  const loader = document.getElementById('startup-loader');
+  const msgEl = document.getElementById('startup-msg');
+  const messages = [
+    "Connecting to Titans Server...",
+    "Secure Portal Authentication...",
+    "Syncing Student Profile...",
+    "NexTrack | Titans Precision",
+    "Welcome. — Provided by Team Titans"
+  ];
+  
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    if (msgEl) {
+      msgEl.style.opacity = 0;
+      setTimeout(() => {
+        msgEl.textContent = messages[msgIdx % messages.length];
+        msgEl.style.opacity = 1;
+        msgIdx++;
+      }, 300);
+    }
+  }, 800);
+
+  const startTime = Date.now();
+
   initCloudSync(() => {
     const session = getSession();
     if (!session || session.role === 'admin') {
@@ -44,6 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderStudentUI(liveStudent);
       }
     });
+
+
+    // Fade out loader after min 1.5s
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, 1800 - elapsed);
+
+    setTimeout(() => {
+      clearInterval(msgInterval);
+      if (loader) loader.classList.add('fade-out');
+    }, remaining);
   });
 });
 
