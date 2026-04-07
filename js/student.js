@@ -126,28 +126,20 @@ function renderStudentUI(student) {
   const btnIn = document.getElementById('btn-checkin');
   const btnOut = document.getElementById('btn-checkout');
 
-  // Status Lock
-  btnIn.disabled = status === 'IN';
-  btnOut.disabled = status === 'OUT';
-
-  // Geofence restriction on check-in
-  const geo = getGeofence();
-  if (geo && status === 'OUT') {
-    // If geofence is set and student is OUT, check-in depends on location
-    if (!geoCheckDone) {
-      btnIn.disabled = true; // disable until location confirmed
-    } else if (studentLocation) {
-      const result = checkGeofence(studentLocation.lat, studentLocation.lng);
-      if (result && !result.inside) {
-        btnIn.disabled = true;
-      }
-    } else {
-      btnIn.disabled = true; // no location available
-    }
+  // 🔒 FULL AUTOMATION: Buttons are for status display only
+  btnIn.disabled = true;
+  btnOut.disabled = true;
+  btnIn.onclick = null;
+  btnOut.onclick = null;
+  
+  // Update button text to reflect automation
+  if (status === 'IN') {
+    btnIn.innerHTML = '<span>✅ Inside Hostel (Auto)</span>';
+    btnOut.innerHTML = '<span>🤖 Guarding Activity...</span>';
+  } else {
+    btnIn.innerHTML = '<span>🤖 Guarding Activity...</span>';
+    btnOut.innerHTML = '<span>🚶 Checked Out (Auto)</span>';
   }
-
-  btnIn.onclick = () => handleCheckIn(student);
-  btnOut.onclick = () => handleCheckOut(student);
 
   // restore debounce if active
   if (debounceTimer) {
@@ -165,12 +157,12 @@ function checkStudentLocation(student) {
   if (!geo) {
     geoCheckDone = true;
     updateLocationBanner();
-    return; // no geofence, allow everything
+    return;
   }
 
   if (!navigator.geolocation) {
     geoCheckDone = true;
-    showLocationBanner('⚠️ GPS not supported on this browser. Check-in restricted.', 'warning');
+    showLocationBanner('⚠️ GPS not supported on this browser.', 'warning');
     return;
   }
 
@@ -178,56 +170,12 @@ function checkStudentLocation(student) {
   const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   if (!isSecure) {
     geoCheckDone = true;
-    showLocationBanner('⚠️ <strong>Secure Connection Required:</strong> Geolocation is blocked on non-HTTPS sites. Please use a secure link or contact admin.', 'warning');
+    showLocationBanner('⚠️ <strong>Secure Connection Required:</strong> Geolocation is blocked on non-HTTPS sites.', 'warning');
     return;
   }
 
-  showLocationBanner('📡 Detecting your precise location...', 'detecting');
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      geoCheckDone = true;
-      const result = checkGeofence(studentLocation.lat, studentLocation.lng);
-
-      if (result && result.inside) {
-        showLocationBanner(`📍 Inside hostel zone (${result.distance}m from center)`, 'inside');
-
-        // Auto check-in if student is OUT and inside zone
-        const status = getCurrentStatus(student.id);
-        if (status === 'OUT' && !debounceTimer) {
-          autoCheckIn(student);
-        }
-      } else {
-        const dist = result ? result.distance : '?';
-        showLocationBanner(`📍 Outside hostel zone (${dist}m away). Check-In disabled.`, 'outside');
-      }
-
-      renderStudentUI(student);
-    },
-    (err) => {
-      geoCheckDone = true;
-      let title = '📍 Location Required';
-      let msg = 'NexTrack needs your location to verify your hostel status.';
-      let isPermissionError = false;
-      
-      if (err.code === 1) { // PERMISSION_DENIED
-        title = '🚫 Permission Denied';
-        msg = 'Please enable location access in your browser/app settings to proceed with Check-In.';
-        isPermissionError = true;
-      } else if (err.code === 3) { // TIMEOUT
-        title = '⏳ Request Timed Out';
-        msg = 'We couldn\'t detect your GPS signal. Please check your network and try again.';
-      } else {
-        title = '⚠️ Detection Error';
-        msg = 'Could not detect your location. Please ensure GPS is active.';
-      }
-
-      showPremiumLocationModal(title, msg, isPermissionError, student);
-      renderStudentUI(student);
-    },
-    { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
-  );
+  // ── Smart Motion Guard Initialization ──
+  startMotionGuard(student);
 }
 
 function autoCheckIn(student) {
@@ -775,3 +723,74 @@ if (typeof listenForMessages === 'function') {
 
 // Initial badge check
 document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });
+/* ── Smart Motion Guard (Geofencing) ── */
+let motionWatcher = null;
+
+function startMotionGuard(student) {
+  const geo = getGeofence();
+  if (!geo || !navigator.geolocation) {
+    geoCheckDone = true;
+    updateLocationBanner();
+    return;
+  }
+
+  showLocationBanner('🛰️ Smart Motion Guard Active', 'detecting');
+
+  // Clear existing watcher if any
+  if (motionWatcher) navigator.geolocation.clearWatch(motionWatcher);
+
+  motionWatcher = navigator.geolocation.watchPosition(
+    (pos) => {
+      studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      geoCheckDone = true;
+      
+      // Update location status in DB to "ACTIVE"
+      updateStudent(student.id, { location_status: 'ACTIVE' });
+
+      const result = checkGeofence(studentLocation.lat, studentLocation.lng);
+      const status = getCurrentStatus(student.id);
+
+      if (result && result.inside) {
+        showLocationBanner(`📍 Inside hostel zone (v47)`, 'inside');
+        if (status === 'OUT' && !debounceTimer) {
+          handleCheckIn(student, true); // Auto check-in
+        }
+      } else if (result && !result.inside) {
+        showLocationBanner(`🚶 Outside hostel (v47)`, 'outside');
+        if (status === 'IN' && !debounceTimer) {
+          handleCheckOut(student, true); // Auto check-out
+        }
+      }
+    },
+    (err) => {
+      geoCheckDone = true;
+      if (err.code === 1) { // PERMISSION_DENIED
+        updateStudent(student.id, { location_status: 'REFUSED' });
+        showPermissionDeniedModal(student);
+      } else {
+        showLocationBanner('⚠️ GPS Signal Weak. Move to open area.', 'warning');
+      }
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
+
+function showPermissionDeniedModal(student) {
+  if (document.getElementById('gps-denied-lock')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'gps-denied-lock';
+  overlay.className = 'update-overlay visible'; // Force visible
+  overlay.style.zIndex = '10000000';
+  overlay.innerHTML = `
+    <div class="update-modal" style="border: 2px solid #ef4444;">
+      <div class="update-icon" style="background:rgba(239,68,68,0.2); color:#ef4444; box-shadow:0 8px 25px rgba(239,68,68,0.4);">🚫</div>
+      <h2 class="update-title" style="color:#ef4444;">Permission Denied</h2>
+      <p class="update-desc">Location access is <strong>MANDATORY</strong> for NexTrack attendance. The warden has been notified of this security bypass.</p>
+      <p class="update-desc" style="font-size:0.75rem; opacity:0.7;">Please enable GPS in system settings and browser permissions.</p>
+      <button class="update-btn" style="background:#ef4444;" onclick="location.reload();">📍 Turn On Location</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}

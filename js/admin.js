@@ -133,14 +133,18 @@ window.showOutsideStudents = function () {
   } else {
     container.innerHTML = outsideList.map(item => {
       const s = item.student;
+      const isBlocked = s.location_status === 'REFUSED';
       const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '<span class="table-avatar-placeholder">👤</span>';
+      
       return `
-        <div class="recovery-card" onclick="document.getElementById('outside-modal').classList.remove('visible'); showStudentDetail('${s.id}');" style="cursor:pointer;">
+        <div class="recovery-card ${isBlocked ? 'location-refused' : ''}" onclick="document.getElementById('outside-modal').classList.remove('visible'); showStudentDetail('${s.id}');" style="cursor:pointer; position:relative; overflow:hidden;">
+          ${isBlocked ? '<div style="position:absolute; top:0; right:0; background:#ef4444; color:white; font-size:0.6rem; padding:2px 8px; font-weight:900; border-bottom-left-radius:10px; z-index:5;">📍 GPS BLOCKED</div>' : ''}
           <div style="display:flex;align-items:center;gap:0.8rem;">
             ${photo}
             <div class="recovery-info">
-              <strong>${s.name}</strong>
-              <span class="recovery-meta">Room ${s.room} · Out since ${formatTime(item.outTime)}</span>
+              <strong style="${isBlocked ? 'color:#fecaca;' : ''}">${s.name}</strong>
+              ${isBlocked ? '<div style="color:#f87171; font-size:0.6rem; font-weight:700; text-transform:uppercase; margin-top:-2px;">location turn off</div>' : ''}
+              <span class="recovery-meta" style="${isBlocked ? 'color:rgba(255,255,255,0.6);' : ''}">Room ${s.room} · Out since ${formatTime(item.outTime)}</span>
             </div>
           </div>
           <a href="tel:${s.phone}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>

@@ -1603,3 +1603,15 @@ tbody tr:hover {
   from { opacity: 0; transform: scale(0.95) translateY(-5px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* ── Location Refused Styling ── */
+.location-refused {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(185, 28, 28, 0.25)) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  animation: recovery-pulse 2s infinite alternate ease-in-out;
+}
+
+@keyframes recovery-pulse {
+  from { box-shadow: 0 0 10px rgba(239, 68, 68, 0.1); }
+  to { box-shadow: 0 0 25px rgba(239, 68, 68, 0.3); }
+}
