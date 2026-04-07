@@ -171,20 +171,23 @@ function checkStudentLocation(student) {
     },
     (err) => {
       geoCheckDone = true;
-      let msg = '⚠️ Could not detect location. ';
+      let title = '📍 Location Required';
+      let msg = 'NexTrack needs your location to verify your hostel status.';
+      let isPermissionError = false;
       
       if (err.code === 1) { // PERMISSION_DENIED
-        msg += '<strong>Permission denied!</strong> Please enable location access in your browser settings.';
+        title = '🚫 Permission Denied';
+        msg = 'Please enable location access in your browser/app settings to proceed with Check-In.';
+        isPermissionError = true;
       } else if (err.code === 3) { // TIMEOUT
-        msg += '<strong>Request timed out.</strong> Check your network/GPS signal.';
+        title = '⏳ Request Timed Out';
+        msg = 'We couldn\'t detect your GPS signal. Please check your network and try again.';
       } else {
-        msg += 'Check-In may be restricted.';
+        title = '⚠️ Detection Error';
+        msg = 'Could not detect your location. Please ensure GPS is active.';
       }
 
-      // Add a retry action
-      const studentObj = getStudentById(student.id); // ensure fresh copy
-      showLocationBanner(`${msg} <button class="btn btn-small" style="margin-left:1rem;background:rgba(255,255,255,0.2);padding:0.2rem 0.5rem;font-size:0.75rem;" onclick="checkStudentLocation(${JSON.stringify(studentObj).replace(/"/g, '&quot;')})">🔄 Retry Discovery</button>`, 'warning');
-      
+      showPremiumLocationModal(title, msg, isPermissionError, student);
       renderStudentUI(student);
     },
     { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
@@ -202,6 +205,27 @@ function autoCheckIn(student) {
 
   showLocationBanner('✅ Auto-checked-in! You are inside the hostel zone.', 'auto-checkin');
   renderStudentUI(student);
+}
+
+function showPremiumLocationModal(title, message, isPermission, student) {
+  if (document.getElementById('location-error-modal')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'location-error-modal';
+  overlay.className = 'update-overlay'; // Reusing the premium overlay styles
+  overlay.innerHTML = `
+    <div class="update-modal location-modal-box">
+      <div class="update-icon" style="background:rgba(248,113,113,0.2);color:#f87171;box-shadow:0 8px 25px rgba(248,113,113,0.3);">⚠️</div>
+      <h2 class="update-title">${title}</h2>
+      <p class="update-desc">${message}</p>
+      <div style="display:flex; flex-direction:column; gap:0.8rem;">
+        <button class="update-btn" style="background:#f87171;" onclick="location.reload()">🔄 Refresh App</button>
+        <button class="btn btn-ghost btn-small" onclick="document.getElementById('location-error-modal').remove()" style="opacity:0.6; font-size:0.75rem;">Dismiss</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => overlay.classList.add('visible'), 100);
 }
 
 function showLocationBanner(text, type) {
