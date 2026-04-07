@@ -1193,3 +1193,14 @@ window.closeDevelopersModal = function () {
   const modal = document.getElementById('developers-modal');
   if (modal) modal.classList.remove('visible');
 };
+
+/* ── Support Logic ── */
+window.showSupport = function () {
+  const modal = document.getElementById('support-modal');
+  if (modal) modal.classList.add('visible');
+};
+
+window.closeSupportModal = function () {
+  const modal = document.getElementById('support-modal');
+  if (modal) modal.classList.remove('visible');
+};

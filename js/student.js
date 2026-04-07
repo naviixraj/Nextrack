@@ -502,6 +502,65 @@ window.logout = () => {
     window.location.href = 'index.html';
   }
 };
+
+/* ── Student Dropdown Logic ── */
+window.toggleStudentMenu = function (event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('student-dropdown-menu');
+  const trigger = document.getElementById('student-menu-trigger');
+  
+  if (menu) {
+    menu.classList.toggle('visible');
+    if (trigger) trigger.classList.toggle('active');
+  }
+};
+
+// Close dropdown on click outside
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('student-dropdown-menu');
+  const trigger = document.getElementById('student-menu-trigger');
+  if (menu && menu.classList.contains('visible')) {
+    if (!menu.contains(e.target) && !trigger.contains(e.target)) {
+      menu.classList.remove('visible');
+      if (trigger) trigger.classList.remove('active');
+    }
+  }
+});
+
+/* ── About Developers Logic ── */
+window.showDevelopers = function () {
+  const modal = document.getElementById('developers-modal');
+  if (!modal) return;
+  
+  fetch('version.json')
+    .then(response => response.json())
+    .then(data => {
+      const versionEl = document.getElementById('dev-modal-version');
+      if (versionEl && data.version) {
+        versionEl.textContent = data.version;
+      }
+    })
+    .catch(err => console.log('Error fetching version:', err));
+
+  modal.classList.add('visible');
+};
+
+window.closeDevelopersModal = function () {
+  const modal = document.getElementById('developers-modal');
+  if (modal) modal.classList.remove('visible');
+};
+
+/* ── Support Logic ── */
+window.showSupport = function () {
+  const modal = document.getElementById('support-modal');
+  if (modal) modal.classList.add('visible');
+};
+
+window.closeSupportModal = function () {
+  const modal = document.getElementById('support-modal');
+  if (modal) modal.classList.remove('visible');
+};
+
 /* ═══════════════════════════════════════════════
    CHAT SYSTEM (Student Side — Firebase)
    ═══════════════════════════════════════════════ */

@@ -44,6 +44,7 @@
         <div class="admin-dropdown glass" id="admin-dropdown-menu">
           <button class="dropdown-item" onclick="changeAdminPassword()">🔐 Password</button>
           <button class="dropdown-item" onclick="showDevelopers()">👨‍💻 Developers</button>
+          <button class="dropdown-item" onclick="showSupport()">🛠️ Support</button>
           <button class="dropdown-item" onclick="manualCheckForUpdate()">🚀 Check for Update</button>
           <div class="dropdown-divider"></div>
           <button class="dropdown-item text-danger" onclick="logout()">🚪 Logout</button>
@@ -375,19 +376,22 @@
   <div class="modal-overlay" id="developers-modal">
     <div class="modal glass" style="max-width:480px; text-align:center; padding: 2.5rem 2rem;">
       <button class="modal-x-btn" onclick="closeDevelopersModal()">&times;</button>
-      <div style="margin-bottom:1.5rem;">
-        <div class="brand-icon-wrap" style="width:80px; height:80px; margin: 0 auto 1rem; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);">
-          <span style="font-size:2.5rem;">⚡</span>
-        </div>
-        <h2 style="font-size:1.8rem; font-weight:800; background: linear-gradient(90deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Team Titans</h2>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.4rem; font-weight:600; text-transform:uppercase; letter-spacing:1px;">First Year Students · Class of 2026</p>
+      <div style="margin-bottom:1.8rem; position:relative;">
+        <h2 style="font-size:2.4rem; font-weight:900; background: linear-gradient(135deg, #fff 30%, #818cf8 60%, #c084fc 90%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; letter-spacing: -2px; filter: drop-shadow(0 0 15px rgba(129, 140, 248, 0.4));">"Meet the Titans"</h2>
+        <p style="font-size:0.7rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:4px; opacity:0.8;">First Year Students · 2026</p>
       </div>
 
-      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius:16px; padding:1.2rem; margin-bottom:1.8rem; text-align:left;">
-        <p style="font-size:0.92rem; line-height:1.6; color:var(--text-secondary); font-style:italic;">
+      <div class="brand-icon-wrap" style="width:110px; height:110px; margin: 0 auto 1.5rem; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); overflow: hidden; border-radius: 32px; box-shadow: 0 15px 40px rgba(0,0,0,0.6);">
+        <img src="irn.png" alt="Titans Logo" style="width:100%; height:100%; object-fit:contain; transform: scale(1.1);">
+      </div>
+
+      <div style="background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.08); border-radius:24px; padding:1.8rem 1.5rem; margin-bottom:2rem; text-align:left; box-shadow: inset 0 0 20px rgba(255,255,255,0.02);">
+        <p style="font-size:1rem; line-height:1.7; color:var(--text-secondary); font-weight:500; font-style:italic;">
           "As first-year students, Team Titans is driven by a passion to modernize hostel management. Led by myself, Naveenraj, our team—Vishnu Varathan, Rishab, and Maheshwaran—is dedicated to building a smarter, safer NexTrack experience for our fellow students."
         </p>
-        <div style="margin-top:1rem; text-align:right; font-weight:700; color:var(--accent-1); font-size:0.85rem;">— Naveenraj, Team Leader</div>
+        <div style="margin-top:1.2rem; text-align:right;">
+          <span style="font-size:0.7rem; color:var(--accent-1); font-weight:800; text-transform:uppercase; letter-spacing:1px; background:rgba(102,126,234,0.15); padding:0.3rem 0.8rem; border-radius:50px; border:1px solid rgba(102,126,234,0.3);">— Naveenraj, Team Leader</span>
+        </div>
       </div>
 
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1.8rem;">
@@ -404,6 +408,7 @@
       <div style="display:flex; flex-direction:column; gap:0.6rem;">
         <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:0.4rem; text-align:left;">Team Members</div>
         <div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center;">
+          <span style="background:rgba(102,126,234,0.15); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.85rem; font-weight:700; border:1px solid rgba(102,126,234,0.3); color: var(--accent-1);">Naveenraj (Leader)</span>
           <span style="background:rgba(255,255,255,0.05); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.85rem; font-weight:600; border:1px solid rgba(255,255,255,0.1);">Vishnu Varathan</span>
           <span style="background:rgba(255,255,255,0.05); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.85rem; font-weight:600; border:1px solid rgba(255,255,255,0.1);">Rishab</span>
           <span style="background:rgba(255,255,255,0.05); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.85rem; font-weight:600; border:1px solid rgba(255,255,255,0.1);">Maheshwaran</span>
@@ -411,6 +416,39 @@
       </div>
 
       <button class="btn btn-primary" onclick="closeDevelopersModal()" style="margin-top:2rem; width:100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- Support Modal -->
+  <div class="modal-overlay" id="support-modal">
+    <div class="modal glass" style="max-width:420px; text-align:center; padding: 2.2rem 1.8rem;">
+      <button class="modal-x-btn" onclick="closeSupportModal()">&times;</button>
+      <div style="margin-bottom:1.5rem;">
+        <div class="brand-icon-wrap" style="width:70px; height:70px; margin: 0 auto 0.8rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden;">
+          <img src="prosupport.jpeg" alt="Support" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+        <h2 style="font-size:1.5rem; font-weight:800; color: var(--text-primary);">Need Support?</h2>
+        <p style="font-size:0.88rem; color:var(--text-secondary); margin-top:0.4rem;">Team Titans is here to help you.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius:14px; padding:1.2rem; margin-bottom:1.5rem; text-align:left;">
+        <p style="font-size:0.9rem; line-height:1.5; color:var(--text-secondary);">
+          If you have any doubts, queries, or technical issues with NexTrack, please feel free to reach out to us. We will get back to you as soon as possible!
+        </p>
+      </div>
+
+      <div style="margin-bottom:1.5rem; text-align:left;">
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:0.6rem;">Contact Team</div>
+        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+          <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">Naveenraj <span style="font-weight:400; color:var(--text-muted); font-size:0.8rem;">(Leader)</span></div>
+          <div style="font-size:0.85rem; color:var(--text-secondary);">Vishnu Varathan, Rishab, Maheshwaran</div>
+        </div>
+      </div>
+
+      <a href="mailto:nextrack.lim@gmail.com?subject=NexTrack%20Support%20Request" class="btn btn-primary btn-full" style="text-decoration:none;">
+        ✉️ Email Us
+      </a>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:1rem;">Email: nextrack.lim@gmail.com</p>
     </div>
   </div>
 
