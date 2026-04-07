@@ -424,8 +424,10 @@ window.openProfileModal = () => {
 
 // Logout
 window.logout = () => {
-  clearSession();
-  window.location.href = 'index.html';
+  if (confirm('🚪 Are you sure you want to logout?')) {
+    clearSession();
+    window.location.href = 'index.html';
+  }
 };
 /* ═══════════════════════════════════════════════
    CHAT SYSTEM (Student Side — Firebase)

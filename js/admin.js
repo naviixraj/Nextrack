@@ -793,8 +793,10 @@ window.changeAdminPassword = function () {
 
 /* ── Logout ──────────────────────────────────── */
 window.logout = function () {
-  clearSession();
-  window.location.href = 'index.html';
+  if (confirm('🚪 Are you sure you want to logout of NexTrack?')) {
+    clearSession();
+    window.location.href = 'index.html';
+  }
 };
 
 /* ── Refresh dashboard ───────────────────────── */
