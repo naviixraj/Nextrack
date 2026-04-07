@@ -5,7 +5,7 @@
  */
 
 let deferredPrompt;
-const APP_VERSION = 'v32';
+const APP_VERSION = 'v33';
 
 // 1. Register Service Worker with a Static Version Buster
 if ('serviceWorker' in navigator) {
@@ -91,6 +91,50 @@ window.showPremiumUpdateModal = function(worker) {
 
   // Show with minor delay for animation smoothness
   setTimeout(() => overlay.classList.add('visible'), 100);
+}
+
+/**
+ * Manual trigger for checking updates from the UI
+ */
+window.manualCheckForUpdate = async function() {
+  if (!('serviceWorker' in navigator)) return;
+  
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) return;
+
+    // Show a small loading state/toast if you have one, or just update
+    console.log('🔍 Manual update check initiated...');
+    await reg.update();
+
+    // Give it a moment to detect and then notify if no update found
+    setTimeout(() => {
+      if (!reg.waiting && !reg.installing && !document.getElementById('pwa-update-modal')) {
+        showStatusToast('✨ Your NexTrack is up to date!', 'info');
+      }
+    }, 2000);
+  } catch (err) {
+    console.log('❌ Manual update check failed:', err);
+  }
+};
+
+/**
+ * Small helper for status feedback
+ */
+function showStatusToast(message, type) {
+  if (document.getElementById('status-toast')) return;
+  
+  const toast = document.createElement('div');
+  toast.id = 'status-toast';
+  toast.className = 'status-toast-premium';
+  toast.innerHTML = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.classList.add('visible'), 10);
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 500);
+  }, 4000);
 }
 
 // ── PWA Installation Handlers ──────
