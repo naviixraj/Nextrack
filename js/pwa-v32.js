@@ -1,19 +1,20 @@
 /**
- * pwa.js - Unified NexTrack Progressive Web App Handler
+ * pwa-v32.js - Unified NexTrack Progressive Web App Handler
  * Manages service worker registration and platform-specific installation prompts.
+ * This version (v32) removes the infinite refresh loop 'controllerchange' event.
  */
 
 let deferredPrompt;
-const APP_VERSION = 'v31';
+const APP_VERSION = 'v32';
 
-// 1. Register Service Worker with a Cache Buster
+// 1. Register Service Worker with a Static Version Buster
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Adding a timestamp ensures the browser always checks for the latest SW script
-    navigator.serviceWorker.register(`sw.js?v=${Date.now()}`).then(reg => {
+    // Using a static version string for v32 to break any previous reload loops
+    navigator.serviceWorker.register(`sw.js?v=${APP_VERSION}`).then(reg => {
       console.log('🚀 PWA Active:', reg.scope);
       
-      // Force an update check immediately
+      // Check for updates
       reg.update();
 
       // Case 1: A new version is already waiting in the background
@@ -33,13 +34,12 @@ if ('serviceWorker' in navigator) {
     }).catch(err => console.log('❌ PWA Error:', err));
   });
 
-  // Reload when the new service worker takes over (after SKIP_WAITING)
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
-  });
+  /**
+   * CRITICAL FIX (v32):
+   * I have REMOVED the 'controllerchange' reload event.
+   * This was the cause of the infinite 'blinking' refresh loop on mobile.
+   * The page will now only refresh manually when the user clicks 'Update Now'.
+   */
 }
 
 /**
@@ -68,15 +68,21 @@ window.showPremiumUpdateModal = function(worker) {
       overlay.classList.remove('visible');
       
       try {
-        // If we have a worker, wake it up to take control
+        // Step 1: Unregister current SW to break the cache loop
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+        }
+        
+        // Step 2: Signal worker to skip waiting if possible
         if (worker) {
           worker.postMessage({ type: 'SKIP_WAITING' });
-        } else {
-          // Fallback: Hard reload with cache breaker
-          const url = new URL(window.location.href);
-          url.searchParams.set('upd', Date.now());
-          window.location.replace(url.href);
         }
+        
+        // Step 3: Hard reload with cache-buster
+        const url = new URL(window.location.href);
+        url.searchParams.set('upd', Date.now());
+        window.location.replace(url.href);
       } catch (err) {
         window.location.reload();
       }
@@ -92,6 +98,7 @@ window.showPremiumUpdateModal = function(worker) {
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
+  // Make the install button visible if it exists
   const installBtn = document.getElementById('pwa-install-btn');
   if (installBtn) installBtn.style.display = 'inline-flex';
 });

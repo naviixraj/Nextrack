@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nextrack-v31';
+const CACHE_NAME = 'nextrack-v32';
 const ASSETS = [
   '/',
   '/index.html',
@@ -9,7 +9,7 @@ const ASSETS = [
   '/js/auth.js',
   '/js/admin.js',
   '/js/student.js',
-  '/js/pwa.js',
+  '/js/pwa-v32.js',
   '/icon-192.png',
   '/icon-512.png'
 ];
