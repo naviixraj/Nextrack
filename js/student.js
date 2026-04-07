@@ -373,6 +373,15 @@ function showProfileModal(student, forced = false) {
   document.getElementById('profile-year').value = student.year || '';
   document.getElementById('profile-room').value = student.room || '';
   document.getElementById('profile-phone').value = student.phone || '';
+  document.getElementById('profile-email').value = student.email || '';
+ 
+  // Reset password fields in UI
+  document.getElementById('profile-old-pwd').value = '';
+  document.getElementById('profile-new-pwd').value = '';
+  document.getElementById('profile-confirm-pwd').value = '';
+  const pwdMsg = document.getElementById('profile-pwd-msg');
+  pwdMsg.style.display = 'none';
+  pwdMsg.textContent = '';
 
   // Photo upload handler
   const photoInput = document.getElementById('profile-photo-input');
@@ -408,20 +417,52 @@ function showProfileModal(student, forced = false) {
     const year = document.getElementById('profile-year').value;
     const room = document.getElementById('profile-room').value.trim();
     const phone = document.getElementById('profile-phone').value.trim();
-    if (!newId || !name || !room || !phone) return;
-
+    const email = document.getElementById('profile-email').value.trim();
+ 
+    if (!newId || !name || !room || !phone || !email) return;
+ 
+    // Manual Password Change Logic
+    const oldPwd = document.getElementById('profile-old-pwd').value;
+    const newPwd = document.getElementById('profile-new-pwd').value;
+    const confirmPwd = document.getElementById('profile-confirm-pwd').value;
+    const pwdMsg = document.getElementById('profile-pwd-msg');
+ 
+    let passwordToSave = student.password;
+ 
+    if (oldPwd || newPwd || confirmPwd) {
+      if (oldPwd !== student.password) {
+        pwdMsg.textContent = '❌ Old password is incorrect.';
+        pwdMsg.style.display = 'block';
+        return;
+      }
+      if (newPwd.length < 4) {
+        pwdMsg.textContent = '⚠️ New password must be at least 4 characters.';
+        pwdMsg.style.display = 'block';
+        return;
+      }
+      if (newPwd !== confirmPwd) {
+        pwdMsg.textContent = '⚠️ New passwords do not match.';
+        pwdMsg.style.display = 'block';
+        return;
+      }
+      passwordToSave = newPwd;
+    }
+ 
     const oldId = student.id;
     const updates = {
-      name, age, department: dept, year, room, phone,
+      name, email, age, department: dept, year, room, phone,
+      password: passwordToSave,
       last_updated: new Date().toISOString()
     };
-    if (stuPhotoBase64) updates.photo = stuPhotoBase64;
-
-    // Handle ID change
+ 
     if (newId !== oldId) {
       const students = getStudents();
       const existing = students.find(s => s.id === newId);
-      if (existing) { alert('⚠️ That ID is already taken.'); return; }
+      if (existing) { 
+        pwdMsg.textContent = '⚠️ That Registration No. is already taken.';
+        pwdMsg.style.display = 'block';
+        return; 
+      }
       const idx = students.findIndex(s => s.id === oldId);
       if (idx !== -1) {
         Object.assign(students[idx], updates);
@@ -437,8 +478,9 @@ function showProfileModal(student, forced = false) {
     } else {
       updateStudent(oldId, updates);
     }
-
+ 
     overlay.classList.remove('visible');
+    // Important: Update the local student object with the new updates
     Object.assign(student, updates);
     renderStudentUI(student);
   };

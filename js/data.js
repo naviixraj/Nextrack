@@ -263,6 +263,7 @@ function seedIfNeeded() {
     name: 'Warden Admin',
     room: '—',
     phone: '—',
+    email: 'admin@example.com',
     password: 'admin1234',
     role: 'admin',
     last_updated: new Date().toISOString(),

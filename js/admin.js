@@ -4,6 +4,7 @@
 
 let currentDateFilter = 'today';
 let customDate = '';
+let globalYearFilter = 'All';
 let curfewInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,7 +42,10 @@ function initDashboard() {
 }
 
 function renderCards() {
-  const students = getStudents().filter(s => s.role !== 'admin');
+  let students = getStudents().filter(s => s.role !== 'admin');
+  if (globalYearFilter !== 'All') {
+    students = students.filter(s => s.year === globalYearFilter);
+  }
   const movements = getMovements();
   const total = students.length;
 
@@ -71,7 +75,10 @@ function renderCards() {
 }
 
 window.showOutsideStudents = function () {
-  const students = getStudents().filter(s => s.role !== 'admin');
+  let students = getStudents().filter(s => s.role !== 'admin');
+  if (globalYearFilter !== 'All') {
+    students = students.filter(s => s.year === globalYearFilter);
+  }
   const movements = getMovements();
   const outsideList = [];
 
@@ -141,6 +148,15 @@ function initTabs() {
       setDateFilter('custom');
     }
   });
+  // Year filter buttons
+  document.querySelectorAll('.year-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.year-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      globalYearFilter = btn.dataset.year;
+      refreshDashboard();
+    });
+  });
 }
 
 function setDateFilter(mode) {
@@ -164,11 +180,15 @@ function renderMonitoringTable() {
   const dateStr = getFilterDate();
   document.getElementById('table-date-label').textContent = dateStr;
 
-  const movements = getMovementsByDate(dateStr);
+  const movements = getMovementsByDate(dateStr).filter(m => {
+    if (globalYearFilter === 'All') return true;
+    const student = getStudentById(m.studentId);
+    return student && student.year === globalYearFilter;
+  });
   const tbody = document.getElementById('monitor-body');
 
   if (movements.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">No movements recorded</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-row">No ${globalYearFilter !== 'All' ? globalYearFilter : ''} movements for this date</td></tr>`;
     return;
   }
 
@@ -223,8 +243,13 @@ function renderMonitoringTable() {
    STUDENT DIRECTORY
    ═══════════════════════════════════════════════ */
 function renderDirectory(filteredStudents) {
-  const students = (filteredStudents || getStudents().filter(s => s.role !== 'admin'))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  let source = filteredStudents || getStudents().filter(s => s.role !== 'admin');
+  
+  if (globalYearFilter !== 'All' && !filteredStudents) {
+    source = source.filter(s => s.year === globalYearFilter);
+  }
+
+  const students = source.sort((a, b) => a.name.localeCompare(b.name));
   const tbody = document.getElementById('directory-body');
 
   if (students.length === 0) {
@@ -271,69 +296,6 @@ window.searchDirectory = function() {
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   renderDirectory(filtered);
-};
-
-window.searchStudentHistory = function() {
-  const query = document.getElementById('history-search').value.toLowerCase().trim();
-  const resultsBox = document.getElementById('history-search-results');
-  
-  if (!query) {
-    resultsBox.innerHTML = '';
-    return;
-  }
-
-  const students = getStudents().filter(s => s.role !== 'admin');
-  const matching = students.filter(s => 
-    s.id.toLowerCase().includes(query) || 
-    s.name.toLowerCase().includes(query) || 
-    s.room.toLowerCase().includes(query)
-  );
-
-  if (matching.length === 0) {
-    resultsBox.innerHTML = '<p class="empty-row" style="margin-top:1rem;">No matching students found.</p>';
-    return;
-  }
-
-  resultsBox.innerHTML = matching.map(s => {
-    const movs = getMovements().filter(m => m.studentId === s.id).reverse();
-    const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '👤';
-    
-    return `
-      <div class="history-student-card glass" style="margin-top:1.5rem; padding:1.5rem; border-radius:14px;">
-        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
-          <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;">${photo}</div>
-          <div>
-            <h4 style="font-size:1.1rem; color:#fff;">${s.name}</h4>
-            <span style="font-size:0.82rem; color:var(--text-muted);">${s.id} · Room ${s.room}</span>
-          </div>
-        </div>
-        
-        <h5 style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.8rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.4rem;">Recent Movements</h5>
-        <div class="table-wrap">
-          <table style="font-size:0.82rem;">
-            <thead>
-              <tr>
-                <th>Out-Time</th>
-                <th>In-Time</th>
-                <th>Duration</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${movs.length === 0 ? '<tr><td colspan="4" class="empty-row">No history found</td></tr>' : movs.slice(0, 10).map(m => `
-                <tr>
-                  <td>${formatDate(m.outTime)} ${formatTime(m.outTime)}</td>
-                  <td>${formatTime(m.inTime)}</td>
-                  <td>${calcDuration(m.outTime, m.inTime)}</td>
-                  <td><span class="status-badge ${m.inTime ? 'badge-in' : 'badge-out'}">${m.inTime ? 'Returned' : 'Outside'}</span></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }).join('');
 };
 
 /* ═══════════════════════════════════════════════
@@ -443,6 +405,7 @@ window.adminEditStudent = function (studentId) {
   document.getElementById('edit-stu-dept').value = s.department || '';
   document.getElementById('edit-stu-room').value = s.room || '';
   document.getElementById('edit-stu-phone').value = s.phone || '';
+  document.getElementById('edit-stu-email').value = s.email || '';
   document.getElementById('edit-stu-year').value = s.year || '';
   document.getElementById('edit-stu-pwd').value = s.password || '';
 
@@ -479,6 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dept = document.getElementById('edit-stu-dept').value.trim();
       const room = document.getElementById('edit-stu-room').value.trim();
       const phone = document.getElementById('edit-stu-phone').value.trim();
+      const email = document.getElementById('edit-stu-email').value.trim();
       const year = document.getElementById('edit-stu-year').value;
       const pwd = document.getElementById('edit-stu-pwd').value;
 
@@ -488,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const oldId = editingStudentId;
-      const updates = { name, age, department: dept, room, phone, year, password: pwd, last_updated: new Date().toISOString(), editAlert: null, editAlertMsg: null };
+      const updates = { name, email, age, department: dept, room, phone, year, password: pwd, last_updated: new Date().toISOString(), editAlert: null, editAlertMsg: null };
 
       // Handle ID change
       if (newId !== oldId) {
@@ -692,6 +656,7 @@ window.openAdminProfile = function () {
   document.getElementById('admin-prof-id').value = admin.id || '';
   document.getElementById('admin-prof-name').value = admin.name || '';
   document.getElementById('admin-prof-phone').value = admin.phone || '';
+  document.getElementById('admin-prof-email').value = admin.email || '';
 
   modal.classList.add('visible');
 };
@@ -735,10 +700,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const newId = document.getElementById('admin-prof-id').value.trim();
       const name = document.getElementById('admin-prof-name').value.trim();
       const phone = document.getElementById('admin-prof-phone').value.trim();
+      const email = document.getElementById('admin-prof-email').value.trim();
       if (!name || !newId) return;
 
       const oldId = session.userId;
-      const updates = { name, phone, last_updated: new Date().toISOString() };
+      const updates = { name, phone, email, last_updated: new Date().toISOString() };
       if (adminPhotoBase64) updates.photo = adminPhotoBase64;
 
       // Handle ID change
@@ -832,7 +798,11 @@ window.searchStudentHistory = function () {
     return;
   }
 
-  const students = getStudents().filter(s => s.role !== 'admin');
+  let students = getStudents().filter(s => s.role !== 'admin');
+  if (globalYearFilter !== 'All') {
+    students = students.filter(s => s.year === globalYearFilter);
+  }
+
   const matches = students.filter(s =>
     s.id.toLowerCase().includes(query) ||
     s.name.toLowerCase().includes(query) ||
@@ -1171,3 +1141,7 @@ if (typeof listenForMessages === 'function') {
 
 // Initial badge check
 document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });
+
+function refreshDashboard() {
+  initDashboard();
+}

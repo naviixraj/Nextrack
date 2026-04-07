@@ -72,6 +72,15 @@
       </div>
     </section>
 
+    <!-- Global Year Filter -->
+    <div class="year-filter-bar glass">
+      <button class="year-filter-btn active" data-year="All">All</button>
+      <button class="year-filter-btn" data-year="1st Year">1st Year</button>
+      <button class="year-filter-btn" data-year="2nd Year">2nd Year</button>
+      <button class="year-filter-btn" data-year="3rd Year">3rd Year</button>
+      <button class="year-filter-btn" data-year="4th Year">4th Year</button>
+    </div>
+
     <nav class="admin-tabs-bar glass">
       <button class="admin-tab active" data-panel="panel-monitor">📊 Monitoring</button>
       <button class="admin-tab" data-panel="panel-directory">📁 Directory</button>
@@ -94,7 +103,7 @@
       </div>
 
       <div class="table-wrap">
-        <table class="monitor-table">
+        <table class="monitor-table monitor-table-bw">
           <thead>
             <tr>
               <th>#</th>
@@ -279,14 +288,18 @@
             <input type="text" id="edit-stu-dept">
           </div>
         </div>
+        <div class="form-group">
+          <label for="edit-stu-room">Room No.</label>
+          <input type="text" id="edit-stu-room" required>
+        </div>
         <div class="form-row">
-          <div class="form-group">
-            <label for="edit-stu-room">Room No.</label>
-            <input type="text" id="edit-stu-room" required>
-          </div>
           <div class="form-group">
             <label for="edit-stu-phone">Phone</label>
             <input type="tel" id="edit-stu-phone" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-stu-email">Email</label>
+            <input type="email" id="edit-stu-email" required placeholder="example@gmail.com">
           </div>
         </div>
         <div class="form-group">
@@ -339,6 +352,10 @@
           <label for="admin-prof-phone">Phone</label>
           <input type="tel" id="admin-prof-phone" required>
         </div>
+        <div class="form-group">
+          <label for="admin-prof-email">Email</label>
+          <input type="email" id="admin-prof-email" required placeholder="admin@example.com">
+        </div>
         <div class="modal-btns">
           <button type="submit" class="btn btn-primary">Save</button>
           <button type="button" class="btn btn-ghost" onclick="closeAdminProfile()">Cancel</button>
@@ -350,9 +367,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js?v=34"></script>
-  <script src="js/data.js?v=34"></script>
-  <script src="js/admin.js?v=34"></script>
-  <script src="js/pwa-v32.js?v=34"></script>
+  <script src="js/firebase-config.js?v=37"></script>
+  <script src="js/data.js?v=37"></script>
+  <script src="js/admin.js?v=37"></script>
+  <script src="js/pwa-v32.js?v=37"></script>
 </body>
 </html>

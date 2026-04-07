@@ -190,7 +190,7 @@ body {
 
 /* ── Forms ────────────────────────────────────────── */
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .form-group label {
@@ -225,7 +225,7 @@ body {
 }
 
 .form-row {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
 }
 
 .form-msg {
@@ -633,7 +633,8 @@ tbody tr:hover {
 
 .modal {
   width: 100%; max-width: 380px;
-  padding: 1.8rem; border-radius: var(--radius-xl);
+  padding: 1.5rem 1.8rem; border-radius: var(--radius-xl);
+  max-height: 90vh; overflow-y: auto;
   animation: fadeIn 0.3s ease;
 }
 .modal h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; }
@@ -1178,6 +1179,87 @@ tbody tr:hover {
   opacity: 1;
 }
 
+/* ── Global Year Filter Bar ── */
+.year-filter-bar {
+  display: flex; gap: 0.5rem;
+  padding: 0.5rem; border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+}
 
+.year-filter-btn {
+  flex: 1; padding: 0.55rem 0.8rem;
+  background: none; border: none; border-radius: var(--radius-sm);
+  color: var(--text-muted); font-family: var(--font);
+  font-weight: 700; font-size: 0.82rem;
+  cursor: pointer; transition: var(--transition);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
 
+.year-filter-btn.active {
+  background: #ffffff; color: #000000;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.year-filter-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* ── B&W Monitoring Theme ── */
+.monitor-table-bw {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #ffffff !important;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.monitor-table-bw thead th {
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-weight: 800;
+  border-bottom: 2px solid #000000 !important;
+}
+
+.monitor-table-bw tbody tr {
+  background: #000000 !important;
+  transition: none !important;
+}
+
+.monitor-table-bw tbody tr:nth-child(even) {
+  background: #111111 !important;
+}
+
+.monitor-table-bw tbody td {
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 0.8rem !important;
+}
+
+.monitor-table-bw tbody tr:hover {
+  background: #222222 !important;
+}
+
+/* Grayscale Badges for B&W Theme */
+.monitor-table-bw .status-badge {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+  font-weight: 800;
+  border-radius: 4px;
+}
+
+.monitor-table-bw .badge-out {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+}
+
+.monitor-table-bw .call-btn {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+}
 

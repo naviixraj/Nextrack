@@ -165,6 +165,32 @@
             <label for="profile-phone">Phone</label>
             <input type="tel" id="profile-phone" required>
           </div>
+          <div class="form-group">
+            <label for="profile-email">Email</label>
+            <input type="email" id="profile-email" required placeholder="example@gmail.com">
+          </div>
+        </div>
+        
+        <div class="password-change-section glass" style="margin-top:1.5rem; padding:1.2rem; border-radius:12px; border:1px solid rgba(100,120,255,0.15);">
+          <h4 style="font-size:0.9rem; margin-bottom:1rem; color:var(--accent-1); display:flex; align-items:center; gap:0.5rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3y-3.5-3.5z"/></svg>
+            Change Password
+          </h4>
+          <div class="form-group">
+            <label for="profile-old-pwd">Old Password</label>
+            <input type="password" id="profile-old-pwd" placeholder="Enter current password">
+          </div>
+          <div class="form-row" style="margin-top:0.8rem;">
+            <div class="form-group">
+              <label for="profile-new-pwd">New Password</label>
+              <input type="password" id="profile-new-pwd" placeholder="Min 4 chars">
+            </div>
+            <div class="form-group">
+              <label for="profile-confirm-pwd">Confirm New</label>
+              <input type="password" id="profile-confirm-pwd" placeholder="Confirm new">
+            </div>
+          </div>
+          <p id="profile-pwd-msg" style="font-size:0.75rem; color:#ef4444; margin-top:0.5rem; display:none;"></p>
         </div>
         <div class="modal-btns">
           <button type="submit" class="btn btn-primary">Save</button>
@@ -177,10 +203,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js?v=34"></script>
-  <script src="js/data.js?v=34"></script>
-  <script src="js/student.js?v=34"></script>
-  <script src="js/pwa-v32.js?v=34"></script>
+  <script src="js/firebase-config.js?v=36"></script>
+  <script src="js/data.js?v=36"></script>
+  <script src="js/student.js?v=36"></script>
+  <script src="js/pwa-v32.js?v=36"></script>
 </body>
 </html>
 

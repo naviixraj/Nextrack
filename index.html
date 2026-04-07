@@ -944,6 +944,9 @@
             </button>
           </div>
         </div>
+        <div class="form-group" style="margin-top: -0.5rem; text-align: right;">
+          <a href="#" id="forgot-pwd-link" style="font-size: 0.75rem; color: var(--accent-1); text-decoration: none; opacity: 0.8; transition: opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">Forgot Password?</a>
+        </div>
         <p id="login-msg" class="form-msg" role="alert"></p>
         <button type="submit" class="btn-primary">
           <span class="spinner"></span>
@@ -964,6 +967,11 @@
         <div class="form-group">
           <label for="reg-id">Registration No.</label>
           <input type="text" id="reg-id" placeholder="Enter your Registration No." required>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-email">Email Address</label>
+          <input type="email" id="reg-email" placeholder="example@gmail.com" required>
         </div>
 
         <div class="form-group">
@@ -1087,78 +1095,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <!-- App Scripts -->
-  <script src="js/firebase-config.js?v=34"></script>
-  <script src="js/data.js?v=34"></script>
-  <script src="js/auth.js?v=34"></script>
-  <script src="js/pwa-v32.js?v=34"></script>
-  
-  <script>
-    /* ── Tab switching ── */
-    const tabLogin = document.getElementById('tab-login');
-    const tabRegister = document.getElementById('tab-register');
-    const formLogin = document.getElementById('login-form');
-    const formReg = document.getElementById('register-form');
-    const slider = document.getElementById('tab-slider');
-
-    function setTab(tab) {
-      const isLogin = tab === 'login';
-      tabLogin.classList.toggle('active', isLogin);
-      tabRegister.classList.toggle('active', !isLogin);
-      tabLogin.setAttribute('aria-selected', isLogin);
-      tabRegister.setAttribute('aria-selected', !isLogin);
-      formLogin.classList.toggle('active', isLogin);
-      formReg.classList.toggle('active', !isLogin);
-      slider.classList.toggle('to-register', !isLogin);
-      clearMessages();
-    }
-
-    tabLogin.addEventListener('click', () => setTab('login'));
-    tabRegister.addEventListener('click', () => setTab('register'));
-
-    function clearMessages() {
-      document.getElementById('login-msg').textContent = '';
-      document.getElementById('login-msg').className = 'form-msg';
-      document.getElementById('register-msg').textContent = '';
-      document.getElementById('register-msg').className = 'form-msg';
-    }
-
-    /* ── Password toggle ── */
-    document.querySelectorAll('.pwd-toggle').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const inp = document.getElementById(btn.dataset.target);
-        inp.type = inp.type === 'password' ? 'text' : 'password';
-        btn.querySelector('svg').style.opacity = inp.type === 'text' ? '0.5' : '1';
-      });
-    });
-
-    /* ── Photo preview ── */
-    document.getElementById('reg-photo').addEventListener('change', function () {
-      const preview = document.getElementById('reg-photo-preview');
-      const uploadText = document.querySelector('.photo-upload-text');
-      if (this.files && this.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          preview.src = e.target.result;
-          preview.style.display = 'block';
-          if (uploadText) uploadText.style.display = 'none';
-        };
-        reader.readAsDataURL(this.files[0]);
-      }
-    });
-
-    /* ── Helper: set message ── */
-    function setMsg(id, text, type) {
-      const el = document.getElementById(id);
-      el.textContent = text;
-      el.className = 'form-msg ' + type;
-    }
-
-    /* ── Button loading state ── */
-    function setLoading(btn, on) {
-      btn.classList.toggle('loading', on);
-      btn.disabled = on;
-    }
-  </script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="js/firebase-config.js?v=35"></script>
+  <script src="js/data.js?v=35"></script>
+  <script src="js/auth.js?v=36"></script>
+  <script src="js/pwa-v32.js?v=36"></script>
 </body>
 
 </html>

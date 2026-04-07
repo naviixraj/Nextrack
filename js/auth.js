@@ -1,6 +1,13 @@
 /* ──────────────────────────────────────────────
-   auth.js  –  Login, Registration & 90-Day Rule
+   auth.js  –  Login, Registration, Forgot Password & Security
    ────────────────────────────────────────────── */
+
+// ── EmailJS Initialization ──
+(function() {
+  if (typeof emailjs !== 'undefined') {
+    emailjs.init("FZBvXpRsuwPKew5dH");
+  }
+})();
 
 document.addEventListener('DOMContentLoaded', () => {
   initCloudSync(() => {
@@ -18,22 +25,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('register-form');
     const loginMsg = document.getElementById('login-msg');
     const registerMsg = document.getElementById('register-msg');
+    const forgotPwdLink = document.getElementById('forgot-pwd-link');
+    const tabSlider = document.getElementById('tab-slider');
 
     // Tab switching
     loginTab.addEventListener('click', () => {
       loginTab.classList.add('active');
       registerTab.classList.remove('active');
+      tabSlider.classList.remove('to-register');
       loginForm.classList.add('active');
       registerForm.classList.remove('active');
-      loginMsg.textContent = '';
+      loginMsg.innerHTML = '';
+      forgotPwdLink.style.display = 'none';
     });
 
     registerTab.addEventListener('click', () => {
       registerTab.classList.add('active');
       loginTab.classList.remove('active');
+      tabSlider.classList.add('to-register');
       registerForm.classList.add('active');
       loginForm.classList.remove('active');
       registerMsg.textContent = '';
+      forgotPwdLink.style.display = 'none';
     });
 
     // ── Photo Preview ──
@@ -69,6 +82,68 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsDataURL(file);
     }
 
+    // ── Forgot Password Logic ──
+    forgotPwdLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const uid = document.getElementById('login-id').value.trim();
+      if (!uid) {
+        loginMsg.innerHTML = '⚠️ Please enter your ID first.';
+        loginMsg.className = 'form-msg error';
+        return;
+      }
+      handleForgotPassword(uid);
+    });
+
+    async function handleForgotPassword(uid) {
+      const students = getStudents();
+      const user = students.find(s => s.id === uid);
+      
+      if (!user || !user.email) {
+        loginMsg.innerHTML = '❌ User ID not found or no email registered.';
+        loginMsg.className = 'form-msg error';
+        return;
+      }
+
+      const confirmMsg = `Reset password for ${user.name}? A new 8-digit password will be sent to ${user.email}.`;
+      if (!confirm(confirmMsg)) return;
+
+      loginMsg.innerHTML = '<span class="status-toast-premium visible" style="position:static; transform:none; opacity:1; padding:0.5rem; margin-top:0.5rem;">💌 Sending reset email...</span>';
+      
+      // Generate random 8-digit password
+      const newPwd = Math.floor(10000000 + Math.random() * 90000000).toString();
+
+      try {
+        // 1. Update Password in Database
+        await updateStudent(uid, { password: newPwd });
+
+        // 2. Send via EmailJS
+        const templateParams = {
+          user_id: user.id,
+          new_password: newPwd,
+          to_email: user.email,
+          user_name: user.name
+        };
+
+        // Explicitly passing public key for maximum reliability
+        const response = await emailjs.send(
+          'service_tmis0qo', 
+          'template_ujbp5de', 
+          templateParams,
+          'FZBvXpRsuwPKew5dH'
+        );
+
+        console.log('EmailJS Success:', response);
+        loginMsg.className = 'form-msg success';
+        loginMsg.innerHTML = '✅ Success! Please check your email for the new 8-digit password.';
+        forgotPwdLink.style.display = 'none';
+      } catch (err) {
+        console.error('Email error:', err);
+        const errorText = err.text || err.message || JSON.stringify(err);
+        loginMsg.className = 'form-msg error';
+        loginMsg.innerHTML = `❌ Email Error: ${errorText}. <br><small>Check if your Service ID and Template ID are correct in EmailJS.</small>`;
+      }
+    }
+
     // ── Login ──
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -76,10 +151,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const pwd = document.getElementById('login-pwd').value;
 
       const students = getStudents();
-      const user = students.find(s => s.id === uid && s.password === pwd);
+      const user = students.find(s => s.id === uid);
+
       if (!user) {
-        loginMsg.textContent = '❌ Invalid ID or password.';
+        loginMsg.textContent = '❌ Invalid ID.';
         loginMsg.className = 'form-msg error';
+        forgotPwdLink.style.display = 'none';
+        return;
+      }
+
+      if (user.password !== pwd) {
+        loginMsg.textContent = '❌ Wrong password.';
+        loginMsg.className = 'form-msg error';
+        forgotPwdLink.style.display = 'inline-block'; // Show Reset Link on wrong password
         return;
       }
 
@@ -97,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const newId = document.getElementById('reg-id').value.trim();
       const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
       const room = document.getElementById('reg-room').value.trim();
       const phone = document.getElementById('reg-phone').value.trim();
       const age = document.getElementById('reg-age').value.trim();
@@ -105,8 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const pwd = document.getElementById('reg-pwd').value;
       const pwdC = document.getElementById('reg-pwd-confirm').value;
 
-      if (!newId || !name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
-        registerMsg.textContent = '⚠️ All fields including Registration No. and photo are required.';
+      if (!newId || !name || !email || !room || !phone || !age || !dept || !pwd || !photoBase64) {
+        registerMsg.textContent = '⚠️ All fields are required.';
         registerMsg.className = 'form-msg error';
         return;
       }
@@ -138,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
       addStudent({
         id,
         name,
+        email,
         room,
         phone,
         age,
@@ -148,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         role: 'student',
         last_updated: new Date().toISOString(),
       }).then(() => {
-        // Auto-login and redirect ONLY AFTER cloud write succeeds!
         setSession({ userId: id, role: 'student' });
         window.location.href = 'student.html';
       }).catch(err => {
