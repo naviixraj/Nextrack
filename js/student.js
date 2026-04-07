@@ -209,12 +209,19 @@ function showLocationBanner(text, type) {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'geo-banner';
-    banner.className = 'geo-banner';
     const main = document.querySelector('.stu-main');
     if (main) main.insertBefore(banner, main.firstChild);
-    else return; // Should not happen
+    else return;
   }
-  banner.innerHTML = text; // support HTML for buttons/styling
+  
+  // Use icons based on type
+  let icon = '📍';
+  if (type === 'inside') icon = '🏠';
+  if (type === 'outside') icon = '🚶';
+  if (type === 'warning' || type === 'error') icon = '⚠️';
+  if (type === 'auto-checkin') icon = '✅';
+
+  banner.innerHTML = `<span style="margin-right:0.6rem;">${icon}</span> ${text}`; 
   banner.className = 'geo-banner geo-' + type;
   banner.style.display = 'block';
 }

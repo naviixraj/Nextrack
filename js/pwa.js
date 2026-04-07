@@ -10,8 +10,58 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(reg => {
       console.log('🚀 NexTrack PWA Active!', reg.scope);
+      
+      // Check for updates periodically
+      reg.update();
+
+      // Listen for the waiting service worker (new version already installed)
+      if (reg.waiting) {
+        showPremiumUpdateModal(reg.waiting);
+      }
+
+      reg.onupdatefound = () => {
+        const newWorker = reg.installing;
+        newWorker.onstatechange = () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showPremiumUpdateModal(newWorker);
+          }
+        };
+      };
     }).catch(err => console.log('❌ PWA Registration Error:', err));
   });
+
+  // Reload when the new service worker takes over
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+}
+
+function showPremiumUpdateModal(worker) {
+  if (document.getElementById('pwa-update-modal')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'pwa-update-modal';
+  overlay.className = 'update-overlay';
+  overlay.innerHTML = `
+    <div class="update-modal">
+      <div class="update-icon">🚀</div>
+      <h2 class="update-title">Feature Update</h2>
+      <p class="update-desc">We've added some powerful new features to NexTrack. Refresh now to experience the latest version.</p>
+      <button class="update-btn" id="pwa-refresh-btn">Update Now</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  
+  document.getElementById('pwa-refresh-btn').addEventListener('click', () => {
+    worker.postMessage({ type: 'SKIP_WAITING' });
+    overlay.classList.remove('visible');
+  });
+
+  // Show with minor delay for animation smoothness
+  setTimeout(() => overlay.classList.add('visible'), 100);
 }
 
 // 2. Listen for the Android/Chrome Install Prompt

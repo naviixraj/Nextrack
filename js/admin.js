@@ -223,7 +223,8 @@ function renderMonitoringTable() {
    STUDENT DIRECTORY
    ═══════════════════════════════════════════════ */
 function renderDirectory(filteredStudents) {
-  const students = filteredStudents || getStudents().filter(s => s.role !== 'admin');
+  const students = (filteredStudents || getStudents().filter(s => s.role !== 'admin'))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const tbody = document.getElementById('directory-body');
 
   if (students.length === 0) {
@@ -267,7 +268,7 @@ window.searchDirectory = function() {
     s.name.toLowerCase().includes(query) || 
     s.room.toLowerCase().includes(query) ||
     (s.phone && s.phone.includes(query))
-  );
+  ).sort((a, b) => a.name.localeCompare(b.name));
 
   renderDirectory(filtered);
 };
