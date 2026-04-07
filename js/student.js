@@ -751,22 +751,37 @@ function startMotionGuard(student) {
       const status = getCurrentStatus(student.id);
 
       if (result && result.inside) {
-        showLocationBanner(`📍 Inside hostel zone (v47)`, 'inside');
+        showLocationBanner(`📍 Inside hostel zone (v54)`, 'inside');
         if (status === 'OUT' && !debounceTimer) {
           handleCheckIn(student, true); // Auto check-in
         }
       } else if (result && !result.inside) {
-        showLocationBanner(`🚶 Outside hostel (v47)`, 'outside');
+        showLocationBanner(`🚶 Outside hostel (v54)`, 'outside');
         if (status === 'IN' && !debounceTimer) {
           handleCheckOut(student, true); // Auto check-out
         }
       }
     },
-    (err) => {
+    async (err) => {
       geoCheckDone = true;
       if (err.code === 1) { // PERMISSION_DENIED
-        updateStudent(student.id, { location_status: 'REFUSED' });
-        showPermissionDeniedModal(student);
+        try {
+          // Log Diagnostic
+          console.log(`🛡️ GPS Refusal for ${student.name} (v54). Syncing to Warden...`);
+          
+          // Force database sync first
+          await updateStudent(student.id, { 
+            location_status: 'REFUSED',
+            last_security_check: new Date().toISOString()
+          });
+          
+          console.log("✅ Warden Successfully Notified.");
+          // Now block the UI
+          setTimeout(() => showPermissionDeniedModal(student), 400);
+        } catch (dbErr) {
+          console.error("❌ Database Security Sync Failed:", dbErr);
+          alert("🛑 SECURITY ERROR: GPS alert could not be sent to Warden. Please check your internet and reload.");
+        }
       } else {
         showLocationBanner('⚠️ GPS Signal Weak. Move to open area.', 'warning');
       }

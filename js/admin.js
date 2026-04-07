@@ -74,6 +74,22 @@ function initDashboard() {
   window.addEventListener('db_updated', () => {
     initGeofenceUI();
   });
+
+  // 📡 Live Sync Connection Monitor
+  if (typeof firebaseDB !== 'undefined') {
+    firebaseDB.ref('.info/connected').on('value', (snap) => {
+      const dot = document.getElementById('sync-indicator');
+      if (dot) {
+        if (snap.val() === true) {
+          dot.className = 'sync-dot online';
+          dot.title = 'Live Sync: Connected';
+        } else {
+          dot.className = 'sync-dot offline';
+          dot.title = 'Live Sync: Disconnected';
+        }
+      }
+    });
+  }
 }
 
 function renderCards() {
@@ -118,12 +134,16 @@ window.showOutsideStudents = function () {
   const outsideList = [];
 
   students.forEach(s => {
+    const isWait = s.location_status === 'REFUSED';
     const stuMovs = movements.filter(m => m.studentId === s.id);
-    if (stuMovs.length > 0) {
-      const latest = stuMovs[stuMovs.length - 1];
-      if (!latest.inTime) {
-        outsideList.push({ student: s, outTime: latest.outTime });
-      }
+    const latest = stuMovs.length > 0 ? stuMovs[stuMovs.length - 1] : null;
+    const isOut = latest && !latest.inTime;
+
+    if (isOut || isWait) {
+      outsideList.push({ 
+        student: s, 
+        outTime: isOut ? latest.outTime : (latest ? latest.inTime : new Date().toISOString()) 
+      });
     }
   });
 
@@ -1183,6 +1203,38 @@ document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge
 
 function refreshDashboard() {
   initDashboard();
+  
+  // Reactive: If the outside modal is open, refresh it now!
+  const outsideModal = document.getElementById('outside-modal');
+  if (outsideModal && outsideModal.classList.contains('visible')) {
+    window.showOutsideStudents();
+  }
+
+  // 🔔 Global Security Monitor: Alert warden of any GPS bypass
+  checkGlobalGpsStatus();
+}
+
+function checkGlobalGpsStatus() {
+  const refused = getStudents().filter(s => s.location_status === 'REFUSED');
+  let banner = document.getElementById('global-security-banner');
+  
+  if (refused.length > 0) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'global-security-banner';
+      banner.className = 'security-alert-bar';
+      document.body.prepend(banner);
+    }
+    banner.innerHTML = `
+      <div class="security-alert-content">
+        <span>🚨 SECURITY ALERT: ${refused.length} student(s) have turned off location!</span>
+        <button onclick="window.showOutsideStudents()">View Details</button>
+      </div>
+    `;
+    banner.style.display = 'flex';
+  } else if (banner) {
+    banner.style.display = 'none';
+  }
 }
 
 /* ── Admin Dropdown Logic ── */
