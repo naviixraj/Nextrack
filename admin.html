@@ -43,6 +43,7 @@
         <button class="btn btn-ghost btn-dots" id="admin-menu-trigger" onclick="toggleAdminMenu(event)">⋮</button>
         <div class="admin-dropdown glass" id="admin-dropdown-menu">
           <button class="dropdown-item" onclick="changeAdminPassword()">🔐 Password</button>
+          <button class="dropdown-item" onclick="showDevelopers()">👨‍💻 Developers</button>
           <button class="dropdown-item" onclick="manualCheckForUpdate()">🚀 Check for Update</button>
           <div class="dropdown-divider"></div>
           <button class="dropdown-item text-danger" onclick="logout()">🚪 Logout</button>
@@ -367,6 +368,49 @@
           <button type="button" class="btn btn-ghost" onclick="closeAdminProfile()">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- About Developers Modal -->
+  <div class="modal-overlay" id="developers-modal">
+    <div class="modal glass" style="max-width:480px; text-align:center; padding: 2.5rem 2rem;">
+      <button class="modal-x-btn" onclick="closeDevelopersModal()">&times;</button>
+      <div style="margin-bottom:1.5rem;">
+        <div class="brand-icon-wrap" style="width:80px; height:80px; margin: 0 auto 1rem; background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);">
+          <span style="font-size:2.5rem;">⚡</span>
+        </div>
+        <h2 style="font-size:1.8rem; font-weight:800; background: linear-gradient(90deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Team Titans</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.4rem; font-weight:600; text-transform:uppercase; letter-spacing:1px;">First Year Students · Class of 2026</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius:16px; padding:1.2rem; margin-bottom:1.8rem; text-align:left;">
+        <p style="font-size:0.92rem; line-height:1.6; color:var(--text-secondary); font-style:italic;">
+          "As first-year students, Team Titans is driven by a passion to modernize hostel management. Led by myself, Naveenraj, our team—Vishnu Varathan, Rishab, and Maheshwaran—is dedicated to building a smarter, safer NexTrack experience for our fellow students."
+        </p>
+        <div style="margin-top:1rem; text-align:right; font-weight:700; color:var(--accent-1); font-size:0.85rem;">— Naveenraj, Team Leader</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1.8rem;">
+        <div style="background: rgba(102,126,234,0.08); padding:0.8rem; border-radius:12px; border:1px solid rgba(102,126,234,0.1);">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Project Year</div>
+          <div style="font-size:1.1rem; font-weight:700; color:var(--text-primary);">2026</div>
+        </div>
+        <div style="background: rgba(168,85,247,0.08); padding:0.8rem; border-radius:12px; border:1px solid rgba(168,85,247,0.1);">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Current Version</div>
+          <div style="font-size:1.1rem; font-weight:700; color:var(--text-primary);" id="dev-modal-version">v34</div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:0.6rem;">
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:0.4rem; text-align:left;">Team Members</div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center;">
+          <span style="background:rgba(255,255,255,0.05); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.85rem; font-weight:600; border:1px solid rgba(255,255,255,0.1);">Vishnu Varathan</span>
+          <span style="background:rgba(255,255,255,0.05); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.85rem; font-weight:600; border:1px solid rgba(255,255,255,0.1);">Rishab</span>
+          <span style="background:rgba(255,255,255,0.05); padding:0.4rem 0.8rem; border-radius:8px; font-size:0.85rem; font-weight:600; border:1px solid rgba(255,255,255,0.1);">Maheshwaran</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="closeDevelopersModal()" style="margin-top:2rem; width:100%;">Close</button>
     </div>
   </div>
 

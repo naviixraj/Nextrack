@@ -1169,3 +1169,27 @@ document.addEventListener('click', (e) => {
     }
   }
 });
+
+/* ── About Developers Logic ── */
+window.showDevelopers = function () {
+  const modal = document.getElementById('developers-modal');
+  if (!modal) return;
+  
+  // Fetch version from version.json for dynamic display
+  fetch('version.json')
+    .then(response => response.json())
+    .then(data => {
+      const versionEl = document.getElementById('dev-modal-version');
+      if (versionEl && data.version) {
+        versionEl.textContent = data.version;
+      }
+    })
+    .catch(err => console.log('Error fetching version:', err));
+
+  modal.classList.add('visible');
+};
+
+window.closeDevelopersModal = function () {
+  const modal = document.getElementById('developers-modal');
+  if (modal) modal.classList.remove('visible');
+};
