@@ -138,14 +138,39 @@
     /* ── Auth Container ── */
     .auth-container {
       position: relative;
-      z-index: 1;
+      z-index: 10;
       width: 100%;
       max-width: 440px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 28px;
+      justify-content: center;
+      gap: 32px;
+      margin: auto;
     }
+
+    .version-tag {
+      margin-top: 1.5rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      opacity: 0.6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .version-tag::before,
+    .version-tag::after {
+      content: '';
+      height: 1px;
+      width: 20px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1));
+    }
+    .version-tag::after { background: linear-gradient(270deg, transparent, rgba(255,255,255,0.1)); }
 
     /* ── Brand ── */
     .brand {
@@ -1065,11 +1090,11 @@
       <div class="startup-logo-wrap">
         <div class="startup-logo-glow"></div>
         <div class="startup-logo-inner">
-          <img src="irn.png?v=57" class="startup-logo-img" alt="Titans Logo">
+          <img src="irn.png?v=63" class="startup-logo-img" alt="Titans Logo">
         </div>
       </div>
       <h1 class="startup-title">NexTrack Hub</h1>
-      <p class="startup-subtitle">Precision Entry</p>
+      <p class="startup-subtitle">Precision Entry v63</p>
       <div class="startup-msg-box">
         <div id="startup-msg" class="startup-msg">Syncing with Team Titans...</div>
       </div>
@@ -1145,6 +1170,7 @@
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </button>
+        <div class="version-tag">NexTrack Core v63 | Stable</div>
       </form>
 
       <!-- Register Form -->
@@ -1286,17 +1312,11 @@
 
   <!-- App Scripts -->
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <div style="text-align:center; padding:1.5rem; opacity:0.4; font-size:0.7rem; color:var(--text-muted); padding-bottom:3rem;">
-    <div>System Build: v57 | Provided by Team Titans</div>
-    <div style="margin-top:0.5rem;">
-      <button onclick="if(window.manualCheckForUpdate) window.manualCheckForUpdate()" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:inherit; padding:5px 12px; border-radius:12px; cursor:pointer; font-size:0.65rem;">Force Security Refresh</button>
-    </div>
-  </div>
 
-  <script src="js/firebase-config.js?v=57"></script>
-  <script src="js/data.js?v=57"></script>
-  <script src="js/auth.js?v=57"></script>
-  <script src="js/pwa-v32.js?v=57"></script>
+  <script src="js/firebase-config.js?v=63"></script>
+  <script src="js/data.js?v=63"></script>
+  <script src="js/auth.js?v=63"></script>
+  <script src="js/pwa-v32.js?v=63"></script>
 </body>
 
 </html>
