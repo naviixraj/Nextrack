@@ -27,9 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
         msgEl.textContent = messages[msgIdx % messages.length];
         msgEl.style.opacity = 1;
         msgIdx++;
-      }, 300);
+      }, 200);
     }
-  }, 800);
+  }, 600); // Faster messaging
 
   const startTime = Date.now();
 
@@ -40,22 +40,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    initDashboard();
-    initTabs();
-    startCurfewCheck();
+    try {
+      initDashboard();
+      initTabs();
+      startCurfewCheck();
 
-    // The Magic: Listen for any cloud updates and instantly re-render!
-    window.addEventListener('db_updated', refreshDashboard);
+      // The Magic: Listen for any cloud updates and instantly re-render!
+      window.addEventListener('db_updated', refreshDashboard);
+    } catch (err) {
+      console.error("🚨 Dashboard Initialization Error:", err);
+      // We still want to hide the loader so the admin can at least see the page
+    } finally {
+      // Fade out loader after min 0.4s (GUARANTEED)
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 400 - elapsed);
 
-    // Fade out loader after min 1.5s
-    const elapsed = Date.now() - startTime;
-    const remaining = Math.max(0, 1800 - elapsed);
-
-    setTimeout(() => {
-      clearInterval(msgInterval);
-      if (loader) loader.classList.add('fade-out');
-      document.body.style.overflow = ''; // Unlock scroll
-    }, remaining);
+      setTimeout(() => {
+        clearInterval(msgInterval);
+        if (loader) loader.classList.add('fade-out');
+        document.body.style.overflow = ''; // Unlock scroll
+      }, remaining);
+    }
   });
 });
 

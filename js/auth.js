@@ -10,6 +10,15 @@
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ── INSTANT SESSION REDIRECT (Speed Boost) ──
+  // If we already have a session, don't even wait for Cloud Sync or Loader
+  const quickSession = getSession();
+  if (quickSession) {
+    if (quickSession.role === 'admin') window.location.href = 'admin.html';
+    else window.location.href = 'student.html';
+    return;
+  }
+
   const loader = document.getElementById('startup-loader');
   const msgEl = document.getElementById('startup-msg');
   const messages = [
@@ -28,14 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
         msgEl.textContent = messages[msgIdx % messages.length];
         msgEl.style.opacity = 1;
         msgIdx++;
-      }, 300);
+      }, 200);
     }
-  }, 800);
+  }, 600); // Faster messaging
 
   const startTime = Date.now();
 
   initCloudSync(() => {
-    // If already logged in, redirect
+    // Re-check session after sync just in case
     const session = getSession();
     if (session) {
       if (session.role === 'admin') window.location.href = 'admin.html';
@@ -43,9 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // No session: Fade out loader after min 1.8s
+    // No session: Fade out loader fast
     const elapsed = Date.now() - startTime;
-    const remaining = Math.max(0, 1800 - elapsed);
+    const remaining = Math.max(0, 300 - elapsed); 
 
     setTimeout(() => {
       clearInterval(msgInterval);

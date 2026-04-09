@@ -27,9 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
         msgEl.textContent = messages[msgIdx % messages.length];
         msgEl.style.opacity = 1;
         msgIdx++;
-      }, 300);
+      }, 200);
     }
-  }, 800);
+  }, 600); // Faster messaging
 
   const startTime = Date.now();
 
@@ -40,46 +40,49 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const student = getStudentById(session.userId);
-    if (!student) {
-      clearSession();
-      window.location.href = 'index.html';
-      return;
-    }
-
-    // ── 90-Day Rule ──
-    const daysSinceUpdate = Math.floor((Date.now() - new Date(student.last_updated).getTime()) / 86400000);
-    if (daysSinceUpdate > 90) {
-      showProfileModal(student, true);
-    }
-
-    renderStudentUI(student);
-
-    // ── Geolocation Check ──
-    checkStudentLocation(student);
-
-    // The Magic: Live UI updates via Cloud Sync
-    window.addEventListener('db_updated', () => {
-      const liveStudent = getStudentById(session.userId);
-      if (!liveStudent) {
-        // Admin deleted you!
+    try {
+      const student = getStudentById(session.userId);
+      if (!student) {
         clearSession();
         window.location.href = 'index.html';
-      } else {
-        renderStudentUI(liveStudent);
+        return;
       }
-    });
 
+      // ── 90-Day Rule ──
+      const daysSinceUpdate = Math.floor((Date.now() - new Date(student.last_updated).getTime()) / 86400000);
+      if (daysSinceUpdate > 90) {
+        showProfileModal(student, true);
+      }
 
-    // Fade out loader after min 1.5s
-    const elapsed = Date.now() - startTime;
-    const remaining = Math.max(0, 1800 - elapsed);
+      renderStudentUI(student);
 
-    setTimeout(() => {
-      clearInterval(msgInterval);
-      if (loader) loader.classList.add('fade-out');
-      document.body.style.overflow = ''; // Unlock scroll
-    }, remaining);
+      // ── Geolocation Check ──
+      checkStudentLocation(student);
+
+      // The Magic: Live UI updates via Cloud Sync
+      window.addEventListener('db_updated', () => {
+        const liveStudent = getStudentById(session.userId);
+        if (!liveStudent) {
+          // Admin deleted you!
+          clearSession();
+          window.location.href = 'index.html';
+        } else {
+          renderStudentUI(liveStudent);
+        }
+      });
+    } catch (err) {
+      console.error("🚨 Student Hub Sync Error:", err);
+    } finally {
+      // Fade out loader after min 0.4s (GUARANTEED)
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 400 - elapsed);
+
+      setTimeout(() => {
+        clearInterval(msgInterval);
+        if (loader) loader.classList.add('fade-out');
+        document.body.style.overflow = ''; // Unlock scroll
+      }, remaining);
+    }
   });
 });
 
@@ -734,60 +737,77 @@ function startMotionGuard(student) {
     return;
   }
 
-  showLocationBanner('🛰️ Smart Motion Guard Active', 'detecting');
+  // Refined message to clearly indicate detection is in progress
+  showLocationBanner('📡 Detecting Location Signal...', 'detecting');
 
-  // Clear existing watcher if any
   if (motionWatcher) navigator.geolocation.clearWatch(motionWatcher);
 
-  motionWatcher = navigator.geolocation.watchPosition(
+  // ── Success Handler (Shared) ──
+  const onLocationSuccess = (pos) => {
+    console.log(`📍 Location Sync: ${pos.coords.latitude}, ${pos.coords.longitude} (±${Math.round(pos.coords.accuracy)}m)`);
+    studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    geoCheckDone = true;
+    
+    // Update location status in DB to "ACTIVE"
+    updateStudent(student.id, { location_status: 'ACTIVE' });
+
+    const result = checkGeofence(studentLocation.lat, studentLocation.lng);
+    const status = getCurrentStatus(student.id);
+
+    if (result && result.inside) {
+      showLocationBanner(`📍 Inside hostel zone`, 'inside');
+      if (status === 'OUT' && !debounceTimer) {
+        handleCheckIn(student); // Auto check-in
+      }
+    } else if (result && !result.inside) {
+      showLocationBanner(`🚶 Outside hostel`, 'outside');
+      if (status === 'IN' && !debounceTimer) {
+        handleCheckOut(student); // Auto check-out
+      }
+    }
+  };
+
+  // ── Error Handler ──
+  const onLocationError = async (err) => {
+    geoCheckDone = true;
+    console.warn(`🛑 GPS Sync Error (${err.code}): ${err.message}`);
+    if (err.code === 1) { // PERMISSION_DENIED
+      try {
+        await updateStudent(student.id, { 
+          location_status: 'REFUSED',
+          last_security_check: new Date().toISOString()
+        });
+        setTimeout(() => showPermissionDeniedModal(student), 400);
+      } catch (dbErr) {
+        console.error("❌ Database Security Sync Failed:", dbErr);
+      }
+    } else {
+      showLocationBanner('⚠️ GPS Signal Weak. Move to open area.', 'warning');
+    }
+  };
+
+  // Stage 1: Ultra-Fast Cache Fix
+  // Tries to get any location immediately from cache (Wi-Fi/Cell/GPS)
+  navigator.geolocation.getCurrentPosition(
     (pos) => {
-      studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      geoCheckDone = true;
-      
-      // Update location status in DB to "ACTIVE"
-      updateStudent(student.id, { location_status: 'ACTIVE' });
-
-      const result = checkGeofence(studentLocation.lat, studentLocation.lng);
-      const status = getCurrentStatus(student.id);
-
-      if (result && result.inside) {
-        showLocationBanner(`📍 Inside hostel zone (v57)`, 'inside');
-        if (status === 'OUT' && !debounceTimer) {
-          handleCheckIn(student, true); // Auto check-in
-        }
-      } else if (result && !result.inside) {
-        showLocationBanner(`🚶 Outside hostel (v57)`, 'outside');
-        if (status === 'IN' && !debounceTimer) {
-          handleCheckOut(student, true); // Auto check-out
-        }
-      }
+      onLocationSuccess(pos);
+      startContinuousWatch(); // Proceed to Stage 2
     },
-    async (err) => {
-      geoCheckDone = true;
-      if (err.code === 1) { // PERMISSION_DENIED
-        try {
-          // Log Diagnostic
-          console.log(`🛡️ GPS Refusal for ${student.name} (v57). Syncing to Warden...`);
-          
-          // Force database sync first
-          await updateStudent(student.id, { 
-            location_status: 'REFUSED',
-            last_security_check: new Date().toISOString()
-          });
-          
-          console.log("✅ Warden Successfully Notified.");
-          // Now block the UI
-          setTimeout(() => showPermissionDeniedModal(student), 400);
-        } catch (dbErr) {
-          console.error("❌ Database Security Sync Failed:", dbErr);
-          alert("🛑 SECURITY ERROR: GPS alert could not be sent to Warden. Please check your internet and reload.");
-        }
-      } else {
-        showLocationBanner('⚠️ GPS Signal Weak. Move to open area.', 'warning');
-      }
+    (err) => {
+      console.log("No cached location found, waiting for hardware...");
+      startContinuousWatch(); // Proceed to Stage 2 anyway
     },
-    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+    { enableHighAccuracy: false, maximumAge: Infinity, timeout: 4000 }
   );
+
+  function startContinuousWatch() {
+    if (motionWatcher) navigator.geolocation.clearWatch(motionWatcher);
+    motionWatcher = navigator.geolocation.watchPosition(
+      onLocationSuccess,
+      onLocationError,
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+    );
+  }
 }
 
 function showPermissionDeniedModal(student) {
