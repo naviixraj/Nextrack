@@ -70,94 +70,127 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Login ──
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const collegeId = document.getElementById('login-college').value.trim().toLowerCase();
       const uid = document.getElementById('login-id').value.trim();
       const pwd = document.getElementById('login-pwd').value;
 
-      const students = getStudents();
-      const user = students.find(s => s.id === uid && s.password === pwd);
-      if (!user) {
-        loginMsg.textContent = '❌ Invalid ID or password.';
+      if (!collegeId || !uid || !pwd) {
+        loginMsg.textContent = '❌ All fields are required.';
         loginMsg.className = 'form-msg error';
         return;
       }
 
-      setSession({ userId: user.id, role: user.role || 'student' });
+      const submitBtn = loginForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span class="spinner"></span> Verifying...';
+      submitBtn.disabled = true;
 
-      if (user.role === 'admin') {
-        window.location.href = 'admin.html';
-      } else {
-        window.location.href = 'student.html';
+      try {
+        // 🏰 SaaS Spawning Logic (v78)
+        // If it's a default admin login for a new college, spawn it.
+        if (uid === 'admin' && pwd === 'admin1234') {
+          await spawnInstitution(collegeId);
+        }
+
+        // Initialize sync for the requested college
+        const colRef = firebaseDB.ref(`colleges/${collegeId}/students/${uid}`);
+        const snap = await colRef.once('value');
+        const user = snap.val();
+
+        if (!user || user.password !== pwd) {
+          throw new Error('Invalid ID or password for this college.');
+        }
+
+        // 🔐 Set Custom Security Claims (Server-side Lock)
+        const setClaim = firebase.functions().httpsCallable('setCollegeClaim');
+        await setClaim({ collegeId, role: user.role || 'student' });
+
+        // Update local session
+        setSession({ userId: user.id, role: user.role || 'student', collegeId });
+        
+        // Initialize listeners and redirect
+        initCollegeSync(collegeId, () => {
+          window.location.href = (user.role === 'admin') ? 'admin.html' : 'student.html';
+        });
+
+      } catch (err) {
+        console.error(err);
+        loginMsg.textContent = `❌ ${err.message}`;
+        loginMsg.className = 'form-msg error';
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
       }
     });
 
     // ── Register ──
-    registerForm.addEventListener('submit', (e) => {
+    registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const collegeId = document.getElementById('reg-college').value.trim().toLowerCase();
       const newId = document.getElementById('reg-id').value.trim();
       const name = document.getElementById('reg-name').value.trim();
       const room = document.getElementById('reg-room').value.trim();
       const phone = document.getElementById('reg-phone').value.trim();
       const age = document.getElementById('reg-age').value.trim();
       const dept = document.getElementById('reg-dept').value.trim();
-      const year = document.getElementById('reg-year') ? document.getElementById('reg-year').value : '';
       const pwd = document.getElementById('reg-pwd').value;
       const pwdC = document.getElementById('reg-pwd-confirm').value;
 
-      if (!newId || !name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
-        registerMsg.textContent = '⚠️ All fields including Registration No. and photo are required.';
-        registerMsg.className = 'form-msg error';
-        return;
-      }
-      if (pwd !== pwdC) {
-        registerMsg.textContent = '⚠️ Passwords do not match.';
-        registerMsg.className = 'form-msg error';
-        return;
-      }
-      if (pwd.length < 4) {
-        registerMsg.textContent = '⚠️ Password must be at least 4 characters.';
-        registerMsg.className = 'form-msg error';
-        return;
-      }
-
-      // Verify ID is unique
-      const existing = getStudentById(newId);
-      if (existing) {
-        registerMsg.textContent = '⚠️ This Registration No. is already registered.';
+      if (!collegeId || !newId || !name || !room || !phone || !age || !dept || !pwd || !photoBase64) {
+        registerMsg.textContent = '⚠️ All fields are required.';
         registerMsg.className = 'form-msg error';
         return;
       }
       
-      const id = newId;
       const submitBtn = registerForm.querySelector('button[type="submit"]');
       const originalText = submitBtn.innerHTML;
       submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
       submitBtn.disabled = true;
 
-      addStudent({
-        id,
-        name,
-        room,
-        phone,
-        age,
-        department: dept,
-        year,
-        password: pwd,
-        photo: photoBase64,
-        role: 'student',
-        last_updated: new Date().toISOString(),
-      }).then(() => {
-        // Auto-login and redirect ONLY AFTER cloud write succeeds!
-        setSession({ userId: id, role: 'student' });
-        window.location.href = 'student.html';
-      }).catch(err => {
+      try {
+        // Verify institution exists
+        const instSnap = await firebaseDB.ref(`colleges/${collegeId}/students/admin`).once('value');
+        if (!instSnap.exists()) {
+          throw new Error('College ID not found. Contact your warden.');
+        }
+
+        // Verify ID unique in THIS college
+        const userSnap = await firebaseDB.ref(`colleges/${collegeId}/students/${newId}`).once('value');
+        if (userSnap.exists()) {
+          throw new Error('Registration No. already exists in this college.');
+        }
+
+        const studentData = {
+          id: newId,
+          name, room, phone, age,
+          department: dept,
+          password: pwd,
+          photo: photoBase64,
+          role: 'student',
+          last_updated: new Date().toISOString()
+        };
+
+        // Write to college-specific node
+        await firebaseDB.ref(`colleges/${collegeId}/students/${newId}`).set(studentData);
+
+        // 🔐 Set Claims
+        const setClaim = firebase.functions().httpsCallable('setCollegeClaim');
+        await setClaim({ collegeId, role: 'student' });
+
+        setSession({ userId: newId, role: 'student', collegeId });
+        
+        initCollegeSync(collegeId, () => {
+          window.location.href = 'student.html';
+        });
+
+      } catch (err) {
         console.error(err);
-        registerMsg.textContent = '❌ Registration failed (Network error).';
+        registerMsg.textContent = `❌ ${err.message}`;
         registerMsg.className = 'form-msg error';
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-      });
+      }
     });
   });
 });

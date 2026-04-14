@@ -17,6 +17,15 @@
   <link rel="apple-touch-icon" href="icon-192.png">
 
   <link rel="stylesheet" href="css/style.css">
+  
+  <!-- SaaS Core (v78) -->
+  <script src="js/i18n.js"></script>
+  <script src="js/ux.js"></script>
+  <script src="js/security.js"></script>
+  <script src="js/auth-guard.js"></script>
+  
+  <!-- QR Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 </head>
 <body class="dashboard-page">
 
@@ -58,14 +67,14 @@
 
     <!-- Action Buttons -->
     <section class="stu-actions">
-      <button class="btn btn-action btn-checkout" id="btn-checkout">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Check-Out
-      </button>
-      <button class="btn btn-action btn-checkin" id="btn-checkin">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        Check-In
-      </button>
+       <!-- Rotating QR Handshake Container (v78) -->
+       <div id="qr-container" class="glass" style="padding:1.5rem; border-radius:var(--radius-lg); margin-bottom:1.5rem; text-align:center;">
+          <div id="handshake-qr" style="margin:0 auto; padding:10px; background:#fff; border-radius:12px; display:inline-block;"></div>
+          <p style="font-size:0.75rem; color:var(--text-secondary); margin-top:10px;">Rotating Handshake: Prevents proxy scanning</p>
+       </div>
+
+      <button class="btn btn-action btn-checkout" id="btn-checkout" style="display:none;">Check-Out</button>
+      <button class="btn btn-action btn-checkin" id="btn-checkin" style="display:none;">Check-In</button>
     </section>
 
     <p class="debounce-timer" id="debounce-timer" style="display:none;"></p>

@@ -141,22 +141,80 @@ function clearSession() {
   sessionStorage.removeItem(DB.SESSION);
 }
 
-/* ── Seed / Init ─────────────────────────────── */
-function seedIfNeeded() {
-  const students = getStudents();
-  const hasAdmin = students.some(s => s.role === 'admin');
-  if (!hasAdmin) {
-    addStudent({
-      id: 'admin',
-      name: 'Warden Admin',
-      room: '—',
-      phone: '—',
-      password: 'admin123',
-      role: 'admin',
-      last_updated: new Date().toISOString(),
-    });
-  }
+/* ── Firebase Cloud Sync (v78 SaaS) ─────────── */
+let firebaseSyncReady = false;
+
+/**
+ * Initializes listeners for a specific college.
+ * Ensures total data isolation inside the /colleges/ node.
+ */
+function initCollegeSync(collegeId, onReady) {
+  if (!collegeId) return;
+  
+  const colRef = firebaseDB.ref(`colleges/${collegeId}`);
+  
+  // Sync students
+  colRef.child('students').on('value', (snap) => {
+    saveStudents(Object.values(snap.val() || {}));
+    if (window.renderDirectory) renderDirectory();
+    if (window.renderAdminList) renderAdminList();
+    if (window.NexStore) NexStore.dispatch('STUDENTS_UPDATED', snap.val());
+  });
+
+  // Sync movements
+  colRef.child('movements').on('value', (snap) => {
+    saveMovements(Object.values(snap.val() || {}));
+    if (window.renderAdminLogs) renderAdminLogs();
+    if (window.NexStore) NexStore.dispatch('MOVEMENTS_UPDATED', snap.val());
+  });
+
+  // Sync subscription status (Kill Switch)
+  colRef.child('subscription').on('value', (snap) => {
+    const sub = snap.val() || {};
+    localStorage.setItem('smt_subscription', JSON.stringify(sub));
+    if (window.NexStore) NexStore.dispatch('SUBSCRIPTION_UPDATED', sub);
+  });
+
+  firebaseSyncReady = true;
+  if (onReady) onReady();
 }
 
-// Run seed on load
-seedIfNeeded();
+/** Global wrapper for Cloud Push */
+function pushToCollege(node, data) {
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  return firebaseDB.ref(`colleges/${session.collegeId}/${node}`).push(data);
+}
+
+function updateInCollege(node, id, updates) {
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  // Note: we assume ID is the registration no. but we should use Firebase keys for real production
+  return firebaseDB.ref(`colleges/${session.collegeId}/${node}/${id}`).update(updates);
+}
+
+/* ── Seed / Init ─────────────────────────────── */
+/** Spawns a default admin for a NEW college if it doesn't exist */
+async function spawnInstitution(collegeId) {
+  const colRef = firebaseDB.ref(`colleges/${collegeId}`);
+  const snap = await colRef.child('students/admin').once('value');
+  
+  if (!snap.exists()) {
+    const adminData = {
+      id: 'admin',
+      name: 'Master Warden',
+      password: 'admin1234',
+      role: 'admin',
+      created_at: new Date().toISOString(),
+      subscription: {
+        status: 'trial',
+        trialStartDate: new Date().toISOString()
+      }
+    };
+    await colRef.child('students/admin').set(adminData);
+    await colRef.child('subscription').set(adminData.subscription);
+    console.log(`🏰 Institution [${collegeId}] spawned successfully.`);
+    return true;
+  }
+  return false;
+}

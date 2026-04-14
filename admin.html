@@ -17,6 +17,15 @@
   <link rel="apple-touch-icon" href="icon-192.png">
 
   <link rel="stylesheet" href="css/style.css">
+  
+  <!-- SaaS Core (v78) -->
+  <script src="js/i18n.js"></script>
+  <script src="js/ux.js"></script>
+  <script src="js/security.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <!-- Razorpay Integration -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="js/billing.js"></script>
 </head>
 <body class="dashboard-page admin-page">
 
@@ -33,7 +42,13 @@
         <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
         <circle cx="12" cy="10" r="3"/>
       </svg>
-      <span>NexTrack <small class="admin-label">Admin</small></span>
+      <span class="brand-name">NexTrack</span> <small class="admin-label">Admin</small>
+    </div>
+    <div class="lang-selector-wrap" style="margin-right: 15px;">
+      <select id="lang-toggle" onchange="NexI18n.setLanguage(this.value)" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 25px; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 fill=%22white%22><path d=%22M0 3l5 5 5-5z%22/></select>'); background-repeat: no-repeat; background-position: right 8px center;">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी (Hindi)</option>
+      </select>
     </div>
     <div class="topbar-actions">
       <button class="btn btn-ghost" onclick="openAdminProfile()">👤 Profile</button>
@@ -186,6 +201,31 @@
           <button class="btn btn-warning btn-small" onclick="clearGeofenceSettings()">🗑 Remove Geofence</button>
         </div>
         <div id="geo-status" style="margin-top:1rem;font-size:0.82rem;"></div>
+        
+        <hr style="border:0; border-top:1px solid var(--glass-border); margin:2rem 0;">
+        
+        <!-- 💰 Subscription & Billing (v78) -->
+        <h3 style="font-size:1rem;margin-bottom:1rem;">💰 Institution Subscription</h3>
+        <div class="glass" style="padding:1.5rem; border-radius:var(--radius-md); background:rgba(255,255,255,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <div>
+              <p style="font-size:0.85rem; font-weight:700;" id="sub-status-label">Status: <span class="status-badge badge-in">Trial</span></p>
+              <p style="font-size:0.75rem; color:var(--text-muted);" id="sub-expiry-label">Trial ends in 30 days</p>
+            </div>
+            <button class="btn btn-primary btn-small" onclick="NexBilling.triggerCheckout()">Pay ₹200 / Month</button>
+          </div>
+          <p style="font-size:0.75rem; color:var(--text-muted);">Secure payments via Razorpay. Automatic activation upon success.</p>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--glass-border); margin:2rem 0;">
+
+        <!-- 🏰 Whitelabeling (v78) -->
+        <h3 style="font-size:1rem;margin-bottom:1rem;">🏰 Institution Branding</h3>
+        <div class="form-group">
+          <label for="branding-name">Display Name</label>
+          <input type="text" id="branding-name" placeholder="e.g. SRM IST, Chennai" class="search-input" style="margin-bottom:1rem;">
+          <button class="btn btn-accent btn-small" onclick="updateBranding()">Update Branding</button>
+        </div>
       </div>
     </section>
 

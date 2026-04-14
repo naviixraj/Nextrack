@@ -2,31 +2,49 @@
    admin.js  –  Dashboard, Monitoring, Management
    ────────────────────────────────────────────── */
 
-let currentDateFilter = 'today';
-let customDate = '';
-let curfewInterval = null;
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const session = getSession();
+  
+  // 🛡️ Phase 2: Auth Guard is already running, but we confirm here
   if (!session || session.role !== 'admin') {
     window.location.href = 'index.html';
     return;
   }
 
-  initDashboard();
-  initTabs();
-  startCurfewCheck();
+  // ✨ UX: Show skeletons while data is starting up
+  NexUX.showSkeletons('monitor-body', 5);
+
+  // Initialize SaaS Sync Engine
+  initCollegeSync(session.collegeId, () => {
+    initDashboard();
+    initTabs();
+    startCurfewCheck();
+    
+    // 🛡️ Audit Log: Session Started
+    NexSecurity.logAction('ADMIN_LOGIN', `Admin ${session.userId} entered the dashboard.`);
+  });
 });
 
 /* ═══════════════════════════════════════════════
    DASHBOARD – Status Cards
    ═══════════════════════════════════════════════ */
 function initDashboard() {
+  updateWhitelabeling();
   renderCards();
   renderMonitoringTable();
   renderDirectory();
-  trackAdminLogin();
   renderAdminList();
+}
+
+/** 🏰 SaaS Whitelabeling Engine (v78) */
+function updateWhitelabeling() {
+  const sub = JSON.parse(localStorage.getItem('smt_subscription') || '{}');
+  const config = sub.config || {};
+  
+  if (config.institutionName) {
+    document.querySelectorAll('.brand-name').forEach(el => el.textContent = config.institutionName);
+    document.title = `${config.institutionName} | NexTrack Admin`;
+  }
 }
 
 function renderCards() {
@@ -34,7 +52,6 @@ function renderCards() {
   const movements = getMovements();
   const total = students.length;
 
-  // A student is "outside" if their latest movement has no inTime
   let outsideCount = 0;
   students.forEach(s => {
     const stuMovs = movements.filter(m => m.studentId === s.id);
@@ -50,7 +67,7 @@ function renderCards() {
   document.getElementById('card-inside').textContent = insideCount;
   document.getElementById('card-outside').textContent = outsideCount;
 
-  // 7:01 PM Trigger
+  // Curfew Alert
   const outsideCard = document.getElementById('outside-card');
   if (isNowPastCurfew() && outsideCount > 0) {
     outsideCard.classList.add('blink-alert');
@@ -60,6 +77,7 @@ function renderCards() {
 }
 
 window.showOutsideStudents = function () {
+  NexUX.vibrate();
   const students = getStudents().filter(s => s.role !== 'admin');
   const movements = getMovements();
   const outsideList = [];
@@ -76,7 +94,7 @@ window.showOutsideStudents = function () {
 
   const container = document.getElementById('outside-list');
   if (outsideList.length === 0) {
-    container.innerHTML = '<p class="empty-row">All students are inside. 🎉</p>';
+    container.innerHTML = `<p class="empty-row">🎉 ${t('SCAN_SUCCESS')}</p>`;
   } else {
     container.innerHTML = outsideList.map(item => {
       const s = item.student;
@@ -102,7 +120,7 @@ window.showOutsideStudents = function () {
 function startCurfewCheck() {
   curfewInterval = setInterval(() => {
     renderCards();
-  }, 30000); // every 30 seconds
+  }, 30000);
 }
 
 /* ═══════════════════════════════════════════════
@@ -113,6 +131,7 @@ function initTabs() {
   const panels = document.querySelectorAll('.tab-panel');
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
+      NexUX.vibrate(50);
       tabs.forEach(t => t.classList.remove('active'));
       panels.forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
@@ -133,6 +152,7 @@ function initTabs() {
 }
 
 function setDateFilter(mode) {
+  NexUX.vibrate(50);
   currentDateFilter = mode;
   document.querySelectorAll('.date-filter-btn').forEach(b => b.classList.remove('active'));
   if (mode === 'today') document.getElementById('filter-today').classList.add('active');
@@ -380,73 +400,107 @@ window.registerNewAdmin = function () {
 };
 
 /* ═══════════════════════════════════════════════
-   ACCOUNT RECOVERY
+   DIRECTORY – Fuzzy Search Engine (v78)
    ═══════════════════════════════════════════════ */
-window.searchStudent = function () {
-  const query = document.getElementById('recovery-search').value.trim().toLowerCase();
-  const results = document.getElementById('recovery-results');
-
-  if (!query) {
-    results.innerHTML = '';
-    return;
-  }
-
+function renderDirectory() {
+  const query = document.getElementById('directory-search').value.trim().toLowerCase();
   const students = getStudents().filter(s => s.role !== 'admin');
-  const matches = students.filter(s =>
-    s.id.toLowerCase().includes(query) ||
-    s.name.toLowerCase().includes(query) ||
-    s.room.toLowerCase().includes(query)
-  );
+  
+  let results = students;
+  if (query) {
+    // 🔍 Fuzzy Search Logic (Levenshtein Distance Approximation)
+    results = students.filter(s => {
+      const matchName = s.name.toLowerCase().includes(query);
+      const matchId = s.id.toLowerCase().includes(query);
+      // Simplify fuzzy: if search is near enough or contains, it's a match
+      return matchName || matchId || (levenshtein(s.name.toLowerCase(), query) <= 2);
+    });
+  }
 
-  if (matches.length === 0) {
-    results.innerHTML = '<p class="empty-row">No matching students found.</p>';
+  const container = document.getElementById('directory-list');
+  if (results.length === 0) {
+    container.innerHTML = `<p class="empty-row">${t('OFFLINE_MSG')}</p>`;
     return;
   }
 
-  results.innerHTML = matches.map(s => `
-    <div class="recovery-card">
-      <div class="recovery-info">
-        <strong>${s.name}</strong>
-        <span class="recovery-meta">${s.id} · Room ${s.room} · ${s.phone}</span>
+  container.innerHTML = results.map(s => {
+    const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '<span class="table-avatar-placeholder">👤</span>';
+    return `
+      <div class="recovery-card" onclick="showStudentDetail('${s.id}')" style="cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          ${photo}
+          <div class="recovery-info">
+            <strong>${s.name}</strong>
+            <span class="recovery-meta">${s.id} · Room ${s.room}</span>
+          </div>
+        </div>
+        <button class="btn btn-small btn-outline">View</button>
       </div>
-      <div class="recovery-actions">
-        <button class="btn btn-small btn-accent" onclick="editRoom('${s.id}')">Edit Room</button>
-      </div>
-    </div>
-  `).join('');
-};
+    `;
+  }).join('');
+}
 
-window.resetPassword = function (id) {
-  const newPwd = prompt('Enter new password for ' + id + ':');
-  if (newPwd && newPwd.length >= 4) {
-    updateStudent(id, { password: newPwd });
-    alert('✅ Password reset successfully.');
-  } else if (newPwd) {
-    alert('⚠️ Password must be at least 4 characters.');
+/** Levenshtein Distance for Fuzzy Search */
+function levenshtein(s, t) {
+  if (!s.length) return t.length;
+  if (!t.length) return s.length;
+  const arr = [];
+  for (let i = 0; i <= t.length; i++) arr[i] = [i];
+  for (let j = 0; j <= s.length; j++) arr[0][j] = j;
+  for (let i = 1; i <= t.length; i++) {
+    for (let j = 1; j <= s.length; j++) {
+      const cost = t.charAt(i - 1) === s.charAt(j - 1) ? 0 : 1;
+      arr[i][j] = Math.min(arr[i - 1][j] + 1, arr[i][j - 1] + 1, arr[i - 1][j - 1] + cost);
+    }
   }
-};
+  return arr[t.length][s.length];
+}
 
-window.editRoom = function (id) {
-  const newRoom = prompt('Enter new room number for ' + id + ':');
-  if (newRoom && newRoom.trim()) {
-    updateStudent(id, { room: newRoom.trim(), last_updated: new Date().toISOString() });
-    alert('✅ Room updated successfully.');
-    renderDirectory();
-  }
+window.registerNewAdmin = function () {
+  const name = prompt(t('FULL_NAME') + ':');
+  if (!name || !name.trim()) return;
+  const id = prompt('Login ID:');
+  if (!id || !id.trim()) return;
+  const pwd = prompt(t('PASSWORD') + ' (min 4):');
+  if (!pwd || pwd.length < 4) return;
+
+  const session = getSession();
+  
+  // 🏰 Multi-Tenant: Inherit College ID
+  const newAdmin = {
+    id: id.trim(),
+    name: name.trim(),
+    password: pwd,
+    role: 'admin',
+    collegeId: session.collegeId,
+    created_at: new Date().toISOString()
+  };
+
+  firebaseDB.ref(`colleges/${session.collegeId}/students/${id.trim()}`).set(newAdmin).then(() => {
+    NexUX.playSuccess();
+    NexSecurity.logAction('CREATE_ADMIN', `Added new Warden: ${name.trim()} (${id.trim()})`);
+    alert('✅ Warden Created.');
+    renderAdminList();
+  });
 };
 
 /* ═══════════════════════════════════════════════
-   ADMIN PROFILE
+   MODAL ACTIONS
    ═══════════════════════════════════════════════ */
-let adminPhotoBase64 = '';
+/** 🏰 Whitelabeling: Update Institution Branding */
+window.updateBranding = function() {
+  const newName = document.getElementById('branding-name').value.trim();
+  if (!newName) return;
 
-window.openAdminProfile = function () {
   const session = getSession();
-  const admin = getStudentById(session.userId);
-  if (!admin) return;
-
-  const modal = document.getElementById('admin-profile-modal');
-  const avatar = document.getElementById('admin-avatar');
+  
+  updateInCollege('subscription', 'config', { institutionName: newName }).then(() => {
+    NexUX.playSuccess();
+    NexSecurity.logAction('BRANDING_UPDATE', `Institution renamed to: ${newName}`);
+    alert(`✅ Branding updated to: ${newName}`);
+    window.location.reload();
+  });
+};
 
   adminPhotoBase64 = admin.photo || '';
   if (admin.photo) {

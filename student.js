@@ -2,31 +2,60 @@
    student.js  –  Check-In / Check-Out Logic
    ────────────────────────────────────────────── */
 
-let debounceTimer = null;
-let debounceSeconds = 0;
+let qrInterval = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const session = getSession();
   if (!session || session.role === 'admin') {
     window.location.href = 'index.html';
     return;
   }
 
-  const student = getStudentById(session.userId);
-  if (!student) {
-    clearSession();
-    window.location.href = 'index.html';
-    return;
-  }
+  // ✨ UX: Show skeletons
+  NexUX.showSkeletons('history-body', 3);
 
-  // ── 90-Day Rule ──
-  const daysSinceUpdate = Math.floor((Date.now() - new Date(student.last_updated).getTime()) / 86400000);
-  if (daysSinceUpdate > 90) {
-    showProfileModal(student, true);
-  }
+  // Initialize SaaS Sync for this college
+  initCollegeSync(session.collegeId, () => {
+    const student = getStudentById(session.userId);
+    if (!student) {
+      clearSession();
+      window.location.href = 'index.html';
+      return;
+    }
 
-  renderStudentUI(student);
+    // ── 90-Day Rule ──
+    const daysSinceUpdate = Math.floor((Date.now() - new Date(student.last_updated).getTime()) / 86400000);
+    if (daysSinceUpdate > 90) {
+      showProfileModal(student, true);
+    }
+
+    renderStudentUI(student);
+    startRotatingQR(session.collegeId);
+  });
 });
+
+/** 🔄 Dynamic QR Handshake (v78) */
+function startRotatingQR(collegeId) {
+  // Use a placeholder secret or fetch from college config
+  const secret = 'NEX_SECRET_2024'; 
+  
+  const updateQR = () => {
+    const handshake = NexSecurity.generateHandshake(collegeId, secret);
+    const session = getSession();
+    // Payload: collegeId|studentId|handshake
+    const payload = `${collegeId}|${session.userId}|${handshake}`;
+    
+    QRCode.toCanvas(document.getElementById('handshake-qr'), payload, {
+      width: 200,
+      margin: 1,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+    console.log(`🔐 Handshake Rotated: ${handshake}`);
+  };
+
+  updateQR();
+  qrInterval = setInterval(updateQR, 30000); // Sync with Security.ROTATION_INTERVAL
+}
 
 function renderStudentUI(student) {
   document.getElementById('stu-name').textContent = student.name;
@@ -42,22 +71,6 @@ function renderStudentUI(student) {
   const badge = document.getElementById('stu-status');
   badge.textContent = status;
   badge.className = 'status-badge ' + (status === 'IN' ? 'badge-in' : 'badge-out');
-
-  const btnIn = document.getElementById('btn-checkin');
-  const btnOut = document.getElementById('btn-checkout');
-
-  // Status Lock
-  btnIn.disabled = status === 'IN';
-  btnOut.disabled = status === 'OUT';
-
-  btnIn.onclick = () => handleCheckIn(student);
-  btnOut.onclick = () => handleCheckOut(student);
-
-  // restore debounce if active
-  if (debounceTimer) {
-    btnIn.disabled = true;
-    btnOut.disabled = true;
-  }
 
   renderTodayHistory(student.id);
 }

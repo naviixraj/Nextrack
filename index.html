@@ -914,6 +914,14 @@
       <p class="brand-tagline">Student Movement Tracking System</p>
     </div>
 
+    <!-- Language Selector v78 -->
+    <div class="lang-selector-wrap" style="align-self: flex-end; margin-bottom: -15px; position: relative; z-index: 10;">
+      <select id="lang-toggle" onchange="NexI18n.setLanguage(this.value)" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 25px; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 fill=%22white%22><path d=%22M0 3l5 5 5-5z%22/></svg>'); background-repeat: no-repeat; background-position: right 8px center;">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी (Hindi)</option>
+      </select>
+    </div>
+
     <div class="auth-card">
 
       <div class="auth-tabs" role="tablist">
@@ -927,7 +935,11 @@
       <!-- Login Form -->
       <form id="login-form" class="auth-form active" autocomplete="off" novalidate>
         <div class="form-group">
-          <label for="login-id">Student / Admin</label>
+          <label for="login-college" id="l-college-label">College ID</label>
+          <input type="text" id="login-college" placeholder="Enter College unique ID" required>
+        </div>
+        <div class="form-group">
+          <label for="login-id" id="l-id-label">Student / Admin</label>
           <input type="text" id="login-id" placeholder="Registration No. or admin ID" required autocomplete="username">
         </div>
         <div class="form-group">
@@ -957,13 +969,17 @@
       <!-- Register Form -->
       <form id="register-form" class="auth-form" autocomplete="off" novalidate>
         <div class="form-group">
+          <label for="reg-college" id="r-college-label">College ID</label>
+          <input type="text" id="reg-college" placeholder="Provided by your institution" required>
+        </div>
+        <div class="form-group">
           <label for="reg-name">Full Name</label>
           <input type="text" id="reg-name" placeholder="dani daniels" required>
         </div>
 
         <div class="form-group">
-          <label for="reg-id">Registration No.</label>
-          <input type="text" id="reg-id" placeholder="Enter your Registration No." required>
+          <label for="reg-id" id="r-id-label">Registration No.</label>
+          <input type="text" id="reg-id" placeholder="2024XXXX" required>
         </div>
 
         <div class="form-group">
@@ -1087,6 +1103,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <!-- App Scripts -->
+  <script src="js/i18n.js"></script>
+  <script src="js/security.js"></script>
   <script src="js/firebase-config.js?v=34"></script>
   <script src="js/data.js?v=34"></script>
   <script src="js/auth.js?v=34"></script>
