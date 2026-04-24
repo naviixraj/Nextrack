@@ -22,7 +22,10 @@ const I18N_DICTIONARY = {
     LOCKED_MSG: "Subscription Expired. Please contact Master Admin.",
     SCAN_SUCCESS: "Check-out Recorded!",
     SCAN_ERROR: "Invalid or Expired QR Code",
-    OFFLINE_MSG: "You are offline. Data saved and will sync automatically."
+    OFFLINE_MSG: "You are offline. Data saved and will sync automatically.",
+    GPS_OUTSIDE: "You must be at the hostel to Check-In/Out.",
+    GPS_ERROR: "Could not verify your location. Please enable GPS.",
+    LOCATION_REQUIRED: "Location access is required for hostel movements."
   },
   hi: {
     APP_NAME: "नेक्सट्रैक",
@@ -39,7 +42,9 @@ const I18N_DICTIONARY = {
     PHONE: "फ़ोन नंबर",
     FORGOT_PWD: "पासवर्ड भूल गए?",
     SCAN_SUCCESS: "चेक-आउट दर्ज किया गया!",
-    OFFLINE_MSG: "आप ऑफ़लाइन हैं। डेटा सहेज लिया गया है।"
+    OFFLINE_MSG: "आप ऑफ़लाइन हैं। डेटा सहेज लिया गया है।",
+    GPS_OUTSIDE: "चेक-इन/आउट के लिए आपको हॉस्टल में होना चाहिए।",
+    GPS_ERROR: "आपकी स्थिति की पुष्टि नहीं हो सकी। कृपया GPS चालू करें।"
   }
 };
 

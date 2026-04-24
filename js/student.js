@@ -2,19 +2,20 @@
    student.js  –  Check-In / Check-Out Logic
    ────────────────────────────────────────────── */
 
-let debounceTimer = null;
-let debounceSeconds = 0;
-let studentLocation = null; // { lat, lng } or null
-let geoCheckDone = false;
+let qrInterval = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-  initCloudSync(() => {
-    const session = getSession();
-    if (!session || session.role === 'admin') {
-      window.location.href = 'index.html';
-      return;
-    }
+document.addEventListener('DOMContentLoaded', async () => {
+  const session = getSession();
+  if (!session || session.role === 'admin') {
+    window.location.href = 'index.html';
+    return;
+  }
 
+  // ✨ UX: Show skeletons
+  NexUX.showSkeletons('history-body', 3);
+
+  // Initialize SaaS Sync for this college
+  initCollegeSync(session.collegeId, () => {
     const student = getStudentById(session.userId);
     if (!student) {
       clearSession();
@@ -29,50 +30,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderStudentUI(student);
-
-    // ── Geolocation Check ──
-    checkStudentLocation(student);
-
-    // The Magic: Live UI updates via Cloud Sync
-    window.addEventListener('db_updated', () => {
-      const liveStudent = getStudentById(session.userId);
-      if (!liveStudent) {
-        // Admin deleted you!
-        clearSession();
-        window.location.href = 'index.html';
-      } else {
-        renderStudentUI(liveStudent);
-      }
-    });
+    initButtons(student);
   });
 });
 
+function initButtons(student) {
+  document.getElementById('btn-checkin').onclick = (e) => verifyAndAction('IN', student, e);
+  document.getElementById('btn-checkout').onclick = (e) => verifyAndAction('OUT', student, e);
+}
+
+
+
 function renderStudentUI(student) {
-  // Re-fetch student to get latest data (e.g. edit alerts from admin)
-  const freshStudent = getStudentById(student.id);
-  if (freshStudent) Object.assign(student, freshStudent);
-
-  // Show admin edit alert if any
-  let alertBanner = document.getElementById('admin-edit-banner');
-  if (student.editAlert) {
-    if (!alertBanner) {
-      alertBanner = document.createElement('div');
-      alertBanner.id = 'admin-edit-banner';
-      const main = document.querySelector('.stu-main');
-      main.insertBefore(alertBanner, main.firstChild);
-    }
-    if (student.editAlert === 'warning') {
-      alertBanner.className = 'geo-banner geo-outside';
-      alertBanner.textContent = student.editAlertMsg || '⚠️ Unauthorized access attempt detected on your profile.';
-    } else if (student.editAlert === 'editing') {
-      alertBanner.className = 'geo-banner geo-detecting';
-      alertBanner.textContent = student.editAlertMsg || '🔒 Your account is currently under editing by an admin.';
-    }
-    alertBanner.style.display = 'block';
-  } else if (alertBanner) {
-    alertBanner.style.display = 'none';
-  }
-
   document.getElementById('stu-name').textContent = student.name;
   document.getElementById('stu-id').textContent = student.id;
   document.getElementById('stu-room').textContent = student.room;
@@ -87,175 +56,11 @@ function renderStudentUI(student) {
   badge.textContent = status;
   badge.className = 'status-badge ' + (status === 'IN' ? 'badge-in' : 'badge-out');
 
-  const btnIn = document.getElementById('btn-checkin');
-  const btnOut = document.getElementById('btn-checkout');
-
-  // Status Lock
-  btnIn.disabled = status === 'IN';
-  btnOut.disabled = status === 'OUT';
-
-  // Geofence restriction on check-in
-  const geo = getGeofence();
-  if (geo && status === 'OUT') {
-    // If geofence is set and student is OUT, check-in depends on location
-    if (!geoCheckDone) {
-      btnIn.disabled = true; // disable until location confirmed
-    } else if (studentLocation) {
-      const result = checkGeofence(studentLocation.lat, studentLocation.lng);
-      if (result && !result.inside) {
-        btnIn.disabled = true;
-      }
-    } else {
-      btnIn.disabled = true; // no location available
-    }
-  }
-
-  btnIn.onclick = () => handleCheckIn(student);
-  btnOut.onclick = () => handleCheckOut(student);
-
-  // restore debounce if active
-  if (debounceTimer) {
-    btnIn.disabled = true;
-    btnOut.disabled = true;
-  }
+  // Show only relevant button
+  document.getElementById('btn-checkin').style.display = (status === 'OUT' ? 'block' : 'none');
+  document.getElementById('btn-checkout').style.display = (status === 'IN' ? 'block' : 'none');
 
   renderTodayHistory(student.id);
-  updateLocationBanner();
-}
-
-/* ── Geolocation Check ───────────────────────── */
-function checkStudentLocation(student) {
-  const geo = getGeofence();
-  if (!geo) {
-    geoCheckDone = true;
-    updateLocationBanner();
-    return; // no geofence, allow everything
-  }
-
-  if (!navigator.geolocation) {
-    geoCheckDone = true;
-    showLocationBanner('⚠️ GPS not supported on this browser. Check-in restricted.', 'warning');
-    return;
-  }
-
-  // Security Check: Geolocation requires HTTPS (unless localhost)
-  const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  if (!isSecure) {
-    geoCheckDone = true;
-    showLocationBanner('⚠️ <strong>Secure Connection Required:</strong> Geolocation is blocked on non-HTTPS sites. Please use a secure link or contact admin.', 'warning');
-    return;
-  }
-
-  showLocationBanner('📡 Detecting your precise location...', 'detecting');
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      geoCheckDone = true;
-      const result = checkGeofence(studentLocation.lat, studentLocation.lng);
-
-      if (result && result.inside) {
-        showLocationBanner(`📍 Inside hostel zone (${result.distance}m from center)`, 'inside');
-
-        // Auto check-in if student is OUT and inside zone
-        const status = getCurrentStatus(student.id);
-        if (status === 'OUT' && !debounceTimer) {
-          autoCheckIn(student);
-        }
-      } else {
-        const dist = result ? result.distance : '?';
-        showLocationBanner(`📍 Outside hostel zone (${dist}m away). Check-In disabled.`, 'outside');
-      }
-
-      renderStudentUI(student);
-    },
-    (err) => {
-      geoCheckDone = true;
-      let title = '📍 Location Required';
-      let msg = 'NexTrack needs your location to verify your hostel status.';
-      let isPermissionError = false;
-      
-      if (err.code === 1) { // PERMISSION_DENIED
-        title = '🚫 Permission Denied';
-        msg = 'Please enable location access in your browser/app settings to proceed with Check-In.';
-        isPermissionError = true;
-      } else if (err.code === 3) { // TIMEOUT
-        title = '⏳ Request Timed Out';
-        msg = 'We couldn\'t detect your GPS signal. Please check your network and try again.';
-      } else {
-        title = '⚠️ Detection Error';
-        msg = 'Could not detect your location. Please ensure GPS is active.';
-      }
-
-      showPremiumLocationModal(title, msg, isPermissionError, student);
-      renderStudentUI(student);
-    },
-    { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
-  );
-}
-
-function autoCheckIn(student) {
-  const movs = getMovements();
-  const openIdx = movs.findLastIndex(m => m.studentId === student.id && !m.inTime);
-  if (openIdx === -1) return;
-
-  const now = new Date().toISOString();
-  movs[openIdx].inTime = now;
-  saveMovements(movs);
-
-  showLocationBanner('✅ Auto-checked-in! You are inside the hostel zone.', 'auto-checkin');
-  renderStudentUI(student);
-}
-
-function showPremiumLocationModal(title, message, isPermission, student) {
-  if (document.getElementById('location-error-modal')) return;
-
-  const overlay = document.createElement('div');
-  overlay.id = 'location-error-modal';
-  overlay.className = 'update-overlay'; // Reusing the premium overlay styles
-  overlay.innerHTML = `
-    <div class="update-modal location-modal-box">
-      <div class="update-icon" style="background:rgba(248,113,113,0.2);color:#f87171;box-shadow:0 8px 25px rgba(248,113,113,0.3);">⚠️</div>
-      <h2 class="update-title">${title}</h2>
-      <p class="update-desc">${message}</p>
-      <div style="display:flex; flex-direction:column; gap:0.8rem;">
-        <button class="update-btn" style="background:#f87171;" onclick="location.reload()">🔄 Refresh App</button>
-        <button class="btn btn-ghost btn-small" onclick="document.getElementById('location-error-modal').remove()" style="opacity:0.6; font-size:0.75rem;">Dismiss</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  setTimeout(() => overlay.classList.add('visible'), 100);
-}
-
-function showLocationBanner(text, type) {
-  let banner = document.getElementById('geo-banner');
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'geo-banner';
-    const main = document.querySelector('.stu-main');
-    if (main) main.insertBefore(banner, main.firstChild);
-    else return;
-  }
-  
-  // Use icons based on type
-  let icon = '📍';
-  if (type === 'inside') icon = '🏠';
-  if (type === 'outside') icon = '🚶';
-  if (type === 'warning' || type === 'error') icon = '⚠️';
-  if (type === 'auto-checkin') icon = '✅';
-
-  banner.innerHTML = `<span style="margin-right:0.6rem;">${icon}</span> ${text}`; 
-  banner.className = 'geo-banner geo-' + type;
-  banner.style.display = 'block';
-}
-
-function updateLocationBanner() {
-  const geo = getGeofence();
-  if (!geo) {
-    const banner = document.getElementById('geo-banner');
-    if (banner) banner.style.display = 'none';
-  }
 }
 
 function getCurrentStatus(studentId) {
@@ -264,6 +69,62 @@ function getCurrentStatus(studentId) {
   const latest = movs[movs.length - 1];
   return latest.inTime ? 'IN' : 'OUT';
 }
+
+/* ── Geofencing Enforcement ──────────────────── */
+async function verifyAndAction(target, student, e) {
+  const sub = JSON.parse(localStorage.getItem('smt_subscription') || '{}');
+  const geofence = sub.config?.geofence;
+
+  if (!geofence) {
+    // 🚫 Click Guard (Simplified)
+    e.target.disabled = true;
+    if (target === 'IN') handleCheckIn(student); else handleCheckOut(student);
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    alert(t('GPS_ERROR'));
+    return;
+  }
+
+  NexUX.showSkeleton('btn-' + (target === 'IN' ? 'checkin' : 'checkout'), 1);
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const dist = calculateDistance(
+        pos.coords.latitude, pos.coords.longitude,
+        geofence.lat, geofence.lng
+      );
+      
+      if (dist <= geofence.radius) {
+        if (target === 'IN') handleCheckIn(student); else handleCheckOut(student);
+      } else {
+        alert(t('GPS_OUTSIDE') + `\n(You are ${(dist - geofence.radius).toFixed(0)}m away)`);
+        renderStudentUI(student);
+      }
+    },
+    (err) => {
+      alert(t('GPS_ERROR') + ": " + err.message);
+      renderStudentUI(student);
+    }
+  );
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // metres
+  const φ1 = lat1 * Math.PI/180;
+  const φ2 = lat2 * Math.PI/180;
+  const Δφ = (lat2-lat1) * Math.PI/180;
+  const Δλ = (lon2-lon1) * Math.PI/180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  return R * c; // in metres
+}
+
 
 /* ── Check-Out ───────────────────────────────── */
 function handleCheckOut(student) {
@@ -274,9 +135,12 @@ function handleCheckOut(student) {
     outTime: now,
     inTime: null,
     date: todayStr(),
+    userAgent: navigator.userAgent, // [SECURITY AUDIT]
+    device: /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
   });
   startDebounce();
   renderStudentUI(student);
+  if (navigator.vibrate) navigator.vibrate(100);
 }
 
 /* ── Check-In (Row-Match Rule) ───────────────── */
@@ -288,9 +152,11 @@ function handleCheckIn(student) {
 
   const now = new Date().toISOString();
   movs[openIdx].inTime = now;
+  movs[openIdx].inUserAgent = navigator.userAgent; // [SECURITY AUDIT]
   saveMovements(movs);
   startDebounce();
   renderStudentUI(student);
+  if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
 }
 
 /* ── 60-Second Debounce Timer ────────────────── */
@@ -370,7 +236,6 @@ function showProfileModal(student, forced = false) {
   document.getElementById('profile-name').value = student.name || '';
   document.getElementById('profile-age').value = student.age || '';
   document.getElementById('profile-dept').value = student.department || '';
-  document.getElementById('profile-year').value = student.year || '';
   document.getElementById('profile-room').value = student.room || '';
   document.getElementById('profile-phone').value = student.phone || '';
 
@@ -405,14 +270,13 @@ function showProfileModal(student, forced = false) {
     const name = document.getElementById('profile-name').value.trim();
     const age = document.getElementById('profile-age').value.trim();
     const dept = document.getElementById('profile-dept').value.trim();
-    const year = document.getElementById('profile-year').value;
     const room = document.getElementById('profile-room').value.trim();
     const phone = document.getElementById('profile-phone').value.trim();
     if (!newId || !name || !room || !phone) return;
 
     const oldId = student.id;
     const updates = {
-      name, age, department: dept, year, room, phone,
+      name, age, department: dept, room, phone,
       last_updated: new Date().toISOString()
     };
     if (stuPhotoBase64) updates.photo = stuPhotoBase64;
@@ -422,20 +286,33 @@ function showProfileModal(student, forced = false) {
       const students = getStudents();
       const existing = students.find(s => s.id === newId);
       if (existing) { alert('⚠️ That ID is already taken.'); return; }
+      
       const idx = students.findIndex(s => s.id === oldId);
       if (idx !== -1) {
-        Object.assign(students[idx], updates);
-        students[idx].id = newId;
+        // [PRODUCTION FIX v80] - Firebase ID Renaming Logic
+        const oldData = students[idx];
+        const newData = { ...oldData, ...updates, id: newId };
+        
+        // 1. Delete old node in Firebase
+        updateInCollege('students', oldId, null);
+        // 2. Create new node in Firebase
+        updateInCollege('students', newId, newData);
+        
+        students[idx] = newData;
         saveStudents(students);
-        // Update movements
+        
+        // 3. Update movements
         const movs = getMovements();
         movs.forEach(m => { if (m.studentId === oldId) m.studentId = newId; });
         saveMovements(movs);
-        setSession({ userId: newId, role: 'student' });
+        
+        saveSession({ userId: newId, collegeId: session.collegeId, role: 'student' });
         student.id = newId;
       }
     } else {
       updateStudent(oldId, updates);
+      // Sync to cloud
+      updateInCollege('students', oldId, updates);
     }
 
     overlay.classList.remove('visible');
@@ -455,186 +332,87 @@ window.openProfileModal = () => {
 
 // Logout
 window.logout = () => {
-  if (confirm('🚪 Are you sure you want to logout?')) {
-    clearSession();
-    window.location.href = 'index.html';
+  saveSession(null);
+  window.location.href = 'index.html';
+};
+
+/* ── Chat System (v80) ───────────────────────── */
+window.toggleChat = () => {
+  const panel = document.getElementById('chat-panel');
+  panel.style.display = (panel.style.display === 'none' ? 'block' : 'none');
+  if (panel.style.display === 'block') {
+    initChatListener();
   }
 };
-/* ═══════════════════════════════════════════════
-   CHAT SYSTEM (Student Side — Firebase)
-   ═══════════════════════════════════════════════ */
-let firebaseStudentMessages = [];
-let selectedMsgKey = null;
-let longPressTimer = null;
 
-function renderStudentChatFromMessages(msgs) {
-  const container = document.getElementById('student-chat-messages');
-  if (!container) return;
-  const session = getSession();
-
-  firebaseStudentMessages = msgs;
-
-  if (msgs.length === 0) {
-    container.innerHTML = '<div class="chat-empty">No messages yet. Start the conversation!</div>';
-    updateChatBadge();
-    return;
-  }
-
-  container.innerHTML = msgs.map(m => {
-    const isMine = m.senderId === session.userId;
-    const isAdminMsg = m.senderRole === 'admin';
-    let bubbleClass = 'chat-bubble ';
-    if (isMine) {
-      bubbleClass += 'chat-bubble-sent';
-    } else if (isAdminMsg) {
-      bubbleClass += 'chat-bubble-admin';
-    } else {
-      bubbleClass += 'chat-bubble-received';
-    }
-
-    const time = new Date(m.timestamp);
-    const timeStr = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-    const dateStr = time.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-    const editedTag = m.edited ? ' <span class="chat-edited">(edited)</span>' : '';
-
-    return `
-      <div class="${bubbleClass}" data-key="${m.firebaseKey}" data-sender="${m.senderId}"
-           oncontextmenu="showMsgMenu(event, '${m.firebaseKey}', '${m.senderId}')"
-           ontouchstart="startLongPress(event, '${m.firebaseKey}', '${m.senderId}')"
-           ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">
-        ${!isMine ? `<span class="chat-sender">${escapeHtmlStu(m.senderName)}${isAdminMsg ? ' 🛡️' : ''}</span>` : ''}
-        <span>${escapeHtmlStu(m.text)}${editedTag}</span>
-        <span class="chat-time">${dateStr} ${timeStr}</span>
-      </div>
-    `;
-  }).join('');
-
-  container.scrollTop = container.scrollHeight;
-
-  const panel = document.getElementById('chat-panel');
-  if (!panel || panel.style.display === 'none') {
-    updateChatBadge();
-  } else {
-    sessionStorage.setItem('smt_chat_last_seen', msgs.length.toString());
-    updateChatBadge();
-  }
+let chatInited = false;
+function initChatListener() {
+  if (chatInited) return;
+  listenToMessages((msg) => {
+    renderChatMessage(msg);
+  });
+  chatInited = true;
 }
 
-// Context menu handlers
-window.showMsgMenu = function (e, key, senderId) {
-  e.preventDefault();
+function renderChatMessage(msg) {
+  const container = document.getElementById('student-chat-messages');
   const session = getSession();
-  if (senderId !== session.userId) return;
+  const isMe = msg.senderId === session.userId;
+  
+  const div = document.createElement('div');
+  div.className = `chat-bubble ${isMe ? 'chat-me' : 'chat-other'}`;
+  div.id = `msg-${msg.key}`;
+  div.innerHTML = `
+    <div class="chat-sender">${msg.senderName}</div>
+    <div class="chat-text">${t(msg.text) || msg.text}</div>
+    <div class="chat-time">${formatTime(msg.timestamp)}</div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  
+  // Remove "empty" message
+  const empty = container.querySelector('.chat-empty');
+  if (empty) empty.style.display = 'none';
+}
 
-  selectedMsgKey = key;
-  const menu = document.getElementById('msg-context-menu');
-  menu.style.display = 'block';
-  menu.style.left = Math.min(e.clientX, window.innerWidth - 150) + 'px';
-  menu.style.top = Math.min(e.clientY, window.innerHeight - 100) + 'px';
-};
+function calcDuration(totalMin) {
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  
+  let result = [];
+  if (d > 0) result.push(`${d}d`);
+  if (h > 0) result.push(`${h}h`);
+  if (m > 0 || result.length === 0) result.push(`${m}m`);
+  return result.join(' ');
+}
 
-window.startLongPress = function (e, key, senderId) {
-  const session = getSession();
-  if (senderId !== session.userId) return;
-
-  longPressTimer = setTimeout(() => {
-    selectedMsgKey = key;
-    const touch = e.touches[0];
-    const menu = document.getElementById('msg-context-menu');
-    menu.style.display = 'block';
-    menu.style.left = Math.min(touch.clientX, window.innerWidth - 150) + 'px';
-    menu.style.top = Math.min(touch.clientY, window.innerHeight - 100) + 'px';
-  }, 500);
-};
-
-window.cancelLongPress = function () {
-  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-};
-
-window.editSelectedMessage = function () {
-  document.getElementById('msg-context-menu').style.display = 'none';
-  if (!selectedMsgKey) return;
-
-  const msg = firebaseStudentMessages.find(m => m.firebaseKey === selectedMsgKey);
-  if (!msg) return;
-
-  const newText = prompt('Edit message:', msg.text);
-  if (newText === null || newText.trim() === '') return;
-
-  editFirebaseMessage(selectedMsgKey, newText.trim());
-  selectedMsgKey = null;
-};
-
-window.deleteSelectedMessage = function () {
-  document.getElementById('msg-context-menu').style.display = 'none';
-  if (!selectedMsgKey) return;
-
-  if (!confirm('Delete this message?')) { selectedMsgKey = null; return; }
-
-  deleteFirebaseMessage(selectedMsgKey);
-  selectedMsgKey = null;
-};
-
-// Hide menu on click outside
-document.addEventListener('click', () => {
-  document.getElementById('msg-context-menu').style.display = 'none';
-});
-
-window.sendStudentMessage = function (e) {
+window.sendStudentMessage = (e) => {
   e.preventDefault();
   const input = document.getElementById('student-chat-input');
   const text = input.value.trim();
+  const session = getSession();
   if (!text) return;
 
-  const session = getSession();
-  const student = getStudentById(session.userId);
-
-  sendFirebaseMessage({
+  sendMessage({
     senderId: session.userId,
-    senderName: student ? student.name : 'Student',
-    senderRole: 'student',
+    senderName: getStudentById(session.userId)?.name || 'Student',
     text: text,
-    timestamp: new Date().toISOString()
+    timestamp: firebase.database.ServerValue.TIMESTAMP
   });
-
   input.value = '';
 };
 
-function escapeHtmlStu(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-// Toggle floating chat panel
-window.toggleChat = function () {
-  const panel = document.getElementById('chat-panel');
-  if (panel.style.display === 'none' || !panel.style.display) {
-    panel.style.display = 'block';
-    sessionStorage.setItem('smt_chat_last_seen', firebaseStudentMessages.length.toString());
-    updateChatBadge();
+/* ── SOS & Support ── */
+window.callWarden = () => {
+  const admin = getStudents().find(s => s.role === 'admin');
+  if (admin && admin.phone) {
+    window.location.href = `tel:${admin.phone}`;
   } else {
-    panel.style.display = 'none';
+    alert('⚠️ No duty warden phone number found.');
   }
 };
 
-function updateChatBadge() {
-  const badge = document.getElementById('chat-badge');
-  if (!badge) return;
-  const lastSeen = parseInt(sessionStorage.getItem('smt_chat_last_seen') || '0');
-  const unread = Math.max(0, firebaseStudentMessages.length - lastSeen);
-  if (unread > 0) {
-    badge.textContent = unread > 99 ? '99+' : unread;
-    badge.style.display = 'inline-block';
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
-// Start listening to Firebase messages (real-time!)
-if (typeof listenForMessages === 'function') {
-  listenForMessages(renderStudentChatFromMessages);
-}
-
-// Initial badge check
-document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });
+window.showSupport = () => {
+   alert('🛡️ NexTrack Support Center\n\nFor emergencies: Call Warden\nTechnical Issues: support@nextrack.io\nVersion: v80 Stable');
+};

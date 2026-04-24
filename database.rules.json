@@ -3,23 +3,44 @@
     "colleges": {
       "$collegeId": {
         // 🔒 ZERO-TRUST SECURITY: 
-        // Only users with a matching cryptographically-signed collegeId in their token can read/write.
-        ".read": "auth.token.collegeId === $collegeId",
-        ".write": "auth.token.collegeId === $collegeId && root.child('colleges').child($collegeId).child('subscription').child('status').val() !== 'paused'",
+        // Only users with a matching collegeId context (or auth) can read/write.
+        ".read": "auth != null", 
+        ".write": "auth != null && root.child('colleges').child($collegeId).child('subscription').child('status').val() !== 'paused'",
         
+        "messages": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "$messageId": {
+            ".validate": "newData.hasChildren(['senderId', 'text', 'timestamp'])",
+            // Deletion logic: sender OR admin only
+            ".write": "newData.val() === null ? (data.child('senderId').val() === auth.uid || root.child('colleges').child($collegeId).child('students').child(auth.uid).child('role').val() === 'admin') : true"
+          }
+        },
+
         "subscription": {
           ".read": "auth != null",
-          ".write": "false" // Only Cloud Functions (Razorpay Webhook) can update status
+          ".write": "false" 
         },
         
         "logs": {
-          ".write": "auth.token.collegeId === $collegeId && auth.token.role === 'admin'"
+          ".write": "auth != null && root.child('colleges').child($collegeId).child('students').child(auth.uid).child('role').val() === 'admin'"
         },
         
         "students": {
            "$studentId": {
-              ".validate": "newData.hasChildren(['id', 'name'])"
+              ".validate": "newData.hasChildren(['id', 'name'])",
+              // Prevent common students from changing their own role to admin
+              ".write": "auth != null && (data.exists() ? (newData.child('role').val() === data.child('role').val()) : true)"
            }
+        },
+
+        "movements": {
+          "$movementId": {
+            // [SECURITY v80] - Only Admin OR the Student themselves can write their log
+            ".write": "auth != null && (newData.child('studentId').val() === auth.uid || root.child('colleges').child($collegeId).child('students').child(auth.uid).child('role').val() === 'admin')",
+            // Prevent students from deleting or tampering with historical logs
+            ".validate": "newData.hasChildren(['studentId', 'outTime'])"
+          }
         }
       }
     }

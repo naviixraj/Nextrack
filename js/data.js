@@ -2,11 +2,27 @@
    data.js  –  localStorage CRUD & utility layer
    ────────────────────────────────────────────── */
 
-const DB = {
-  STUDENTS: 'smt_students',
-  MOVEMENTS: 'smt_movements',
-  SESSION: 'smt_session',
-};
+// 📦 Production Storage Engine (v80)
+// Keys are now dynamic prefixes to prevent cross-college leaks
+function getDbKey(type) {
+  const session = JSON.parse(sessionStorage.getItem('smt_session') || '{}');
+  const prefix = session.collegeId ? `${session.collegeId}_` : 'smt_';
+  const mapping = {
+    STUDENTS: 'students',
+    MOVEMENTS: 'movements',
+    SESSION: 'session',
+    SUB: 'subscription'
+  };
+  return prefix + mapping[type];
+}
+
+function getSession() {
+  return JSON.parse(sessionStorage.getItem('smt_session') || 'null');
+}
+
+function saveSession(data) {
+  sessionStorage.setItem('smt_session', JSON.stringify(data));
+}
 
 /* ── Helpers ─────────────────────────────────── */
 function generateId() {
@@ -42,10 +58,16 @@ function calcDuration(outIso, inIso) {
   const ms = new Date(inIso) - new Date(outIso);
   if (ms < 0) return '—';
   const totalMin = Math.floor(ms / 60000);
-  const h = Math.floor(totalMin / 60);
+  
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
   const m = totalMin % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  
+  let result = [];
+  if (d > 0) result.push(`${d}d`);
+  if (h > 0) result.push(`${h}h`);
+  if (m > 0 || result.length === 0) result.push(`${m}m`);
+  return result.join(' ');
 }
 
 /** Returns duration in minutes (for threshold checks) */
@@ -62,123 +84,117 @@ function isAfterCurfew(iso) {
 }
 
 /** Check if right now is past 19:01 */
+/** Check if right now is past the college's curfew */
 function isNowPastCurfew() {
+  const sub = JSON.parse(localStorage.getItem(getDbKey('SUBSCRIPTION')) || '{}');
+  const customCurfew = sub.config?.curfewTime || '19:00';
+  const [targetH, targetM] = customCurfew.split(':').map(Number);
+  
   const now = new Date();
-  return now.getHours() > 19 || (now.getHours() === 19 && now.getMinutes() >= 1);
+  const currentH = now.getHours();
+  const currentM = now.getMinutes();
+  
+  return currentH > targetH || (currentH === targetH && currentM >= targetM);
 }
 
-// Cloud Cache
-let fbStudents = [];
-let fbMovements = [];
-let fbAdminLogins = [];
-let fbGeofence = null;
-let isCloudReady = false;
-
-/* ── Cloud Sync Engine ───────────────────────── */
-function initCloudSync(onReadyCallback) {
-  if (typeof firebaseDB === 'undefined' || !firebaseDB) {
-    console.error('❌ Firebase DB missing!');
-    if (onReadyCallback) onReadyCallback();
-    return;
-  }
-
-  // Ensure Firebase Auth is ready before fetching data
-  firebase.auth().onAuthStateChanged((user) => {
-    if (!user) return; // Wait until signed in (anonymous or otherwise)
-
-    // Initial Fetch (Block UI until data loads)
-    Promise.all([
-      firebaseDB.ref('students').once('value'),
-      firebaseDB.ref('movements').once('value'),
-      firebaseDB.ref('admin_logins').once('value'),
-      firebaseDB.ref('geofence').once('value')
-    ]).then(snapshots => {
-      fbStudents = snapshots[0].val() ? Object.values(snapshots[0].val()) : [];
-      fbMovements = snapshots[1].val() ? Object.values(snapshots[1].val()) : [];
-      fbAdminLogins = snapshots[2].val() ? Object.values(snapshots[2].val()) : [];
-      fbGeofence = snapshots[3].val() || null;
-      isCloudReady = true;
-
-      // Attach Real-Time Observers for Cross-Device Sync
-      firebaseDB.ref('students').on('value', snap => {
-        fbStudents = snap.val() ? Object.values(snap.val()) : [];
-        window.dispatchEvent(new Event('db_updated'));
-      });
-      firebaseDB.ref('movements').on('value', snap => {
-        fbMovements = snap.val() ? Object.values(snap.val()) : [];
-        window.dispatchEvent(new Event('db_updated'));
-      });
-      firebaseDB.ref('admin_logins').on('value', snap => {
-        fbAdminLogins = snap.val() ? Object.values(snap.val()) : [];
-        window.dispatchEvent(new Event('db_updated'));
-      });
-      firebaseDB.ref('geofence').on('value', snap => {
-        fbGeofence = snap.val() || null;
-        window.dispatchEvent(new Event('db_updated'));
-      });
-
-      // Run seed only after initial data is completely loaded
-      seedIfNeeded();
-
-      if (onReadyCallback) onReadyCallback();
-    }).catch(err => {
-      console.error('❌ Cloud sync failed:', err);
-      // Give a highly visible alert if this was a true security rule error
-      if (err.code === 'PERMISSION_DENIED') {
-        alert("⚠️ Firebase Security Rules are blocking access! Please go to your Firebase Console -> Realtime Database -> Rules, and set read and write to true.");
-      }
-      if (onReadyCallback) onReadyCallback();
-    });
-  });
-}
-
-/* ── Students CRUD (Cloud) ───────────────────── */
+/* ── Students CRUD ───────────────────────────── */
 function getStudents() {
-  return fbStudents;
+  return JSON.parse(localStorage.getItem(getDbKey('STUDENTS')) || '[]');
 }
 
 function saveStudents(arr) {
-  // Legacy function: We should overwrite the node but as an object map for safety.
-  // Converting array back to object keyed by ID
-  const map = {};
-  arr.forEach(s => { map[s.id] = s; });
-  return firebaseDB.ref('students').set(map);
+  try {
+    localStorage.setItem(getDbKey('STUDENTS'), JSON.stringify(arr));
+  } catch (e) {
+    alert('⚠️ Phone memory is full. App might be slow.');
+  }
 }
 
 function getStudentById(id) {
-  return fbStudents.find(s => s.id === id) || null;
+  return getStudents().find(s => s.id === id) || null;
 }
 
 function addStudent(student) {
-  return firebaseDB.ref('students/' + student.id).set(student);
+  const students = getStudents();
+  students.push(student);
+  saveStudents(students);
+}
+
+/** 🖼️ Photo Squeezer (Canvas Compression) 
+ * Resizes large images to 200px wide to save database space.
+ */
+function compressPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 200;
+        const scale = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scale;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% Quality
+      };
+    };
+    reader.onerror = error => reject(error);
+  });
 }
 
 function updateStudent(id, updates) {
-  return firebaseDB.ref('students/' + id).update(updates);
+  const students = getStudents();
+  const idx = students.findIndex(s => s.id === id);
+  if (idx === -1) return false;
+  Object.assign(students[idx], updates);
+  saveStudents(students);
+  return true;
 }
 
-/* ── Movements CRUD (Cloud) ──────────────────── */
+/* ── Movements CRUD ──────────────────────────── */
 function getMovements() {
-  return fbMovements.sort((a, b) => new Date(a.outTime) - new Date(b.outTime));
+  return JSON.parse(localStorage.getItem(getDbKey('MOVEMENTS')) || '[]');
 }
 
 function saveMovements(arr) {
-  const map = {};
-  arr.forEach(m => { map[m.id] = m; });
-  return firebaseDB.ref('movements').set(map);
+  try {
+    localStorage.setItem(getDbKey('MOVEMENTS'), JSON.stringify(arr));
+  } catch (e) {
+     console.error('Storage full');
+  }
 }
 
 function addMovement(mov) {
-  return firebaseDB.ref('movements/' + mov.id).set(mov);
+  const movs = getMovements();
+  movs.push(mov);
+  saveMovements(movs);
+  
+  // [v80 REAL-TIME SYNC]
+  pushToCollege('movements', mov);
 }
 
 function updateMovement(movId, updates) {
-  return firebaseDB.ref('movements/' + movId).update(updates);
+  const movs = getMovements();
+  const idx = movs.findIndex(m => m.id === movId);
+  if (idx === -1) return false;
+  Object.assign(movs[idx], updates);
+  saveMovements(movs);
+  
+  // [v80 REAL-TIME SYNC]
+  // We find the entry in Firebase by its local ID mapping 
+  // (In production, you would store the Firebase UID on the movement object)
+  // For now, we update the student's current state.
+  updateInCollege('movements', movId, updates);
+  return true;
 }
 
 /** Get movements for a specific date string (YYYY-MM-DD) */
 function getMovementsByDate(dateStr) {
-  return fbMovements.filter(m => {
+  return getMovements().filter(m => {
     const d = new Date(m.outTime);
     const mDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return mDate === dateStr;
@@ -187,84 +203,118 @@ function getMovementsByDate(dateStr) {
 
 /* ── Session ─────────────────────────────────── */
 function getSession() {
-  return JSON.parse(localStorage.getItem(DB.SESSION) || 'null');
+  return JSON.parse(sessionStorage.getItem(DB.SESSION) || 'null');
 }
 
 function setSession(obj) {
-  localStorage.setItem(DB.SESSION, JSON.stringify(obj));
+  sessionStorage.setItem(DB.SESSION, JSON.stringify(obj));
 }
 
 function clearSession() {
-  localStorage.removeItem(DB.SESSION);
+  sessionStorage.removeItem(DB.SESSION);
 }
 
-/* ── Chat Messages ───────────────────────────── */
-function getMessages() {
-  return JSON.parse(localStorage.getItem('smt_messages') || '[]');
-}
-
-function saveMessages(arr) {
-  localStorage.setItem('smt_messages', JSON.stringify(arr));
-}
-
-function addMessage(msg) {
-  const msgs = getMessages();
-  msgs.push(msg);
-  // Keep only last 200 messages to avoid localStorage overflow
-  if (msgs.length > 200) msgs.splice(0, msgs.length - 200);
-  saveMessages(msgs);
-}
-
-/* ── Geofence Settings (Synced) ────────────────── */
-function getGeofence() {
-  return fbGeofence;
-}
-
-function saveGeofence(settings) {
-  if (typeof firebaseDB !== 'undefined' && firebaseDB) {
-    return firebaseDB.ref('geofence').set(settings);
-  }
-  // Fallback (for offline or local testing)
-  localStorage.setItem('smt_geofence', JSON.stringify(settings));
-}
+/* ── Firebase Cloud Sync (v78 SaaS) ─────────── */
+let firebaseSyncReady = false;
 
 /**
- * Haversine distance between two lat/lng points in meters
+ * Initializes listeners for a specific college.
+ * Ensures total data isolation inside the /colleges/ node.
  */
-function geoDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // Earth radius in meters
-  const toRad = deg => deg * Math.PI / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+function initCollegeSync(collegeId, onReady) {
+  if (!collegeId) return;
+  
+  const colRef = firebaseDB.ref(`colleges/${collegeId}`);
+  
+  // Sync students
+  colRef.child('students').on('value', (snap) => {
+    saveStudents(Object.values(snap.val() || {}));
+    if (window.renderDirectory) renderDirectory();
+    if (window.renderAdminList) renderAdminList();
+    if (window.NexStore) NexStore.dispatch('STUDENTS_UPDATED', snap.val());
+  });
+
+  // Sync movements
+  colRef.child('movements').on('value', (snap) => {
+    saveMovements(Object.values(snap.val() || {}));
+    if (window.renderAdminLogs) renderAdminLogs();
+    if (window.NexStore) NexStore.dispatch('MOVEMENTS_UPDATED', snap.val());
+  });
+
+  // Sync subscription status (Kill Switch)
+  colRef.child('subscription').on('value', (snap) => {
+    const sub = snap.val() || {};
+    localStorage.setItem('smt_subscription', JSON.stringify(sub));
+    if (window.NexStore) NexStore.dispatch('SUBSCRIPTION_UPDATED', sub);
+  });
+
+  firebaseSyncReady = true;
+  if (onReady) onReady();
 }
 
-/**
- * Check if given coordinates are inside the geofence
- * Returns { inside: bool, distance: number (meters) } or null if no geofence
- */
-function checkGeofence(lat, lng) {
-  const geo = getGeofence();
-  if (!geo || !geo.lat || !geo.lng || !geo.radius) return null;
-  const dist = geoDistance(lat, lng, geo.lat, geo.lng);
-  return { inside: dist <= geo.radius, distance: Math.round(dist) };
+/** Global wrapper for Cloud Push */
+function pushToCollege(node, data) {
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  return firebaseDB.ref(`colleges/${session.collegeId}/${node}`).push(data);
+}
+
+function updateInCollege(node, id, updates) {
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  // Note: we assume ID is the registration no. but we should use Firebase keys for real production
+  return firebaseDB.ref(`colleges/${session.collegeId}/${node}/${id}`).update(updates);
 }
 
 /* ── Seed / Init ─────────────────────────────── */
-function seedIfNeeded() {
-  const students = getStudents();
+/** Spawns a default admin for a NEW college if it doesn't exist */
+async function spawnInstitution(collegeId) {
+  const colRef = firebaseDB.ref(`colleges/${collegeId}`);
+  const snap = await colRef.child('students/admin').once('value');
   
-  // 🔓 EMERGENCY PASSWORD RESET (Force Overwrite)
-  // This will reset the administrator password to 'admin1234' if you've forgotten it.
-  addStudent({
-    id: 'admin',
-    name: 'Warden Admin',
-    room: '—',
-    phone: '—',
-    password: 'admin1234',
-    role: 'admin',
-    last_updated: new Date().toISOString(),
-  });
+  if (!snap.exists()) {
+    const adminData = {
+      id: 'admin',
+      name: 'Master Warden',
+      password: 'admin1234',
+      role: 'admin',
+      created_at: new Date().toISOString(),
+      subscription: {
+        status: 'trial',
+        trialStartDate: new Date().toISOString()
+      }
+    };
+    await colRef.child('students/admin').set(adminData);
+    await colRef.child('subscription').set(adminData.subscription);
+    console.log(`🏰 Institution [${collegeId}] spawned successfully.`);
+    return true;
+  }
+  return false;
 }
+
+// 🚀 CONNECTIVITY GUARD (v80)
+window.addEventListener('online', () => updateOnlineStatus());
+window.addEventListener('offline', () => updateOnlineStatus());
+
+function updateOnlineStatus() {
+  const isOnline = navigator.onLine;
+  let banner = document.getElementById('offline-guard-banner');
+  
+  if (!isOnline) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'offline-guard-banner';
+      banner.innerHTML = '⚠️ Connection Lost. Check-ins might fail until online.';
+      Object.assign(banner.style, {
+        position: 'fixed', top: '0', left: '0', right: '0', zIndex: '999999',
+        background: '#ef4444', color: 'white', textAlign: 'center',
+        padding: '10px', fontWeight: 'bold', fontSize: '0.85rem'
+      });
+      document.body.appendChild(banner);
+    }
+  } else if (banner) {
+    banner.remove();
+  }
+}
+// Run on start
+setTimeout(updateOnlineStatus, 1000);

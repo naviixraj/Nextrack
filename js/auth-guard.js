@@ -68,7 +68,11 @@ const AuthGuard = {
 
 // Auto-protect on load
 document.addEventListener('DOMContentLoaded', () => {
+    const path = window.location.pathname;
+    const isLogin = path.endsWith('index.html') || path === '/' || path.split('/').pop() === '';
+    
     // Don't guard index.html
-    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') return;
+    if (isLogin) return;
+    
     AuthGuard.protect();
 });

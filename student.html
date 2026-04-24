@@ -67,11 +67,7 @@
 
     <!-- Action Buttons -->
     <section class="stu-actions">
-       <!-- Rotating QR Handshake Container (v78) -->
-       <div id="qr-container" class="glass" style="padding:1.5rem; border-radius:var(--radius-lg); margin-bottom:1.5rem; text-align:center;">
-          <div id="handshake-qr" style="margin:0 auto; padding:10px; background:#fff; border-radius:12px; display:inline-block;"></div>
-          <p style="font-size:0.75rem; color:var(--text-secondary); margin-top:10px;">Rotating Handshake: Prevents proxy scanning</p>
-       </div>
+
 
       <button class="btn btn-action btn-checkout" id="btn-checkout" style="display:none;">Check-Out</button>
       <button class="btn btn-action btn-checkin" id="btn-checkin" style="display:none;">Check-In</button>
@@ -111,7 +107,7 @@
         <div class="chat-empty">No messages yet. Start the conversation!</div>
       </div>
       <form class="chat-input-bar" id="student-chat-form" onsubmit="sendStudentMessage(event)">
-        <input type="text" id="student-chat-input" placeholder="Type a message..." autocomplete="off" required>
+        <input type="text" id="student-chat-input" placeholder="Type a message..." maxlength="250" autocomplete="off" required>
         <button type="submit" class="btn btn-primary btn-small">➤</button>
       </form>
     </div>
@@ -186,10 +182,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js?v=34"></script>
-  <script src="js/data.js?v=34"></script>
-  <script src="js/student.js?v=34"></script>
-  <script src="js/pwa-v32.js?v=34"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js?v=80"></script>
+  <script src="js/data.js?v=80"></script>
+  <script src="js/student.js?v=80"></script>
+  <script src="js/pwa-v32.js?v=80"></script>
 </body>
 </html>
 

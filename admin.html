@@ -245,7 +245,7 @@
         <div class="chat-empty">No messages yet. Start the conversation!</div>
       </div>
       <form class="chat-input-bar" id="admin-chat-form" onsubmit="sendAdminMessage(event)">
-        <input type="text" id="admin-chat-input" placeholder="Type a message..." autocomplete="off" required>
+        <input type="text" id="admin-chat-input" placeholder="Type a message..." maxlength="250" autocomplete="off" required>
         <button type="submit" class="btn btn-primary btn-small">➤</button>
       </form>
     </div>
@@ -283,8 +283,10 @@
         <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="detail-phone">—</span></div>
         <div class="detail-item"><span class="detail-label">Last Updated</span><span class="detail-value" id="detail-updated">—</span></div>
       </div>
-      <div class="detail-actions">
+      <div class="detail-actions" id="detail-actions-tray">
         <a href="#" id="detail-call-btn" class="btn btn-primary btn-small">📞 Call</a>
+        <button id="admin-manual-in" class="btn btn-accent btn-small" style="display:none;">📥 Manual Return</button>
+        <button id="admin-manual-out" class="btn btn-warning btn-small" style="display:none;">📤 Manual Leave</button>
       </div>
     </div>
   </div>
@@ -390,9 +392,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js?v=34"></script>
-  <script src="js/data.js?v=34"></script>
-  <script src="js/admin.js?v=34"></script>
-  <script src="js/pwa-v32.js?v=34"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js?v=80"></script>
+  <script src="js/data.js?v=80"></script>
+  <script src="js/admin.js?v=80"></script>
+  <script src="js/pwa-v32.js?v=80"></script>
 </body>
 </html>

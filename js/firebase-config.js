@@ -46,55 +46,48 @@ try {
 }
 
 // ── Firebase Chat Functions ─────────────────────
-function sendFirebaseMessage(msg) {
-  if (!firebaseDB) {
-    console.error('❌ Cannot send: Firebase not initialized');
-    return;
-  }
-  return firebaseDB.ref('messages').push(msg)
-    .then(() => console.log('✅ Message sent'))
-    .catch((err) => console.error('❌ Send failed:', err));
+function sendMessage(msg) {
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  return firebaseDB.ref(`colleges/${session.collegeId}/messages`).push(msg);
 }
 
-function listenForMessages(callback) {
-  if (!firebaseDB) {
-    console.error('❌ Cannot listen: Firebase not initialized');
-    return;
-  }
-  firebaseDB.ref('messages')
-    .orderByChild('timestamp')
-    .limitToLast(200)
-    .on('value', (snapshot) => {
-      const msgs = [];
-      snapshot.forEach((child) => {
-        msgs.push({ firebaseKey: child.key, ...child.val() });
-      });
-      callback(msgs);
-    }, (err) => {
-      console.error('❌ Firebase listen error:', err);
+function listenToMessages(callback) {
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  firebaseDB.ref(`colleges/${session.collegeId}/messages`)
+    .limitToLast(50) // Performance: only load last 50
+    .on('child_added', (snap) => {
+      callback({ key: snap.key, ...snap.val() });
     });
+  
+  // Real-time Sync for Edits & Deletes
+  firebaseDB.ref(`colleges/${session.collegeId}/messages`).on('child_changed', (snap) => {
+     if (window.updateChatMessageUI) window.updateChatMessageUI({ key: snap.key, ...snap.val() });
+  });
+  firebaseDB.ref(`colleges/${session.collegeId}/messages`).on('child_removed', (snap) => {
+     if (window.removeChatMessageUI) window.removeChatMessageUI(snap.key);
+  });
 }
 
-function deleteFirebaseMessage(firebaseKey) {
-  if (!firebaseDB) return;
-  return firebaseDB.ref('messages/' + firebaseKey).remove()
-    .then(() => console.log('🗑 Message deleted'))
-    .catch((err) => console.error('❌ Delete failed:', err));
+function deleteMessage(firebaseKey) {
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  return firebaseDB.ref(`colleges/${session.collegeId}/messages/${firebaseKey}`).remove();
 }
 
-function editFirebaseMessage(firebaseKey, newText) {
-  if (!firebaseDB) return;
-  return firebaseDB.ref('messages/' + firebaseKey).update({
+function updateMessage(firebaseKey, newText) {
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  return firebaseDB.ref(`colleges/${session.collegeId}/messages/${firebaseKey}`).update({
     text: newText,
-    edited: true
-  })
-    .then(() => console.log('✏️ Message edited'))
-    .catch((err) => console.error('❌ Edit failed:', err));
+    edited: true,
+    editedAt: firebase.database.ServerValue.TIMESTAMP
+  });
 }
 
 function deleteAllFirebaseMessages() {
-  if (!firebaseDB) return;
-  return firebaseDB.ref('messages').remove()
-    .then(() => console.log('🗑 All messages deleted'))
-    .catch((err) => console.error('❌ Delete all failed:', err));
+  const session = getSession();
+  if (!session || !session.collegeId) return;
+  return firebaseDB.ref(`colleges/${session.collegeId}/messages`).remove();
 }

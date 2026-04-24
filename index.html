@@ -1101,14 +1101,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 
   <!-- App Scripts -->
   <script src="js/i18n.js"></script>
   <script src="js/security.js"></script>
-  <script src="js/firebase-config.js?v=34"></script>
-  <script src="js/data.js?v=34"></script>
-  <script src="js/auth.js?v=34"></script>
-  <script src="js/pwa-v32.js?v=34"></script>
+  <script src="js/firebase-config.js?v=80"></script>
+  <script src="js/data.js?v=80"></script>
+  <script src="js/auth.js?v=80"></script>
+  <script src="js/pwa-v32.js?v=80"></script>
   
   <script>
     /* ── Tab switching ── */
@@ -1149,18 +1150,20 @@
       });
     });
 
-    /* ── Photo preview ── */
-    document.getElementById('reg-photo').addEventListener('change', function () {
+    /* ── Photo preview & Squeezer ── */
+    document.getElementById('reg-photo').addEventListener('change', async function () {
       const preview = document.getElementById('reg-photo-preview');
       const uploadText = document.querySelector('.photo-upload-text');
       if (this.files && this.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          preview.src = e.target.result;
+        try {
+          const compressed = await compressPhoto(this.files[0]);
+          window.regPhotoBase64 = compressed; // Store for auth.js
+          preview.src = compressed;
           preview.style.display = 'block';
           if (uploadText) uploadText.style.display = 'none';
-        };
-        reader.readAsDataURL(this.files[0]);
+        } catch (err) {
+          console.error('Photo processing failed:', err);
+        }
       }
     });
 

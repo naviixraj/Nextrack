@@ -1,0 +1,8 @@
+node_modules/
+.vscode/
+package-lock.json
+professional_model
+prosupport.jpeg
+irn.png
+*.log
+.DS_Store
