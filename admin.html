@@ -18,14 +18,8 @@
 
   <link rel="stylesheet" href="css/style.css">
   
-  <!-- SaaS Core (v78) -->
-  <script src="js/i18n.js"></script>
-  <script src="js/ux.js"></script>
-  <script src="js/security.js"></script>
-  <script src="js/auth-guard.js"></script>
-  <!-- Razorpay Integration -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script src="js/billing.js"></script>
+  <!-- SaaS Core scripts moved to bottom for correct load order -->
+  <!-- All scripts loaded at bottom for correct order -->
 </head>
 <body class="dashboard-page admin-page">
 
@@ -43,6 +37,7 @@
         <circle cx="12" cy="10" r="3"/>
       </svg>
       <span class="brand-name">NexTrack</span> <small class="admin-label">Admin</small>
+      <span id="sub-status-badge" class="status-badge" style="font-size:0.6rem; margin-top:3px; padding:2px 8px; font-weight:bold; cursor:pointer;" onclick="NexBilling.triggerCheckout()">Checking...</span>
     </div>
     <div class="lang-selector-wrap" style="margin-right: 15px;">
       <select id="lang-toggle" onchange="NexI18n.setLanguage(this.value)" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 25px; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 fill=%22white%22><path d=%22M0 3l5 5 5-5z%22/></select>'); background-repeat: no-repeat; background-position: right 8px center;">
@@ -212,7 +207,7 @@
               <p style="font-size:0.85rem; font-weight:700;" id="sub-status-label">Status: <span class="status-badge badge-in">Trial</span></p>
               <p style="font-size:0.75rem; color:var(--text-muted);" id="sub-expiry-label">Trial ends in 30 days</p>
             </div>
-            <button class="btn btn-primary btn-small" onclick="NexBilling.triggerCheckout()">Pay ₹200 / Month</button>
+            <button class="btn btn-primary btn-small" onclick="NexBilling.triggerCheckout()">Pay ₹1,499 / Month</button>
           </div>
           <p style="font-size:0.75rem; color:var(--text-muted);">Secure payments via Razorpay. Automatic activation upon success.</p>
         </div>
@@ -389,13 +384,34 @@
     </div>
   </div>
 
+  <!-- 🔐 Security Enforcement (v80) -->
+  <div id="security-enforcement-overlay" class="modal-overlay" style="display:none; z-index:9999; backdrop-filter:blur(20px);">
+    <div class="modal glass" style="max-width:400px; text-align:center;">
+      <h2 style="color:var(--accent-1); margin-bottom:1rem;">⚠️ Security Alert</h2>
+      <p style="margin-bottom:1.5rem;">You are still using the <strong>default password</strong>. For the safety of your campus data, you must change it now.</p>
+      <form id="forced-password-form">
+        <div class="form-group">
+          <input type="password" id="forced-new-pwd" placeholder="New Secure Password" required style="width:100%; padding:12px; margin-bottom:1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:10px;">
+        </div>
+        <div class="form-group">
+          <input type="password" id="forced-confirm-pwd" placeholder="Confirm Password" required style="width:100%; padding:12px; margin-bottom:1rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:10px;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Upgrade Security</button>
+      </form>
+    </div>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=80"></script>
-  <script src="js/data.js?v=80"></script>
-  <script src="js/admin.js?v=80"></script>
-  <script src="js/pwa-v32.js?v=80"></script>
+  <script src="js/firebase-config.js?v=101"></script>
+  <script src="js/data.js?v=101"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/ux.js"></script>
+  <script src="js/security.js"></script>
+  <script src="js/auth-guard.js?v=102"></script>
+  <script src="js/billing.js?v=102"></script>
+  <script src="js/admin.js?v=103"></script>
 </body>
 </html>

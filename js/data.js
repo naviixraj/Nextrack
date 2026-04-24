@@ -201,56 +201,62 @@ function getMovementsByDate(dateStr) {
   });
 }
 
-/* ── Session ─────────────────────────────────── */
+/* ── Session (Consolidated) ─────────────────── */
 function getSession() {
-  return JSON.parse(sessionStorage.getItem(DB.SESSION) || 'null');
+  return JSON.parse(sessionStorage.getItem('smt_session') || 'null');
 }
 
-function setSession(obj) {
-  sessionStorage.setItem(DB.SESSION, JSON.stringify(obj));
+function saveSession(data) {
+  sessionStorage.setItem('smt_session', JSON.stringify(data));
 }
 
 function clearSession() {
-  sessionStorage.removeItem(DB.SESSION);
+  sessionStorage.removeItem('smt_session');
 }
 
 /* ── Firebase Cloud Sync (v78 SaaS) ─────────── */
 let firebaseSyncReady = false;
 
-/**
- * Initializes listeners for a specific college.
- * Ensures total data isolation inside the /colleges/ node.
+/** 
+ * v80.1: Simplified and Robust Cloud Sync
  */
-function initCollegeSync(collegeId, onReady) {
+async function initCollegeSync(collegeId) {
   if (!collegeId) return;
-  
   const colRef = firebaseDB.ref(`colleges/${collegeId}`);
   
-  // Sync students
-  colRef.child('students').on('value', (snap) => {
-    saveStudents(Object.values(snap.val() || {}));
-    if (window.renderDirectory) renderDirectory();
-    if (window.renderAdminList) renderAdminList();
-    if (window.NexStore) NexStore.dispatch('STUDENTS_UPDATED', snap.val());
-  });
+  console.log('📡 Starting Cloud Handshake:', collegeId);
 
-  // Sync movements
-  colRef.child('movements').on('value', (snap) => {
-    saveMovements(Object.values(snap.val() || {}));
-    if (window.renderAdminLogs) renderAdminLogs();
-    if (window.NexStore) NexStore.dispatch('MOVEMENTS_UPDATED', snap.val());
-  });
+  // 🛰️ v80.6 Anti-Freeze: Skip cloud wait after 5s if connection is slow
+  const syncPromise = colRef.once('value');
+  const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 5000));
 
-  // Sync subscription status (Kill Switch)
-  colRef.child('subscription').on('value', (snap) => {
-    const sub = snap.val() || {};
-    localStorage.setItem('smt_subscription', JSON.stringify(sub));
-    if (window.NexStore) NexStore.dispatch('SUBSCRIPTION_UPDATED', sub);
-  });
+  try {
+    const snap = await Promise.race([syncPromise, timeoutPromise]);
+    
+    if (snap) {
+      const data = snap.val() || {};
+      saveStudents(Object.values(data.students || {}));
+      saveMovements(Object.values(data.movements || {}));
+      localStorage.setItem('smt_subscription', JSON.stringify(data.subscription || {}));
+      console.log('✅ Cloud Connected.');
+    } else {
+      console.warn('⚠️ Cloud Timeout: Using local cache to prevent UI freeze.');
+    }
+  } catch (err) {
+    console.warn('⚠️ Sync Error:', err);
+  }
 
   firebaseSyncReady = true;
-  if (onReady) onReady();
+
+  // 🔄 Real-time Background Sync
+  colRef.child('students').on('value', s => saveStudents(Object.values(s.val() || {})));
+  colRef.child('movements').on('value', s => saveMovements(Object.values(s.val() || {})));
+  colRef.child('subscription').on('value', s => localStorage.setItem('smt_subscription', JSON.stringify(s.val() || {})));
+
+  return true; 
 }
+
+// [NexUX moved to ux.js for premium features]
 
 /** Global wrapper for Cloud Push */
 function pushToCollege(node, data) {

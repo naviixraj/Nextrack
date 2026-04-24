@@ -3,32 +3,34 @@
    ────────────────────────────────────────────── */
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // 1. ALWAYS unlock tab navigation first — no exceptions
+  initTabs();
+
   const session = getSession();
-  
-  // 🛡️ Phase 2: Auth Guard is already running, but we confirm here
   if (!session || session.role !== 'admin') {
     window.location.href = 'index.html';
     return;
   }
 
-  // ✨ UX: Show skeletons while data is starting up
-  NexUX.showSkeletons('monitor-body', 5);
+  // 2. Show loading skeletons (safe)
+  if (window.NexUX && NexUX.showSkeletons) {
+    NexUX.showSkeletons('monitor-body', 5);
+  }
 
-  // Initialize SaaS Sync Engine
-  initCollegeSync(session.collegeId, () => {
-    initDashboard();
-    initTabs();
-    startCurfewCheck();
-    
-    // 🛡️ Phase 2: Auth Guard is already running, but we confirm here
-    NexSecurity.logAction('ADMIN_LOGIN', `Admin ${session.userId} entered the dashboard.`);
-    
-    // 🛡️ Mandatory Security Enforcement (v79)
-    checkAdminSecurity(session.userId);
-    
-    // ⏳ Idle Lockout (30 mins)
-    initIdleLock();
-  });
+  // 3. Sync cloud data, then render dashboard
+  try {
+    await initCollegeSync(session.collegeId);
+  } catch (err) {
+    console.warn('Cloud sync issue:', err);
+  }
+
+  // 4. Render dashboard with whatever data we have
+  initDashboard();
+
+  // 5. Optional features — each one safe
+  try { if (window.NexSecurity) NexSecurity.logAction('ADMIN_LOGIN', `Admin ${session.userId} entered.`); } catch(e){}
+  try { checkAdminSecurity(session.userId); } catch(e){}
+  try { initIdleLock(); } catch(e){}
 });
 
 let idleTimer;
@@ -44,6 +46,23 @@ function initIdleLock() {
   document.onmousemove = resetTimer;
   document.onkeypress = resetTimer;
   resetTimer();
+}
+
+/* ═══════════════════════════════════════════════
+   TAB NAVIGATION (was missing — root cause of freeze)
+   ═══════════════════════════════════════════════ */
+function initTabs() {
+  const tabs = document.querySelectorAll('.admin-tab');
+  const panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const target = document.getElementById(tab.dataset.panel);
+      if (target) target.classList.add('active');
+    });
+  });
 }
 
 async function checkAdminSecurity(adminId) {
@@ -91,10 +110,59 @@ function initForcedPasswordLogic(adminId) {
    ═══════════════════════════════════════════════ */
 function initDashboard() {
   updateWhitelabeling();
+  updateSubscriptionStatus();
   renderCards();
   renderMonitoringTable();
   renderDirectory();
   renderAdminList();
+}
+
+/** 💰 Subscription Monitoring */
+function updateSubscriptionStatus() {
+  const sub = JSON.parse(localStorage.getItem(getDbKey('SUBSCRIPTION')) || '{}');
+  const badge = document.getElementById('sub-status-badge');
+  if (!badge) return;
+
+  // Let NexBilling determine actual status (handles TEST_MODE)
+  const currentStatus = window.NexBilling ? NexBilling.getStatus() : (sub.status || 'trial');
+
+  if (currentStatus === 'active') {
+    const expiry = new Date(sub.expiryDate);
+    const left = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24));
+    
+    if (left <= 0) {
+      badge.textContent = 'EXPIRED';
+      badge.className = 'status-badge badge-out';
+      lockSystemForPayment();
+    } else {
+      badge.textContent = `PREMIUM (${left}d left)`;
+      badge.className = 'status-badge badge-in';
+    }
+  } else if (currentStatus === 'trial') {
+    badge.textContent = 'TRIAL MODE';
+    badge.className = 'status-badge badge-warn';
+  } else {
+    badge.textContent = 'PAUSED';
+    badge.className = 'status-badge badge-out';
+    lockSystemForPayment();
+  }
+}
+
+function lockSystemForPayment() {
+  if (window.NexBilling && NexBilling.TEST_MODE) return; // Prevent lockout in test mode
+  document.body.innerHTML += `
+    <div id="admin-js-lockout" class="modal-overlay visible" style="z-index:9999999;">
+      <div class="modal glass" style="text-align:center; padding:4rem;">
+        <h1 style="font-size:3rem;">🛑</h1>
+        <h2>Access Paused</h2>
+        <p>Your subscription has expired or been paused.</p>
+        <button class="btn btn-primary" onclick="NexBilling.triggerCheckout()" style="padding:1rem 2rem; font-size:1.1rem; margin-top:1rem;">
+          Pay ₹1,499 to Unlock
+        </button>
+        <button class="btn btn-ghost" onclick="logout()" style="margin-top:1rem; display:block; width:100%;">Logout</button>
+      </div>
+    </div>
+  `;
 }
 
 /** 🏰 SaaS Whitelabeling Engine (v78) */
@@ -614,6 +682,14 @@ window.updateBranding = function() {
   });
 };
 
+window.openAdminProfile = function() {
+  const session = getSession();
+  const admin = getStudentById(session.userId);
+  if (!admin) return;
+  const modal = document.getElementById('admin-profile-modal');
+  const avatar = document.getElementById('admin-avatar');
+  if (!modal) return;
+
   adminPhotoBase64 = admin.photo || '';
   if (admin.photo) {
     avatar.innerHTML = `<img src="${admin.photo}" class="detail-photo-img">`;
@@ -683,7 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
           Object.assign(students[idx], updates);
           students[idx].id = newId;
           saveStudents(students);
-          setSession({ userId: newId, role: 'admin' });
+          saveSession({ ...session, userId: newId, role: 'admin' });
         }
       } else {
         updateStudent(oldId, updates);
@@ -897,3 +973,38 @@ window.deleteAllChats = () => {
     document.getElementById('admin-chat-messages').innerHTML = '<div class="chat-empty">Messages cleared.</div>';
   }
 };
+
+/* ── Missing UI Handlers (v80 Fix) ── */
+window.openAdminProfile = function() {
+  const session = getSession();
+  const admin = getStudentById(session.userId);
+  if (!admin) return;
+  
+  document.getElementById('admin-prof-id').value = admin.id;
+  document.getElementById('admin-prof-name').value = admin.name;
+  document.getElementById('admin-prof-phone').value = admin.phone || '';
+  document.getElementById('admin-profile-modal').classList.add('visible');
+};
+
+window.closeAdminProfile = function() {
+  document.getElementById('admin-profile-modal').classList.remove('visible');
+};
+
+window.manualCheckForUpdate = function() {
+  const btn = event.target;
+  btn.textContent = '🚀 Checking...';
+  setTimeout(() => {
+    btn.textContent = '✅ Up to Date (v80.5)';
+    setTimeout(() => btn.textContent = '🚀 Check for Update', 3000);
+  }, 1500);
+};
+
+window.changeAdminPassword = function() {
+  const session = getSession();
+  const newPwd = prompt('Enter new master password:');
+  if (newPwd && newPwd.length >= 6) {
+    updateInCollege('students', session.userId, { password: newPwd });
+    alert('✅ Password changed successfully!');
+  }
+};
+

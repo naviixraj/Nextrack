@@ -1,12 +1,10 @@
 /**
- * 🛡️ Auth & Subscription Guardian (v78)
- * Enforces institution isolation and handles the 'Kill Switch'.
+ * 🛡️ Auth & Subscription Guardian (v102 — Billing lockout disabled for dev)
+ * Enforces institution isolation.
+ * Billing lockout is disabled until Razorpay live keys are configured.
  */
 
 const AuthGuard = {
-  /**
-   * Protects the current route based on session and subscription status.
-   */
   async protect() {
     const session = getSession();
     
@@ -18,40 +16,36 @@ const AuthGuard = {
     }
 
     // 2. Multi-Tenant Sync Check
-    // Ensure data.js has initialized listeners for this college
     if (!window.firebaseSyncReady) {
-      initCollegeSync(session.collegeId);
+      try { await initCollegeSync(session.collegeId); } catch(e){}
     }
 
-    // 3. Subscription 'Kill Switch' Check
-    // We check the local cached subscription but the database rules will also block writes.
+    // 3. Subscription check — DISABLED for development.
+    // Uncomment the block below when Razorpay live keys are configured.
+    /*
     const sub = JSON.parse(localStorage.getItem('smt_subscription') || '{}');
-    const now = new Date();
-    
-    if (sub.expiryDate) {
-      const expiry = new Date(sub.expiryDate);
-      const grace = new Date(expiry);
-      grace.setDate(grace.getDate() + 2); // 2-Day Grace Period
-      
+    if (sub.status === 'expired' && sub.expiryDate) {
+      const now = new Date();
+      const grace = new Date(sub.expiryDate);
+      grace.setDate(grace.getDate() + 2);
       if (now > grace) {
-        console.error('🚫 Institution Paused: Subscription Expired.');
         this.showBillingLockout();
-      } else if (now > expiry) {
-        this.showGraceWarning();
       }
     }
+    */
+    console.log('🛡️ Auth Guard: Session valid, access granted.');
   },
 
   showBillingLockout() {
-    // Inject a full-screen billing overlay that cannot be dismissed
     const overlay = document.createElement('div');
     overlay.className = 'billing-lockout-overlay';
     overlay.innerHTML = `
       <div class="lockout-card">
-        <div class="lockout-icon">💸</div>
-        <h2>${t('LOCKED_MSG')}</h2>
-        <p>Access for this institution has been paused. Please contact administration for payment (₹200/mo).</p>
-        <button class="btn-primary" onclick="triggerRazorpay()">${t('SIGN_IN')}</button>
+        <div class="lockout-icon">🛑</div>
+        <h2>Access Paused</h2>
+        <p>Your subscription has expired or been paused.</p>
+        <button class="btn btn-primary" onclick="NexBilling.triggerCheckout()">Pay ₹1,499 to Unlock</button>
+        <button class="btn btn-ghost" onclick="logout()" style="margin-top:0.5rem;">Logout</button>
       </div>
     `;
     document.body.appendChild(overlay);
@@ -70,9 +64,6 @@ const AuthGuard = {
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     const isLogin = path.endsWith('index.html') || path === '/' || path.split('/').pop() === '';
-    
-    // Don't guard index.html
     if (isLogin) return;
-    
     AuthGuard.protect();
 });

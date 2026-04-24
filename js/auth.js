@@ -31,43 +31,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (spawned) console.log('🏰 New Campus Node Spawned successfully.');
       }
 
-      // Initialize Sync for this college
+      // 🏰 SaaS Rule: Step 2 - Initialize Sync
       console.log('🔄 Initializing College Sync...');
-      initCollegeSync(collegeId, async () => {
-        console.log('✅ College Synced. Checking user...');
-        const user = getStudentById(uid);
-        
-        if (!user || user.password !== pwd) {
-          console.warn('❌ User not found or password mismatch.');
-          setMsg('login-msg', '❌ Invalid ID, Password or College ID', 'error');
-          setLoading(e.submitter || loginForm.querySelector('button'), false);
-          return;
-        }
+      await initCollegeSync(collegeId);
 
-        console.log('✅ User authenticated. Setting session...');
-        setSession({ userId: user.id, collegeId, role: user.role || 'student' });
-        
-        // 🛡️ Security: Set Custom Claims (Optimistic update)
-        try {
-          if (firebase.functions) {
-            console.log('🛰️ Calling setCollegeClaim...');
-            const setClaim = firebase.functions().httpsCallable('setCollegeClaim');
-            await setClaim({ collegeId, role: user.role || 'student' });
-            console.log('🛰️ Claims set successfully.');
-          } else {
-            console.warn('🚫 Firebase Functions SDK missing from page!');
-          }
-        } catch (claimErr) {
-          console.warn('⚠️ Custom Claims could not be set (Backend not deployed?).', claimErr);
-        }
+      // 🏰 SaaS Rule: Step 3 - Verify User
+      console.log('✅ College Synced. Checking user...');
+      const user = getStudentById(uid);
+      
+      if (!user || user.password !== pwd) {
+        console.warn('❌ User not found or password mismatch.');
+        setMsg('login-msg', '❌ Invalid ID, Password or College ID', 'error');
+        setLoading(e.submitter || loginForm.querySelector('button'), false);
+        return;
+      }
 
-        NexUX.playSuccess();
-        console.log('🎨 Success! Redirecting in 800ms...');
-        
-        setTimeout(() => {
-          window.location.href = (user.role === 'admin') ? 'admin.html' : 'student.html';
-        }, 800);
-      });
+      console.log('✅ User authenticated. Setting session...');
+      saveSession({ userId: user.id, collegeId, role: user.role || 'student' });
+      
+      // 🛡️ Security: Set Custom Claims (Optimistic update)
+      try {
+        if (firebase.functions) {
+          const setClaim = firebase.functions().httpsCallable('setCollegeClaim');
+          await setClaim({ collegeId, role: user.role || 'student' });
+          console.log('🛰️ Claims set successfully.');
+        }
+      } catch (claimErr) {
+        console.warn('⚠️ Custom Claims could not be set.', claimErr);
+      }
+
+      NexUX.playSuccess();
+      console.log('🎨 Success! Redirecting...');
+      
+      setTimeout(() => {
+        window.location.href = (user.role === 'admin') ? 'admin.html' : 'student.html';
+      }, 500);
     } catch (err) {
       console.error('💥 Auth Crash:', err);
       if (typeof setMsg === 'function') {
@@ -97,34 +95,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       // 1. Sync college node to check for existing ID
-      initCollegeSync(collegeId, async () => {
-        const existing = getStudentById(id);
-        if (existing) {
-          alert('❌ This Registration Number is already taken in this college.');
-          setLoading(e.submitter || registerForm.querySelector('button'), false);
-          return;
-        }
+      await initCollegeSync(collegeId);
+      const existing = getStudentById(id);
+      if (existing) {
+        alert('❌ This Registration Number is already taken in this college.');
+        setLoading(e.submitter || registerForm.querySelector('button'), false);
+        return;
+      }
 
-        // 2. Register Student
-        const studentData = {
-          id: id,
-          name: name,
-          password: pwd,
-          photo: photoBase64,
-          role: 'student',
-          last_updated: new Date().toISOString()
-        };
+      // 2. Register Student
+      const studentData = {
+        id: id,
+        name: name,
+        password: pwd,
+        photo: photoBase64,
+        role: 'student',
+        last_updated: new Date().toISOString()
+      };
 
-        await updateInCollege('students', id, studentData);
-        
-        // 3. Set Session and Redirect
-        saveSession({ userId: id, collegeId: collegeId, role: 'student' });
-        
-        NexUX.playSuccess();
-        setTimeout(() => {
-          window.location.href = 'student.html';
-        }, 800);
-      });
+      await updateInCollege('students', id, studentData);
+      
+      // 3. Set Session and Redirect
+      saveSession({ userId: id, collegeId: collegeId, role: 'student' });
+      
+      NexUX.playSuccess();
+      setTimeout(() => {
+        window.location.href = 'student.html';
+      }, 500);
     } catch (err) {
       alert('❌ Registration Failed: ' + err.message);
       setLoading(e.submitter || registerForm.querySelector('button'), false);

@@ -1,25 +1,51 @@
 /**
- * 💰 NexTrack Billing & Subscription Logic (v78)
- * Integrates Razorpay Checkout and handles institution status UI.
+ * 💰 NexTrack Billing & Subscription Logic (v102 — TEST MODE)
+ * ⚠️ TEST MODE: All features unlocked. No payments required.
+ * Switch to production by replacing RAZORPAY_KEY_ID with your live key
+ * and setting TEST_MODE to false.
  */
 
 const NexBilling = {
-  // Replace with live key from Razorpay Dashboard in production
+  TEST_MODE: true,  // 🔥 Set to false for production
   RAZORPAY_KEY_ID: 'rzp_test_placeholder', 
 
-  /**
-   * Triggers the Razorpay checkout modal
-   */
   triggerCheckout() {
+    if (this.TEST_MODE) {
+      alert('✅ TEST MODE: Unlocking dashboard for free testing!');
+      
+      // Wipe the broken local storage that's causing the loop
+      localStorage.removeItem('smt_subscription');
+      
+      // Attempt to heal the cloud data too
+      try {
+        const session = getSession();
+        if (session && session.collegeId && window.firebaseDB) {
+          firebaseDB.ref(`colleges/${session.collegeId}/subscription`).set({
+            status: 'trial',
+            plan: 'pro'
+          });
+        }
+      } catch(e) {}
+
+      // Hard-remove the overlay if it exists
+      const overlay = document.querySelector('.billing-lockout-overlay');
+      if (overlay) overlay.remove();
+      document.body.style.overflow = '';
+      
+      // Force reload to apply clean state
+      window.location.reload();
+      return;
+    }
+
     const session = getSession();
     if (!session || !session.collegeId) return;
 
     const options = {
       key: this.RAZORPAY_KEY_ID,
-      amount: 20000, // Rs 200 in paise
+      amount: 149900,
       currency: "INR",
       name: "NexTrack SaaS",
-      description: "Institution Subscription (1 Month)",
+      description: "College Pro Subscription (Monthly)",
       image: "logo nex.jpeg",
       handler: function (response) {
         NexBilling.handleSuccess(response);
@@ -40,33 +66,30 @@ const NexBilling = {
     rzp.open();
   },
 
-  /**
-   * Handles successful payment callback
-   */
   async handleSuccess(response) {
-    NexUX.playSuccess();
+    if (window.NexUX) NexUX.playSuccess();
+    if (window.NexSecurity) NexSecurity.logAction('PAYMENT_SUCCESS', `Razorpay Payment ID: ${response.razorpay_payment_id}`);
     
-    // 🛡️ Audit Log: Payment Successful
-    NexSecurity.logAction('PAYMENT_SUCCESS', `Razorpay Payment ID: ${response.razorpay_payment_id}`);
+    document.body.innerHTML += `
+      <div id="payment-wait-overlay" class="modal-overlay visible" style="z-index:1000000;">
+        <div class="modal glass" style="text-align:center; padding:3rem;">
+          <div class="spinner" style="margin:0 auto 1rem;"></div>
+          <h3>Payment Successful!</h3>
+          <p>Verifying your transaction...</p>
+        </div>
+      </div>
+    `;
+    setTimeout(() => window.location.reload(), 6000);
+  },
 
-    // Normally we wait for the webhook, but we can update the UI immediately
-    // to give the user a 'premium' fast feel.
-    const session = getSession();
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 30);
-
-    const updateData = {
-      status: 'active',
-      expiryDate: expiryDate.toISOString(),
-      lastPaymentId: response.razorpay_payment_id
-    };
-
-    // Update in firebase (database rules must allow this for test purposes, 
-    // or we use a Cloud Function)
-    await firebaseDB.ref(`colleges/${session.collegeId}/subscription`).update(updateData);
-    
-    alert('✅ Subscription Activated! Your institution is now premium.');
-    window.location.reload();
+  /**
+   * Returns the current subscription status for UI display.
+   * In TEST_MODE, always returns 'trial' (unlimited access).
+   */
+  getStatus() {
+    if (this.TEST_MODE) return 'trial';
+    const sub = JSON.parse(localStorage.getItem('smt_subscription') || '{}');
+    return sub.status || 'trial';
   }
 };
 
