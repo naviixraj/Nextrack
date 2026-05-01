@@ -52,12 +52,24 @@ window.showPremiumUpdateModal = function(worker) {
   overlay.id = 'pwa-update-modal';
   overlay.className = 'update-overlay';
   overlay.innerHTML = `
-    <div class="update-modal">
+    <div class="update-modal glass">
       <div class="update-icon">🚀</div>
-      <h2 class="update-title">Feature Update</h2>
-      <p class="update-desc">We've added some powerful new features to NexTrack. Refresh now to experience the latest version.</p>
-      <button class="update-btn" id="pwa-refresh-btn">Update Now</button>
-      <button class="btn btn-ghost btn-small" onclick="document.getElementById('pwa-update-modal').remove()" style="margin-top:1.5rem; opacity:0.5; font-size:0.75rem;">Close Preview</button>
+      <h2 class="update-title">New Version Available</h2>
+      <p class="update-desc">A premium update from <strong>Team Titans</strong> is ready. We've optimized performance and added new visual features.</p>
+      
+      <div style="background:rgba(255,255,255,0.03); border-radius:16px; padding:1rem; margin-bottom:1.5rem; text-align:left; border:1px solid rgba(255,255,255,0.05);">
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.4rem;">What's New</div>
+        <ul style="font-size:0.82rem; color:var(--text-secondary); padding-left:1.2rem; margin:0;">
+          <li>Premium "Titans" Startup Loader</li>
+          <li>Global Year-Wise Student Filtering</li>
+          <li>Advanced Contextual Admin Menu</li>
+        </ul>
+      </div>
+
+      <button class="update-btn" id="pwa-refresh-btn">🚀 Update & Experience</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('pwa-update-modal').remove()" style="margin-top:1rem; width:100%; font-size:0.8rem; opacity:0.6;">Maybe Later</button>
+      
+      <div style="margin-top:2rem; font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:2px; font-weight:700;">Powered by Team Titans</div>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -97,24 +109,47 @@ window.showPremiumUpdateModal = function(worker) {
  * Manual trigger for checking updates from the UI
  */
 window.manualCheckForUpdate = async function() {
-  if (!('serviceWorker' in navigator)) return;
-  
+  // Create a "Checking..." toast/popup
+  const statusEl = document.createElement('div');
+  statusEl.className = 'status-toast-premium visible';
+  statusEl.innerHTML = `
+    <div class="status-toast-content">
+      <div class="status-toast-spinner"></div>
+      <span>Checking for updates...</span>
+    </div>
+  `;
+  document.body.appendChild(statusEl);
+
+  if (!('serviceWorker' in navigator)) {
+    setTimeout(() => {
+      statusEl.querySelector('span').textContent = 'PWA not supported on this browser.';
+      setTimeout(() => statusEl.remove(), 2000);
+    }, 1000);
+    return;
+  }
+
   try {
     const reg = await navigator.serviceWorker.getRegistration();
-    if (!reg) return;
-
-    // Show a small loading state/toast if you have one, or just update
-    console.log('🔍 Manual update check initiated...');
-    await reg.update();
-
-    // Give it a moment to detect and then notify if no update found
-    setTimeout(() => {
-      if (!reg.waiting && !reg.installing && !document.getElementById('pwa-update-modal')) {
-        showStatusToast('✨ Your NexTrack is up to date!', 'info');
-      }
-    }, 2000);
+    if (reg) {
+      await reg.update();
+      setTimeout(() => {
+        if (reg.waiting || reg.installing) {
+          statusEl.remove();
+          showPremiumUpdateModal(reg.waiting || reg.installing);
+        } else {
+          statusEl.innerHTML = `
+            <div class="status-toast-content">
+              <span style="color:#4ade80;">🚀 You are on the latest version</span>
+            </div>
+          `;
+          setTimeout(() => statusEl.remove(), 2500);
+        }
+      }, 1200);
+    } else {
+      statusEl.remove();
+    }
   } catch (err) {
-    console.log('❌ Manual update check failed:', err);
+    statusEl.remove();
   }
 };
 

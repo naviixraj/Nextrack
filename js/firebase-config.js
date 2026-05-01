@@ -3,14 +3,13 @@
    ────────────────────────────────────────────── */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAdlL6GzNox-9xdw6NEvPJW1eVLMc-GvPQ",
-  authDomain: "nextrack-34110.firebaseapp.com",
-  databaseURL: "https://nextrack-34110-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "nextrack-34110",
-  storageBucket: "nextrack-34110.firebasestorage.app",
-  messagingSenderId: "860673203541",
-  appId: "1:860673203541:web:69777e3983bfdd52d323dc",
-  measurementId: "G-L2JZD6N97V"
+  apiKey: "AIzaSyCnxDRER1laogyS4OareR0F2bAhB0GKjPc",
+  authDomain: "nxtrack-a5fe1.firebaseapp.com",
+  projectId: "nxtrack-a5fe1",
+  storageBucket: "nxtrack-a5fe1.firebasestorage.app",
+  messagingSenderId: "293860363431",
+  appId: "1:293860363431:web:a4547e076d5dc4c59b5f82",
+  measurementId: "G-C959HPYQQX"
 };
 
 let firebaseDB = null;

@@ -19,7 +19,7 @@ const NexBilling = {
       // Attempt to heal the cloud data too
       try {
         const session = getSession();
-        if (session && session.collegeId && window.firebaseDB) {
+        if (session && session.collegeId && typeof firebaseDB !== 'undefined' && firebaseDB !== null) {
           firebaseDB.ref(`colleges/${session.collegeId}/subscription`).set({
             status: 'trial',
             plan: 'pro'
@@ -70,12 +70,27 @@ const NexBilling = {
     if (window.NexUX) NexUX.playSuccess();
     if (window.NexSecurity) NexSecurity.logAction('PAYMENT_SUCCESS', `Razorpay Payment ID: ${response.razorpay_payment_id}`);
     
+    // 📧 Automated Email Notification
+    const session = getSession();
+    if (window.emailjs && session) {
+      const templateParams = {
+        to_email: "warden@institution.edu", // In production, pull this from the Admin's profile
+        college_id: session.collegeId,
+        payment_id: response.razorpay_payment_id,
+        message: "Payment process complete. You just unlocked the features for next month."
+      };
+
+      emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+        .then(() => console.log('📧 Confirmation email sent.'))
+        .catch((err) => console.error('📧 Email failed:', err));
+    }
+
     document.body.innerHTML += `
       <div id="payment-wait-overlay" class="modal-overlay visible" style="z-index:1000000;">
         <div class="modal glass" style="text-align:center; padding:3rem;">
           <div class="spinner" style="margin:0 auto 1rem;"></div>
           <h3>Payment Successful!</h3>
-          <p>Verifying your transaction...</p>
+          <p>Verifying your transaction... Your premium features are being unlocked.</p>
         </div>
       </div>
     `;

@@ -23,6 +23,22 @@
 </head>
 <body class="dashboard-page admin-page">
 
+  <!-- Professional Startup Loader -->
+  <div id="startup-loader" class="startup-overlay">
+    <div class="startup-content">
+      <div class="startup-logo-wrap">
+        <div class="startup-logo-glow"></div>
+        <div class="startup-logo-inner">🛡️</div>
+      </div>
+      <h1 class="startup-title">NexTrack Admin</h1>
+      <p class="startup-subtitle">Enterprise Intelligence</p>
+      <div class="startup-msg-box">
+        <div id="startup-msg" class="startup-msg">Initializing Secure Session...</div>
+      </div>
+    </div>
+    <div class="startup-footer">Powered by Team Titans</div>
+  </div>
+
   <!-- Background -->
   <div class="bg-grid"></div>
   <div class="bg-glow bg-glow-1"></div>
@@ -48,10 +64,18 @@
     <div class="topbar-actions">
       <button class="btn btn-ghost" onclick="openAdminProfile()">👤 Profile</button>
       <button class="btn btn-ghost chat-btn" id="chat-toggle-btn" onclick="toggleChat()">💬 Chat <span class="chat-badge" id="chat-badge" style="display:none;">0</span></button>
-      <button class="btn btn-ghost" onclick="changeAdminPassword()">🔐 Password</button>
-      <button class="btn btn-ghost" onclick="manualCheckForUpdate()" style="font-size:0.7rem; color:var(--accent-1); border:1px solid rgba(102,126,234,0.3); padding:0.4rem 0.6rem; border-radius:10px;">🚀 Check for Update</button>
-      <button class="btn btn-ghost" onclick="refreshDashboard()">🔄 Refresh</button>
-      <button class="btn btn-ghost" onclick="logout()">🚪 Logout</button>
+      
+      <div class="admin-menu-container">
+        <button class="btn btn-ghost btn-dots" id="admin-menu-trigger" onclick="toggleAdminMenu(event)">⋮</button>
+        <div class="admin-dropdown glass" id="admin-dropdown-menu">
+          <button class="dropdown-item" onclick="changeAdminPassword()">🔐 Password</button>
+          <button class="dropdown-item" onclick="showDevelopers()">👨‍💻 Developers</button>
+          <button class="dropdown-item" onclick="showSupport()">🛠️ Support</button>
+          <button class="dropdown-item" onclick="manualCheckForUpdate()">🚀 Check for Update</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item text-danger" onclick="logout()">🚪 Logout</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -82,6 +106,15 @@
       </div>
     </section>
 
+    <!-- Global Year Filter -->
+    <div class="year-filter-bar glass">
+      <button class="year-filter-btn active" data-year="All">All</button>
+      <button class="year-filter-btn" data-year="1st Year">1st Year</button>
+      <button class="year-filter-btn" data-year="2nd Year">2nd Year</button>
+      <button class="year-filter-btn" data-year="3rd Year">3rd Year</button>
+      <button class="year-filter-btn" data-year="4th Year">4th Year</button>
+    </div>
+
     <nav class="admin-tabs-bar glass">
       <button class="admin-tab active" data-panel="panel-monitor">📊 Monitoring</button>
       <button class="admin-tab" data-panel="panel-directory">📁 Directory</button>
@@ -101,6 +134,14 @@
           <button class="date-filter-btn" id="filter-custom-btn">Go</button>
         </div>
         <span class="date-label" id="table-date-label"></span>
+        <button class="btn btn-ghost" onclick="exportMonitoringToPDF()" style="margin-left:auto; font-size:0.75rem; color:var(--accent-1); border:1px solid rgba(102,126,234,0.3); padding:0.4rem 0.8rem; border-radius:12px; display:flex; align-items:center; gap:0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download Report
+        </button>
       </div>
 
       <div class="table-wrap">
@@ -384,6 +425,56 @@
     </div>
   </div>
 
+  <!-- 👨‍💻 Developers Modal -->
+  <div class="modal-overlay" id="developers-modal">
+    <div class="modal glass" style="max-width:500px;">
+      <button class="modal-x-btn" onclick="closeDevelopersModal()">&times;</button>
+      <div class="modal-premium-header">
+        <h2 class="modal-title-gradient">Meet the Titans</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:2px; font-weight:700;">Precision Systems Engineering</p>
+      </div>
+      <div style="text-align:center; padding:1rem 0;">
+        <div style="background:var(--accent-grad); width:80px; height:80px; border-radius:24px; margin:0 auto 1.5rem; display:flex; align-items:center; justify-content:center; font-size:2.5rem; box-shadow:0 10px 30px rgba(102,126,234,0.3);">🚀</div>
+        <p style="font-size:1.1rem; font-weight:600; color:#fff; margin-bottom:0.5rem;">Team Titans</p>
+        <p style="font-size:0.9rem; color:var(--text-secondary); line-height:1.6; margin-bottom:2rem;">This enterprise-grade tracking system was architected and developed by Team Titans. We specialize in high-performance SaaS solutions with a focus on security, scalability, and premium aesthetics.</p>
+        <div style="display:flex; justify-content:center; gap:1.5rem;">
+          <div style="text-align:center;"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.2rem;">V80 ENGINE</div><div style="font-weight:700; color:var(--accent-1);">STABLE</div></div>
+          <div style="text-align:center;"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.2rem;">CORE VERSION</div><div style="font-weight:700; color:var(--accent-2);">V103.5</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🛠️ Support Center Modal -->
+  <div class="modal-overlay" id="support-modal">
+    <div class="modal glass" style="max-width:480px;">
+      <button class="modal-x-btn" onclick="closeSupportModal()">&times;</button>
+      <div class="modal-premium-header">
+        <h2 class="modal-title-gradient">Support Center</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:2px; font-weight:700;">Titans Care | 24/7 Priority</p>
+      </div>
+      <div style="padding:1rem 0;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:2rem;">
+          <a href="https://wa.me/91XXXXXXXXXX" target="_blank" style="background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.2); padding:1.5rem 1rem; border-radius:20px; text-align:center; text-decoration:none; transition:transform 0.3s ease;">
+            <div style="font-size:1.8rem; margin-bottom:0.5rem;">💬</div>
+            <div style="font-weight:700; color:#4ade80;">WhatsApp</div>
+          </a>
+          <a href="mailto:titans.support@example.com" style="background:rgba(102,126,234,0.1); border:1px solid rgba(102,126,234,0.2); padding:1.5rem 1rem; border-radius:20px; text-align:center; text-decoration:none; transition:transform 0.3s ease;">
+            <div style="font-size:1.8rem; margin-bottom:0.5rem;">📧</div>
+            <div style="font-weight:700; color:var(--accent-1);">Email Devs</div>
+          </a>
+        </div>
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:20px; padding:1.2rem;">
+          <h4 style="font-size:0.9rem; margin-bottom:0.8rem; color:#fff;">Current System Status</h4>
+          <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:#4ade80; font-weight:600;">
+            <div style="width:8px; height:8px; background:#4ade80; border-radius:50%; box-shadow:0 0 10px #4ade80;"></div>
+            All Core Modules Synchronized (v80.5)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 🔐 Security Enforcement (v80) -->
   <div id="security-enforcement-overlay" class="modal-overlay" style="display:none; z-index:9999; backdrop-filter:blur(20px);">
     <div class="modal glass" style="max-width:400px; text-align:center;">
@@ -405,6 +496,18 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
+  
+  <!-- Premium Integrations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function() {
+      // Replace with your actual EmailJS Public Key in production
+      emailjs.init("YOUR_EMAILJS_PUBLIC_KEY");
+    })();
+  </script>
+
   <script src="js/firebase-config.js?v=101"></script>
   <script src="js/data.js?v=101"></script>
   <script src="js/i18n.js"></script>

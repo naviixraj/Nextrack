@@ -5,16 +5,31 @@
 let qrInterval = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const loader = document.getElementById('startup-loader');
+  const msgEl = document.getElementById('startup-msg');
+  const messages = ["Connecting to Titans Server...", "Secure Portal Authentication...", "Syncing Student Profile...", "NexTrack | Titans Precision", "Welcome. — Provided by Team Titans"];
+  
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    if (msgEl) {
+      msgEl.style.opacity = 0;
+      setTimeout(() => {
+        msgEl.textContent = messages[msgIdx % messages.length];
+        msgEl.style.opacity = 1;
+        msgIdx++;
+      }, 300);
+    }
+  }, 800);
+
+  const startTime = Date.now();
+
   const session = getSession();
   if (!session || session.role === 'admin') {
     window.location.href = 'index.html';
     return;
   }
 
-  // ✨ UX: Show skeletons
-  NexUX.showSkeletons('history-body', 3);
-
-  // Initialize SaaS Sync for this college
+  // Initialize SaaS Sync
   initCollegeSync(session.collegeId, () => {
     const student = getStudentById(session.userId);
     if (!student) {
@@ -23,14 +38,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    renderStudentUI(student);
+    initButtons(student);
+
     // ── 90-Day Rule ──
-    const daysSinceUpdate = Math.floor((Date.now() - new Date(student.last_updated).getTime()) / 86400000);
+    let daysSinceUpdate = 999; // Default to trigger if date is missing/invalid
+    if (student.last_updated) {
+      const parsedDate = new Date(student.last_updated).getTime();
+      if (!isNaN(parsedDate)) {
+        daysSinceUpdate = Math.floor((Date.now() - parsedDate) / 86400000);
+      }
+    }
+    
     if (daysSinceUpdate > 90) {
       showProfileModal(student, true);
     }
 
-    renderStudentUI(student);
-    initButtons(student);
+    // Fade out loader after min 800ms
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, 800 - elapsed);
+    setTimeout(() => {
+      clearInterval(msgInterval);
+      if (loader) loader.classList.add('fade-out');
+    }, remaining);
   });
 });
 

@@ -40,6 +40,29 @@ const NexUX = {
     `.repeat(count);
     
     container.innerHTML = skeletonHTML;
+  },
+
+  /**
+   * Shows a premium glassmorphic toast notification
+   */
+  showToast(msg, isSuccess = true) {
+    const toast = document.createElement('div');
+    toast.className = 'status-toast-premium';
+    toast.innerHTML = `
+      <div class="status-toast-content">
+        ${isSuccess ? '✅' : '⚠️'}
+        <span>${msg}</span>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Trigger animation
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    
+    setTimeout(() => {
+      toast.classList.remove('visible');
+      setTimeout(() => toast.remove(), 600);
+    }, 3000);
   }
 };
 

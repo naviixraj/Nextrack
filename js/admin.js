@@ -2,7 +2,27 @@
    admin.js  –  Dashboard, Monitoring, Management
    ────────────────────────────────────────────── */
 
+let globalYearFilter = 'All';
+
 document.addEventListener('DOMContentLoaded', async () => {
+  const loader = document.getElementById('startup-loader');
+  const msgEl = document.getElementById('startup-msg');
+  const messages = ["Securely Synchronizing...", "NexTrack | Enterprise Intelligence", "Verifying Admin Credentials...", "Team Titans | Precision Systems", "Welcome back. — Provided by Team Titans"];
+  
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    if (msgEl) {
+      msgEl.style.opacity = 0;
+      setTimeout(() => {
+        msgEl.textContent = messages[msgIdx % messages.length];
+        msgEl.style.opacity = 1;
+        msgIdx++;
+      }, 300);
+    }
+  }, 800);
+
+  const startTime = Date.now();
+
   // 1. ALWAYS unlock tab navigation first — no exceptions
   initTabs();
 
@@ -12,22 +32,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 2. Show loading skeletons (safe)
-  if (window.NexUX && NexUX.showSkeletons) {
-    NexUX.showSkeletons('monitor-body', 5);
-  }
-
-  // 3. Sync cloud data, then render dashboard
+  // 2. Sync cloud data
   try {
     await initCollegeSync(session.collegeId);
   } catch (err) {
     console.warn('Cloud sync issue:', err);
   }
 
-  // 4. Render dashboard with whatever data we have
+  // 3. Render dashboard
   initDashboard();
 
-  // 5. Optional features — each one safe
+  // 4. Premium UI Initialization
+  initYearFilter();
+
+  // 5. Fade out loader after min 800ms
+  const elapsed = Date.now() - startTime;
+  const remaining = Math.max(0, 800 - elapsed);
+  setTimeout(() => {
+    clearInterval(msgInterval);
+    if (loader) loader.classList.add('fade-out');
+  }, remaining);
+
+  // 6. Security Checks
   try { if (window.NexSecurity) NexSecurity.logAction('ADMIN_LOGIN', `Admin ${session.userId} entered.`); } catch(e){}
   try { checkAdminSecurity(session.userId); } catch(e){}
   try { initIdleLock(); } catch(e){}
@@ -60,7 +86,12 @@ function initTabs() {
       panels.forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       const target = document.getElementById(tab.dataset.panel);
-      if (target) target.classList.add('active');
+      if (target) {
+        target.classList.add('active');
+      }
+      
+      // Auto-refresh data on tab switch
+      if (typeof refreshDashboard === 'function') refreshDashboard();
     });
   });
 }
@@ -177,7 +208,10 @@ function updateWhitelabeling() {
 }
 
 function renderCards() {
-  const students = getStudents().filter(s => s.role !== 'admin');
+  let students = getStudents().filter(s => s.role !== 'admin');
+  if (globalYearFilter !== 'All') {
+    students = students.filter(s => s.year === globalYearFilter);
+  }
   const movements = getMovements();
   const total = students.length;
 
@@ -253,34 +287,24 @@ function startCurfewCheck() {
 }
 
 /* ═══════════════════════════════════════════════
-   TABS
+   DATE FILTERS
    ═══════════════════════════════════════════════ */
-function initTabs() {
-  const tabs = document.querySelectorAll('.admin-tab');
-  const panels = document.querySelectorAll('.tab-panel');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      NexUX.vibrate(50);
-      tabs.forEach(t => t.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById(tab.dataset.panel).classList.add('active');
-      
-      // Auto-refresh data on tab switch
-      if (typeof refreshDashboard === 'function') refreshDashboard();
-    });
-  });
+function initDateFilters() {
+  const btnToday = document.getElementById('filter-today');
+  const btnYesterday = document.getElementById('filter-yesterday');
+  const btnCustom = document.getElementById('filter-custom-btn');
 
-  // Date filter buttons
-  document.getElementById('filter-today').addEventListener('click', () => setDateFilter('today'));
-  document.getElementById('filter-yesterday').addEventListener('click', () => setDateFilter('yesterday'));
-  document.getElementById('filter-custom-btn').addEventListener('click', () => {
-    const val = document.getElementById('filter-custom-date').value;
-    if (val) {
-      customDate = val;
-      setDateFilter('custom');
-    }
-  });
+  if (btnToday) btnToday.addEventListener('click', () => setDateFilter('today'));
+  if (btnYesterday) btnYesterday.addEventListener('click', () => setDateFilter('yesterday'));
+  if (btnCustom) {
+    btnCustom.addEventListener('click', () => {
+      const val = document.getElementById('filter-custom-date').value;
+      if (val) {
+        customDate = val;
+        setDateFilter('custom');
+      }
+    });
+  }
 }
 
 function setDateFilter(mode) {
@@ -305,7 +329,16 @@ function renderMonitoringTable() {
   const dateStr = getFilterDate();
   document.getElementById('table-date-label').textContent = dateStr;
 
-  const movements = getMovementsByDate(dateStr);
+  let movements = getMovementsByDate(dateStr);
+  
+  // Filter by Year if active
+  if (globalYearFilter !== 'All') {
+    movements = movements.filter(m => {
+      const s = getStudentById(m.studentId);
+      return s && s.year === globalYearFilter;
+    });
+  }
+
   const tbody = document.getElementById('monitor-body');
 
   if (movements.length === 0) {
@@ -364,7 +397,10 @@ function renderMonitoringTable() {
    STUDENT DIRECTORY
    ═══════════════════════════════════════════════ */
 function renderDirectory() {
-  const students = getStudents().filter(s => s.role !== 'admin');
+  let students = getStudents().filter(s => s.role !== 'admin');
+  if (globalYearFilter !== 'All') {
+    students = students.filter(s => s.year === globalYearFilter);
+  }
   const tbody = document.getElementById('directory-body');
 
   if (students.length === 0) {
@@ -990,15 +1026,6 @@ window.closeAdminProfile = function() {
   document.getElementById('admin-profile-modal').classList.remove('visible');
 };
 
-window.manualCheckForUpdate = function() {
-  const btn = event.target;
-  btn.textContent = '🚀 Checking...';
-  setTimeout(() => {
-    btn.textContent = '✅ Up to Date (v80.5)';
-    setTimeout(() => btn.textContent = '🚀 Check for Update', 3000);
-  }, 1500);
-};
-
 window.changeAdminPassword = function() {
   const session = getSession();
   const newPwd = prompt('Enter new master password:');
@@ -1006,5 +1033,275 @@ window.changeAdminPassword = function() {
     updateInCollege('students', session.userId, { password: newPwd });
     alert('✅ Password changed successfully!');
   }
+};
+
+/** 📅 Year Filter System */
+function initYearFilter() {
+  const filterBtns = document.querySelectorAll('.year-filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      globalYearFilter = btn.dataset.year;
+      
+      // Animation effect
+      btn.style.transform = 'scale(0.95)';
+      setTimeout(() => btn.style.transform = '', 100);
+      
+      refreshDashboard();
+    });
+  });
+}
+
+/** ⚙️ Three Dots Menu System */
+window.toggleAdminMenu = function(e) {
+  e.stopPropagation();
+  const dropdown = document.getElementById('admin-dropdown-menu');
+  dropdown.classList.toggle('visible');
+};
+
+// Close menu when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('admin-dropdown-menu');
+  if (dropdown && dropdown.classList.contains('visible')) {
+    if (!e.target.closest('.admin-menu-container')) {
+      dropdown.classList.remove('visible');
+    }
+  }
+});
+
+/** 👨‍💻 Modal Handlers */
+window.showDevelopers = function() {
+  const modal = document.getElementById('developers-modal');
+  if (modal) modal.classList.add('visible');
+  document.getElementById('admin-dropdown-menu').classList.remove('visible');
+};
+
+window.closeDevelopersModal = function() {
+  document.getElementById('developers-modal').classList.remove('visible');
+};
+
+window.showSupport = function() {
+  const modal = document.getElementById('support-modal');
+  if (modal) modal.classList.add('visible');
+  document.getElementById('admin-dropdown-menu').classList.remove('visible');
+};
+
+window.closeSupportModal = function() {
+  document.getElementById('support-modal').classList.remove('visible');
+};
+
+/* ═══════════════════════════════════════════════
+   HISTORY TAB & INDIVIDUAL STUDENT SEARCH
+   ═══════════════════════════════════════════════ */
+window.searchStudentHistory = function() {
+  const query = document.getElementById('history-search').value.toLowerCase().trim();
+  const resultsContainer = document.getElementById('history-search-results');
+  
+  if (!query) {
+    resultsContainer.innerHTML = '';
+    return;
+  }
+
+  const students = getStudents().filter(s => s.role !== 'admin');
+  const matchedStudent = students.find(s => 
+    s.name.toLowerCase().includes(query) || 
+    s.id.toLowerCase().includes(query) || 
+    (s.room && s.room.toLowerCase().includes(query))
+  );
+
+  if (!matchedStudent) {
+    resultsContainer.innerHTML = '<p class="empty-row">No student found.</p>';
+    return;
+  }
+
+  // Get all movements for this student
+  const allMovements = getMovements().filter(m => m.studentId === matchedStudent.id);
+  allMovements.sort((a, b) => new Date(b.outTime) - new Date(a.outTime));
+
+  const photoHtml = matchedStudent.photo ? `<img src="${matchedStudent.photo}" style="width:60px; height:60px; border-radius:12px; object-fit:cover; border:1px solid rgba(255,255,255,0.1);">` : `<div style="width:60px; height:60px; border-radius:12px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">👤</div>`;
+
+  let html = `
+    <div class="glass" style="padding:1.5rem; border-radius:16px; margin-top:1rem; border:1px solid rgba(102,126,234,0.15);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem;">
+        <div style="display:flex; gap:1rem; align-items:center;">
+          ${photoHtml}
+          <div>
+            <h3 style="font-size:1.2rem; margin:0; color:#fff;">${matchedStudent.name}</h3>
+            <p style="margin:0; font-size:0.85rem; color:var(--text-muted);">${matchedStudent.id} • Room: ${matchedStudent.room} • Year: ${matchedStudent.year || 'N/A'}</p>
+          </div>
+        </div>
+        <button class="btn btn-ghost" onclick="exportStudentHistoryToPDF('${matchedStudent.id}')" style="font-size:0.75rem; color:var(--accent-1); border:1px solid rgba(102,126,234,0.3); padding:0.4rem 0.8rem; border-radius:12px; display:flex; align-items:center; gap:0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Report
+        </button>
+      </div>
+      
+      <div class="table-wrap">
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+              <th style="text-align:left; padding:0.8rem;">Date</th>
+              <th style="text-align:left; padding:0.8rem;">Out Time</th>
+              <th style="text-align:left; padding:0.8rem;">In Time</th>
+              <th style="text-align:left; padding:0.8rem;">Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  if (allMovements.length === 0) {
+    html += `<tr><td colspan="4" class="empty-row" style="padding:2rem; text-align:center; color:var(--text-muted);">No movement history found for this student.</td></tr>`;
+  } else {
+    allMovements.forEach(m => {
+      const dateStr = new Date(m.outTime).toLocaleDateString('en-GB');
+      const outStr = new Date(m.outTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const inStr = m.inTime ? new Date(m.inTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '<span class="status-badge badge-out">OUT</span>';
+      
+      let durationStr = '—';
+      if (m.inTime) {
+        const diffMs = new Date(m.inTime) - new Date(m.outTime);
+        const hrs = Math.floor(diffMs / 3600000);
+        const mins = Math.floor((diffMs % 3600000) / 60000);
+        durationStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+      }
+
+      html += `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:0.8rem;">${dateStr}</td>
+          <td style="padding:0.8rem;">${outStr}</td>
+          <td style="padding:0.8rem;">${inStr}</td>
+          <td style="padding:0.8rem;">${durationStr}</td>
+        </tr>
+      `;
+    });
+  }
+
+  html += `</tbody></table></div></div>`;
+  resultsContainer.innerHTML = html;
+};
+
+/* ═══════════════════════════════════════════════
+   PDF EXPORT LOGIC (jsPDF)
+   ═══════════════════════════════════════════════ */
+window.exportMonitoringToPDF = function() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  const dateStr = (currentDateFilter === 'today') ? new Date().toISOString().split('T')[0] : 
+                 (currentDateFilter === 'yesterday') ? new Date(Date.now() - 86400000).toISOString().split('T')[0] : customDate;
+  
+  let movements = getMovementsByDate(dateStr);
+  
+  // Apply active year filter
+  if (globalYearFilter !== 'All') {
+    movements = movements.filter(m => {
+      const s = getStudentById(m.studentId);
+      return s && s.year === globalYearFilter;
+    });
+  }
+
+  if (movements.length === 0) {
+    alert("No records found for the selected filter.");
+    return;
+  }
+
+  // Header
+  doc.setFontSize(20);
+  doc.setTextColor(40);
+  doc.text("Daily Movement Report", 14, 22);
+  doc.setFontSize(11);
+  doc.setTextColor(100);
+  doc.text(`Date: ${dateStr} | Filter: ${globalYearFilter}`, 14, 30);
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 36);
+
+  const tableColumn = ["#", "Name", "Reg ID", "Room", "Out Time", "In Time", "Duration"];
+  const tableRows = [];
+
+  movements.forEach((m, index) => {
+    const s = getStudentById(m.studentId);
+    const outT = new Date(m.outTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const inT = m.inTime ? new Date(m.inTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'STILL OUT';
+    
+    let dur = '-';
+    if (m.inTime) {
+      const diff = new Date(m.inTime) - new Date(m.outTime);
+      const h = Math.floor(diff / 3600000);
+      const min = Math.floor((diff % 3600000) / 60000);
+      dur = h > 0 ? `${h}h ${min}m` : `${min}m`;
+    }
+
+    tableRows.push([
+      index + 1,
+      s ? s.name : 'Unknown',
+      m.studentId,
+      s ? (s.room || '-') : '-',
+      outT,
+      inT,
+      dur
+    ]);
+  });
+
+  doc.autoTable({
+    startY: 45,
+    head: [tableColumn],
+    body: tableRows,
+    theme: 'striped',
+    headStyles: { fillColor: [99, 102, 241] }
+  });
+
+  doc.save(`Monitoring_Report_${dateStr}_${globalYearFilter}.pdf`);
+  NexUX.playSuccess();
+  NexUX.showToast("Report Downloaded Successfully");
+};
+
+window.exportStudentHistoryToPDF = function(studentId) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const student = getStudentById(studentId);
+  if (!student) return;
+
+  const movements = getMovements().filter(m => m.studentId === studentId);
+  movements.sort((a, b) => new Date(b.outTime) - new Date(a.outTime));
+
+  // Header
+  doc.setFontSize(20);
+  doc.text("Student Movement Ledger", 14, 22);
+  doc.setFontSize(12);
+  doc.text(`Name: ${student.name} (${student.id})`, 14, 32);
+  doc.text(`Room: ${student.room || '-'} | Phone: ${student.phone || '-'}`, 14, 38);
+  doc.setFontSize(10);
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 44);
+
+  const tableColumn = ["Date", "Out Time", "In Time", "Duration"];
+  const tableRows = [];
+
+  movements.forEach(m => {
+    const dStr = new Date(m.outTime).toLocaleDateString('en-GB');
+    const outT = new Date(m.outTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const inT = m.inTime ? new Date(m.inTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'STILL OUT';
+    
+    let dur = '-';
+    if (m.inTime) {
+      const diff = new Date(m.inTime) - new Date(m.outTime);
+      const h = Math.floor(diff / 3600000);
+      const min = Math.floor((diff % 3600000) / 60000);
+      dur = h > 0 ? `${h}h ${min}m` : `${min}m`;
+    }
+
+    tableRows.push([dStr, outT, inT, dur]);
+  });
+
+  doc.autoTable({
+    startY: 52,
+    head: [tableColumn],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: { fillColor: [79, 70, 229] }
+  });
+
+  doc.save(`Ledger_${studentId}_${student.name}.pdf`);
+  NexUX.playSuccess();
+  NexUX.showToast("Student Ledger Generated");
 };
 
