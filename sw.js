@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nextrack-v63';
+const CACHE_NAME = 'nextrack-v64';
 const ASSETS = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const ASSETS = [
   '/student.html',
   '/css/style.css',
   '/irn.png',
+  '/js/firebase-config.js',
   '/js/data.js',
   '/js/auth.js',
   '/js/admin.js',
@@ -16,7 +17,7 @@ const ASSETS = [
 ];
 
 // Cache strategy for different types of requests
-const NETWORK_FIRST_ASSETS = ['index.html', 'admin.html', 'student.html', 'js/auth.js', 'js/admin.js', 'js/student.js'];
+const NETWORK_FIRST_ASSETS = ['index.html', 'admin.html', 'student.html', 'js/firebase-config.js', 'js/data.js', 'js/auth.js', 'js/admin.js', 'js/student.js'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
