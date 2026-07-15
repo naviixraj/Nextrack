@@ -1,6 +1,26 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null"
+    "students": {
+      ".read": "auth != null",
+      "$student_id": {
+        ".write": "auth != null"
+      }
+    },
+    "movements": {
+      ".read": "auth != null",
+      "$movement_id": {
+        ".write": "auth != null"
+      }
+    },
+    "admin_logins": {
+      ".read": "auth != null",
+      "$admin_id": {
+        ".write": "auth != null"
+      }
+    },
+    "geofence": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
   }
 }
