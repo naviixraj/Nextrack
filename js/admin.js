@@ -259,9 +259,9 @@ function renderMonitoringTable() {
 
   tbody.innerHTML = movements.map((m, i) => {
     const student = getStudentById(m.studentId);
-    const name = student ? student.name : 'Unknown';
-    const room = student ? student.room : '—';
-    const phone = student ? student.phone : '—';
+    const name = student ? escapeHtml(student.name) : 'Unknown';
+    const room = student ? escapeHtml(student.room) : '—';
+    const phone = student ? escapeHtml(student.phone) : '—';
     const photo = student && student.photo ? `<img src="${student.photo}" class="table-avatar" alt="">` : '<span class="table-avatar-placeholder">👤</span>';
 
     // Duration
@@ -327,13 +327,13 @@ function renderDirectory(filteredStudents) {
     const stale = days > 90 ? 'stale' : '';
     const photo = s.photo ? `<img src="${s.photo}" class="table-avatar" alt="">` : '<span class="table-avatar-placeholder">👤</span>';
     return `
-      <tr class="clickable-row" onclick="showStudentDetail('${s.id}')">
+      <tr class="clickable-row" onclick="showStudentDetail('${escapeHtml(s.id)}')">
         <td>${i + 1}</td>
         <td>${photo}</td>
-        <td>${s.id}</td>
-        <td>${s.name}</td>
-        <td>${s.room}</td>
-        <td>${s.phone}</td>
+        <td>${escapeHtml(s.id)}</td>
+        <td>${escapeHtml(s.name)}</td>
+        <td>${escapeHtml(s.room)}</td>
+        <td>${escapeHtml(s.phone)}</td>
         <td class="${stale}">${formatDate(s.last_updated)} (${days}d ago)</td>
         <td style="white-space:nowrap;">
           <button class="btn btn-small btn-accent" onclick="event.stopPropagation(); adminEditStudent('${s.id}')">✏️ Edit</button>
