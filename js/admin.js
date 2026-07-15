@@ -673,11 +673,11 @@ window.searchStudent = function () {
   results.innerHTML = matches.map(s => `
     <div class="recovery-card">
       <div class="recovery-info">
-        <strong>${s.name}</strong>
-        <span class="recovery-meta">${s.id} · Room ${s.room} · ${s.phone}</span>
+        <strong>${escapeHtml(s.name)}</strong>
+        <span class="recovery-meta">${escapeHtml(s.id)} · Room ${escapeHtml(s.room)} · ${escapeHtml(s.phone)}</span>
       </div>
       <div class="recovery-actions">
-        <button class="btn btn-small btn-accent" onclick="editRoom('${s.id}')">Edit Room</button>
+        <button class="btn btn-small btn-accent" onclick="editRoom('${escapeHtml(s.id)}')">Edit Room</button>
       </div>
     </div>
   `).join('');
@@ -938,8 +938,8 @@ window.searchStudentHistory = function () {
         <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem;">
           ${photo}
           <div class="recovery-info">
-            <strong>${s.name}</strong>
-            <span class="recovery-meta">${s.id} · Room ${s.room} · ${s.department || ''} · ${s.year || ''}</span>
+            <strong>${escapeHtml(s.name)}</strong>
+            <span class="recovery-meta">${escapeHtml(s.id)} · Room ${escapeHtml(s.room)} · ${escapeHtml(s.department || '')} · ${escapeHtml(s.year || '')}</span>
           </div>
           <span class="status-badge ${status === 'IN' ? 'badge-in' : 'badge-out'}" style="margin-left:auto;">${status}</span>
         </div>

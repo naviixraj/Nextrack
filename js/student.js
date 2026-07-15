@@ -118,7 +118,7 @@ function renderStudentUI(student) {
 
   const avatarEl = document.getElementById('stu-avatar');
   if (student.photo) {
-    avatarEl.innerHTML = `<img src="${student.photo}" alt="${student.name}" class="avatar-img">`;
+    avatarEl.innerHTML = `<img src="${student.photo}" alt="${escapeHtmlStu(student.name)}" class="avatar-img">`;
   }
 
   const status = getCurrentStatus(student.id);
