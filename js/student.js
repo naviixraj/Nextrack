@@ -396,7 +396,7 @@ function showProfileModal(student, forced = false) {
   };
 
   // Save handler
-  document.getElementById('profile-form').onsubmit = (e) => {
+  document.getElementById('profile-form').onsubmit = async (e) => {
     e.preventDefault();
     const newId = document.getElementById('profile-stu-id').value.trim();
     const name = document.getElementById('profile-name').value.trim();
@@ -418,7 +418,8 @@ function showProfileModal(student, forced = false) {
     let passwordToSave = student.password;
  
     if (oldPwd || newPwd || confirmPwd) {
-      if (oldPwd !== student.password) {
+      const hashedOldPwd = await hashPassword(oldPwd);
+      if (hashedOldPwd !== student.password) {
         pwdMsg.textContent = '❌ Old password is incorrect.';
         pwdMsg.style.display = 'block';
         return;
@@ -433,7 +434,7 @@ function showProfileModal(student, forced = false) {
         pwdMsg.style.display = 'block';
         return;
       }
-      passwordToSave = newPwd;
+      passwordToSave = await hashPassword(newPwd);
     }
  
     const oldId = student.id;

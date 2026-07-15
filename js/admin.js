@@ -438,13 +438,14 @@ window.removeStudent = function (id) {
    ═══════════════════════════════════════════════ */
 let editingStudentId = null;
 
-window.adminEditStudent = function (studentId) {
+window.adminEditStudent = async function (studentId) {
   const adminPwd = prompt('🔐 Enter your admin password to edit this student:');
   if (!adminPwd) return;
 
   const session = getSession();
   const admin = getStudentById(session.userId);
-  if (!admin || adminPwd !== admin.password) {
+  const hashedAdminPwd = await hashPassword(adminPwd);
+  if (!admin || hashedAdminPwd !== admin.password) {
     alert('❌ Incorrect admin password!');
     // Set warning alert on student profile
     updateStudent(studentId, { editAlert: 'warning', editAlertMsg: '⚠️ Someone attempted unauthorized access to your profile.' });
@@ -499,7 +500,7 @@ window.closeAdminEditModal = function () {
 document.addEventListener('DOMContentLoaded', () => {
   const editForm = document.getElementById('admin-edit-form');
   if (editForm) {
-    editForm.addEventListener('submit', (e) => {
+    editForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!editingStudentId) return;
 
@@ -511,11 +512,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const phone = document.getElementById('edit-stu-phone').value.trim();
       const email = document.getElementById('edit-stu-email').value.trim();
       const year = document.getElementById('edit-stu-year').value;
-      const pwd = document.getElementById('edit-stu-pwd').value;
+      let pwd = document.getElementById('edit-stu-pwd').value;
 
       if (!name || !newId || !room || !phone || !pwd) {
         alert('⚠️ Name, ID, Room, Phone, and Password are required.');
         return;
+      }
+
+      const s = getStudentById(editingStudentId);
+      if (s && s.password !== pwd) {
+        pwd = await hashPassword(pwd);
       }
 
       const oldId = editingStudentId;
@@ -595,7 +601,7 @@ function renderAdminList() {
   }).join('');
 }
 
-window.registerNewAdmin = function () {
+window.registerNewAdmin = async function () {
   const name = prompt('Enter new admin name:');
   if (!name || !name.trim()) return;
   const id = prompt('Enter login ID for the new admin:');
@@ -605,12 +611,14 @@ window.registerNewAdmin = function () {
   const pwd = prompt('Enter password (min 4 characters):');
   if (!pwd || pwd.length < 4) { alert('⚠️ Password must be at least 4 characters.'); return; }
 
+  const hashedPwd = await hashPassword(pwd);
+
   addStudent({
     id: id.trim(),
     name: name.trim(),
     room: '—',
     phone: '—',
-    password: pwd,
+    password: hashedPwd,
     role: 'admin',
     last_updated: new Date().toISOString(),
   });
@@ -618,14 +626,15 @@ window.registerNewAdmin = function () {
   renderAdminList();
 };
 
-window.removeAdmin = function (targetAdminId) {
+window.removeAdmin = async function (targetAdminId) {
   const session = getSession();
   const currentAdmin = getStudentById(session.userId);
   
   if (!currentAdmin) return;
 
   const pwd = prompt(`🔐 SECURITY VERIFICATION\nEnter YOUR admin password to delete admin "${targetAdminId}":`);
-  if (pwd !== currentAdmin.password) {
+  const hashedPwd = await hashPassword(pwd);
+  if (hashedPwd !== currentAdmin.password) {
     alert('❌ Incorrect password! Unauthorized deletion blocked.');
     return;
   }
@@ -683,10 +692,11 @@ window.searchStudent = function () {
   `).join('');
 };
 
-window.resetPassword = function (id) {
+window.resetPassword = async function (id) {
   const newPwd = prompt('Enter new password for ' + id + ':');
   if (newPwd && newPwd.length >= 4) {
-    updateStudent(id, { password: newPwd });
+    const hashedPwd = await hashPassword(newPwd);
+    updateStudent(id, { password: hashedPwd });
     alert('✅ Password reset successfully.');
   } else if (newPwd) {
     alert('⚠️ Password must be at least 4 characters.');
@@ -800,14 +810,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ── Change Admin Password ────────────────────── */
-window.changeAdminPassword = function () {
+window.changeAdminPassword = async function () {
   const session = getSession();
   const admin = getStudentById(session.userId);
   if (!admin) return;
 
   const current = prompt('Enter your current password:');
   if (!current) return;
-  if (current !== admin.password) {
+  const hashedCurrent = await hashPassword(current);
+  if (hashedCurrent !== admin.password) {
     alert('❌ Current password is incorrect.');
     return;
   }
@@ -824,7 +835,8 @@ window.changeAdminPassword = function () {
     return;
   }
 
-  updateStudent(session.userId, { password: newPwd });
+  const hashedNewPwd = await hashPassword(newPwd);
+  updateStudent(session.userId, { password: hashedNewPwd });
   alert('✅ Admin password updated successfully.');
 };
 
