@@ -159,10 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Generate random 8-digit password
       const newPwd = Math.floor(10000000 + Math.random() * 90000000).toString();
+      const hashedNewPwd = await hashPassword(newPwd);
 
       try {
         // 1. Update Password in Database
-        await updateStudent(uid, { password: newPwd });
+        await updateStudent(uid, { password: hashedNewPwd });
 
         // 2. Send via EmailJS
         const templateParams = {
@@ -193,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Login ──
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const uid = document.getElementById('login-id').value.trim();
       const pwd = document.getElementById('login-pwd').value;
@@ -208,7 +209,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (user.password !== pwd) {
+      const hashedPwd = await hashPassword(pwd);
+
+      if (user.password !== hashedPwd) {
         loginMsg.textContent = '❌ Wrong password.';
         loginMsg.className = 'form-msg error';
         forgotPwdLink.style.display = 'inline-block'; // Show Reset Link on wrong password
@@ -225,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ── Register ──
-    registerForm.addEventListener('submit', (e) => {
+    registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const newId = document.getElementById('reg-id').value.trim();
       const name = document.getElementById('reg-name').value.trim();
@@ -268,6 +271,8 @@ document.addEventListener('DOMContentLoaded', () => {
       submitBtn.innerHTML = '<span class="spinner"></span> Creating Account...';
       submitBtn.disabled = true;
 
+      const hashedPwd = await hashPassword(pwd);
+
       addStudent({
         id,
         name,
@@ -277,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         age,
         department: dept,
         year,
-        password: pwd,
+        password: hashedPwd,
         photo: photoBase64,
         role: 'student',
         last_updated: new Date().toISOString(),

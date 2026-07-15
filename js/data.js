@@ -255,20 +255,27 @@ function checkGeofence(lat, lng) {
 }
 
 /* ── Seed / Init ─────────────────────────────── */
-function seedIfNeeded() {
+async function hashPassword(password) {
+  const msgUint8 = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function seedIfNeeded() {
   const students = getStudents();
   const adminExists = students.some(s => s.role === 'admin');
   
   if (!adminExists) {
     // 🔓 EMERGENCY PASSWORD RESET (Force Overwrite)
-    // This will reset the administrator password to 'admin1234' if you've forgotten it.
+    const hashedPwd = await hashPassword('admin1234');
     addStudent({
       id: 'admin',
       name: 'Warden Admin',
       room: '—',
       phone: '—',
       email: 'admin@example.com',
-      password: 'admin1234',
+      password: hashedPwd,
       role: 'admin',
       last_updated: new Date().toISOString(),
     });
