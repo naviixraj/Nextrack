@@ -146,6 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (user.role === 'admin') {
+        loginMsg.innerHTML = '❌ Cannot reset admin password from here.';
+        loginMsg.className = 'form-msg error';
+        return;
+      }
+
       const confirmMsg = `Reset password for ${user.name}? A new 8-digit password will be sent to ${user.email}.`;
       if (!confirm(confirmMsg)) return;
 

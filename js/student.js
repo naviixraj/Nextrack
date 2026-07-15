@@ -453,13 +453,15 @@ function showProfileModal(student, forced = false) {
       }
       const idx = students.findIndex(s => s.id === oldId);
       if (idx !== -1) {
-        Object.assign(students[idx], updates);
-        students[idx].id = newId;
-        saveStudents(students);
-        // Update movements
-        const movs = getMovements();
-        movs.forEach(m => { if (m.studentId === oldId) m.studentId = newId; });
-        saveMovements(movs);
+        const fullStudentData = { ...students[idx], ...updates, id: newId };
+        firebaseDB.ref('students/' + newId).set(fullStudentData).then(() => {
+          firebaseDB.ref('students/' + oldId).remove();
+        });
+        // Update movements individually
+        const movements = getMovements().filter(m => m.studentId === oldId);
+        movements.forEach(m => {
+          firebaseDB.ref('movements/' + m.id).update({ studentId: newId });
+        });
         setSession({ userId: newId, role: 'student' });
         student.id = newId;
       }
