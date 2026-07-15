@@ -273,11 +273,12 @@ function handleCheckIn(student) {
   const openIdx = movs.findLastIndex(m => m.studentId === student.id && !m.inTime);
   if (openIdx === -1) return; // safety
 
+  const openMov = movs[openIdx];
   const now = new Date().toISOString();
-  movs[openIdx].inTime = now;
-  saveMovements(movs);
-  startDebounce();
-  renderStudentUI(student);
+  updateMovement(openMov.id, { inTime: now }).then(() => {
+    startDebounce();
+    renderStudentUI(student);
+  });
 }
 
 /* ── 60-Second Debounce Timer ────────────────── */
@@ -744,6 +745,13 @@ function startMotionGuard(student) {
 
   // ── Success Handler (Shared) ──
   const onLocationSuccess = (pos) => {
+    // Ignore inaccurate location fixes (e.g. cellular triangulation indoors) to avoid false check-outs
+    if (pos.coords.accuracy > 150) {
+      console.warn(`📡 Ignoring inaccurate location: ±${Math.round(pos.coords.accuracy)}m`);
+      showLocationBanner(`⚠️ Weak GPS Accuracy (±${Math.round(pos.coords.accuracy)}m). Optimizing...`, 'warning');
+      return;
+    }
+
     console.log(`📍 Location Sync: ${pos.coords.latitude}, ${pos.coords.longitude} (±${Math.round(pos.coords.accuracy)}m)`);
     studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     geoCheckDone = true;

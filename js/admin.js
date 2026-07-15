@@ -420,15 +420,17 @@ window.removeStudent = function (id) {
   if (!student) return;
   if (!confirm(`Are you sure you want to remove ${student.name} (${id})? This cannot be undone.`)) return;
 
-  const students = getStudents().filter(s => s.id !== id);
-  saveStudents(students);
-  const movements = getMovements().filter(m => m.studentId !== id);
-  saveMovements(movements);
-
-  alert(`✅ ${student.name} has been removed.`);
-  renderCards();
-  renderMonitoringTable();
-  renderDirectory();
+  firebaseDB.ref('students/' + id).remove().then(() => {
+    // Delete the student's movements individually
+    const movements = getMovements().filter(m => m.studentId === id);
+    movements.forEach(m => {
+      firebaseDB.ref('movements/' + m.id).remove();
+    });
+    alert(`✅ ${student.name} has been removed.`);
+    refreshDashboard();
+  }).catch(err => {
+    alert('❌ Failed to remove student: ' + err.message);
+  });
 };
 
 /* ═══════════════════════════════════════════════

@@ -255,17 +255,20 @@ function checkGeofence(lat, lng) {
 /* ── Seed / Init ─────────────────────────────── */
 function seedIfNeeded() {
   const students = getStudents();
+  const adminExists = students.some(s => s.role === 'admin');
   
-  // 🔓 EMERGENCY PASSWORD RESET (Force Overwrite)
-  // This will reset the administrator password to 'admin1234' if you've forgotten it.
-  addStudent({
-    id: 'admin',
-    name: 'Warden Admin',
-    room: '—',
-    phone: '—',
-    email: 'admin@example.com',
-    password: 'admin1234',
-    role: 'admin',
-    last_updated: new Date().toISOString(),
-  });
+  if (!adminExists) {
+    // 🔓 EMERGENCY PASSWORD RESET (Force Overwrite)
+    // This will reset the administrator password to 'admin1234' if you've forgotten it.
+    addStudent({
+      id: 'admin',
+      name: 'Warden Admin',
+      room: '—',
+      phone: '—',
+      email: 'admin@example.com',
+      password: 'admin1234',
+      role: 'admin',
+      last_updated: new Date().toISOString(),
+    });
+  }
 }
