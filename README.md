@@ -20,7 +20,7 @@ A modern, progressive web application for tracking student movement in hostels w
 ## 🏗️ Project Structure
 
 ```
-nexnavi/
+NEXTRACK LIVE/
 ├── index.html              # Login & Registration Portal
 ├── admin.html              # Admin Dashboard
 ├── student.html            # Student Dashboard
