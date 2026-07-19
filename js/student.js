@@ -7,8 +7,138 @@ let debounceSeconds = 0;
 let studentLocation = null; // { lat, lng } or null
 let geoCheckDone = false;
 
+// ── IMMEDIATE GPS CHECK (runs before everything, even the startup loader) ──
+// This catches GPS-off / permission-denied before the student even sees the UI
+(function immediateGPSCheck() {
+  if (!navigator.geolocation) return;
+
+  // If we just reloaded after GPS was confirmed (to avoid warm-up loop), skip check
+  if (sessionStorage.getItem('gps_just_confirmed')) {
+    // We leave it in sessionStorage so startMotionGuard can also see it
+    return;
+  }
+
+  const showBlockScreen = () => {
+    if (document.getElementById('gps-denied-lock')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'gps-denied-lock';
+    overlay.style.cssText = `
+      position: fixed; inset: 0; z-index: 99999999;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(16px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+    `;
+    overlay.innerHTML = `
+      <div id="gps-modal-card" style="
+        max-width: 380px; width: 100%;
+        background: rgba(20, 10, 10, 0.95);
+        border: 2px solid rgba(239,68,68,0.6);
+        border-radius: 28px; padding: 2.5rem 2rem; text-align: center;
+        box-shadow: 0 0 60px rgba(239,68,68,0.25), 0 30px 60px rgba(0,0,0,0.6);
+        font-family: 'Inter', sans-serif; color: white;
+      ">
+        <div id="gps-icon-wrap" style="
+          width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 1.5rem;
+          background: rgba(239,68,68,0.15); border: 2px solid rgba(239,68,68,0.4);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 2.2rem; box-shadow: 0 8px 25px rgba(239,68,68,0.3);
+          animation: gps-pulse 2s ease-in-out infinite;
+        ">🚫</div>
+        <h2 id="gps-title" style="font-size:1.4rem; font-weight:800; color:#ef4444; margin-bottom:0.8rem;">Location Required</h2>
+        <p id="gps-desc" style="font-size:0.92rem; color:rgba(255,255,255,0.75); line-height:1.6; margin-bottom:0.8rem;">
+          Location access is <strong style="color:#fff;">MANDATORY</strong> for NexTrack attendance.<br>The warden has been notified.
+        </p>
+        <p id="gps-sub" style="font-size:0.78rem; color:rgba(255,255,255,0.45); margin-bottom:2rem;">
+          Enable GPS in your phone settings — this page will unlock automatically.
+        </p>
+        <div id="gps-status-bar" style="
+          background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+          border-radius: 12px; padding: 0.8rem 1rem; font-size:0.82rem;
+          color:rgba(255,255,255,0.5);
+          display: flex; align-items: center; gap: 0.5rem; justify-content: center;
+        ">
+          <span id="gps-spinner" style="display:inline-block; animation: gps-spin 1s linear infinite;">⟳</span>
+          <span id="gps-status-text">Waiting for location to be enabled...</span>
+        </div>
+      </div>
+      <style>
+        @keyframes gps-pulse { 0%,100%{box-shadow:0 8px 25px rgba(239,68,68,0.3)} 50%{box-shadow:0 8px 40px rgba(239,68,68,0.6)} }
+        @keyframes gps-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes gps-success-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+      </style>
+    `;
+    // Force body overflow hidden
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(overlay);
+
+    // ── Auto-poll every 3s to detect when location is back on ──
+    let unlocking = false;
+    const poll = setInterval(() => {
+      if (unlocking) return;
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          // Location is back!
+          if (unlocking) return;
+          unlocking = true;
+          clearInterval(poll);
+          const icon = document.getElementById('gps-icon-wrap');
+          const title = document.getElementById('gps-title');
+          const desc = document.getElementById('gps-desc');
+          const sub = document.getElementById('gps-sub');
+          const bar = document.getElementById('gps-status-bar');
+          const spinner = document.getElementById('gps-spinner');
+          const statusText = document.getElementById('gps-status-text');
+          if (icon) { icon.textContent = '✅'; icon.style.background = 'rgba(16,185,129,0.15)'; icon.style.borderColor = 'rgba(16,185,129,0.4)'; icon.style.boxShadow = '0 8px 25px rgba(16,185,129,0.3)'; icon.style.animation = 'none'; }
+          if (title) { title.textContent = 'Location Detected!'; title.style.color = '#10b981'; }
+          if (desc) { desc.innerHTML = 'GPS confirmed! <strong style="color:#fff;">Entering NexTrack...</strong>'; }
+          if (sub) { sub.style.display = 'none'; }
+          if (bar) { bar.style.background = 'rgba(16,185,129,0.1)'; bar.style.borderColor = 'rgba(16,185,129,0.3)'; }
+          if (spinner) { spinner.style.animation = 'none'; spinner.textContent = ''; }
+          let count = 3;
+          if (statusText) statusText.textContent = `Unlocking in ${count}...`;
+          const cd = setInterval(() => {
+            count--;
+            if (count > 0) { if (statusText) statusText.textContent = `Unlocking in ${count}...`; }
+            else { clearInterval(cd); sessionStorage.setItem('gps_just_confirmed', 'true'); window.location.reload(); }
+          }, 1000);
+        },
+        () => {}, // Still denied — keep polling
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 0 }
+      );
+    }, 3000);
+  };
+
+  // Step 1: Check Permissions API instantly
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+      if (result.state === 'denied') { showBlockScreen(); return; }
+      // Step 2: Try actual GPS with short timeout
+      navigator.geolocation.getCurrentPosition(
+        () => {}, // Success — do nothing, main flow handles it
+        () => showBlockScreen(), // Any failure = block
+        { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
+      );
+      result.onchange = () => { if (result.state === 'denied') showBlockScreen(); };
+    }).catch(() => {
+      // Permissions API not available — just try GPS directly
+      navigator.geolocation.getCurrentPosition(
+        () => {},
+        () => showBlockScreen(),
+        { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
+      );
+    });
+  } else {
+    navigator.geolocation.getCurrentPosition(
+      () => {},
+      () => showBlockScreen(),
+      { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
+    );
+  }
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   document.body.style.overflow = 'hidden'; // Lock scroll during startup
+
   const loader = document.getElementById('startup-loader');
   const msgEl = document.getElementById('startup-msg');
   const messages = [
@@ -848,48 +978,76 @@ function startMotionGuard(student) {
     }
   };
 
-  // ── Error Handler ──
-  const onLocationError = async (err) => {
+  // ── Error Handler for Continuous Watch (after page loaded) ──
+  const onLocationError = (err) => {
     geoCheckDone = true;
-    console.warn(`🛑 GPS Sync Error (${err.code}): ${err.message}`);
-    if (err.code === 1 || err.code === 2) { // PERMISSION_DENIED or POSITION_UNAVAILABLE
-      try {
-        await updateStudent(student.id, { 
-          location_status: 'REFUSED',
-          last_security_check: new Date().toISOString()
-        });
-        setTimeout(() => showPermissionDeniedModal(student), 400);
-      } catch (dbErr) {
-        console.error("❌ Database Security Sync Failed:", dbErr);
-      }
+    console.warn(`🛑 GPS Watch Error (${err.code}): ${err.message}`);
+    if (err.code === 1 || err.code === 2) {
+      showPermissionDeniedModal(student);
+      updateStudent(student.id, {
+        location_status: 'REFUSED',
+        last_security_check: new Date().toISOString()
+      }).catch(e => console.error('DB sync failed:', e));
     } else {
+      // code 3 in continuous watch = just weak signal (student is inside, GPS dropped)
       showLocationBanner('⚠️ GPS Signal Weak. Move to open area.', 'warning');
     }
   };
 
-  // Stage 1: Ultra-Fast Cache Fix
-  // Tries to get any location immediately from cache (Wi-Fi/Cell/GPS)
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      onLocationSuccess(pos);
-      startContinuousWatch(); // Proceed to Stage 2
-    },
-    (err) => {
-      if (err.code === 1 || err.code === 2) {
-        onLocationError(err);
+  // ── Error Handler for Initial Check (STRICT — any failure = block) ──
+  const onInitialCheckError = (err) => {
+    console.warn(`🚫 Initial GPS Check Failed (${err.code}): ${err.message}`);
+    // ANY failure (denied, GPS off, timeout) = can't verify location = block
+    showPermissionDeniedModal(student);
+    updateStudent(student.id, {
+      location_status: 'REFUSED',
+      last_security_check: new Date().toISOString()
+    }).catch(e => console.error('DB sync failed:', e));
+  };
+
+  // ── INSTANT CHECK: Use Permissions API first (zero delay) ──
+  const runGeoCheck = () => {
+    // If we just unlocked the screen, GPS is warming up. Go straight to continuous watch.
+    if (sessionStorage.getItem('gps_just_confirmed')) {
+      sessionStorage.removeItem('gps_just_confirmed'); // Consume the flag
+      startContinuousWatch();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        onLocationSuccess(pos);
+        startContinuousWatch();
+      },
+      onInitialCheckError, // ANY failure on initial check = show lock screen
+      { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
+    );
+  };
+
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+      if (result.state === 'denied') {
+        // INSTANT — browser already denied, no GPS call needed
+        onInitialCheckError({ code: 1, message: 'Permission denied by browser settings' });
         return;
       }
-      console.log("No cached location found, waiting for hardware...");
-      startContinuousWatch(); // Proceed to Stage 2 anyway
-    },
-    { enableHighAccuracy: false, maximumAge: Infinity, timeout: 4000 }
-  );
+      runGeoCheck();
+      // Watch for mid-session permission revocation
+      result.onchange = () => {
+        if (result.state === 'denied') {
+          onInitialCheckError({ code: 1, message: 'Permission revoked mid-session' });
+        }
+      };
+    }).catch(() => runGeoCheck());
+  } else {
+    runGeoCheck();
+  }
 
   function startContinuousWatch() {
     if (motionWatcher) navigator.geolocation.clearWatch(motionWatcher);
     motionWatcher = navigator.geolocation.watchPosition(
       onLocationSuccess,
-      onLocationError,
+      onLocationError, // lenient — code 3 = just weak signal
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
     );
   }
