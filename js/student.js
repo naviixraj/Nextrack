@@ -852,7 +852,7 @@ function startMotionGuard(student) {
   const onLocationError = async (err) => {
     geoCheckDone = true;
     console.warn(`🛑 GPS Sync Error (${err.code}): ${err.message}`);
-    if (err.code === 1) { // PERMISSION_DENIED
+    if (err.code === 1 || err.code === 2) { // PERMISSION_DENIED or POSITION_UNAVAILABLE
       try {
         await updateStudent(student.id, { 
           location_status: 'REFUSED',
@@ -875,6 +875,10 @@ function startMotionGuard(student) {
       startContinuousWatch(); // Proceed to Stage 2
     },
     (err) => {
+      if (err.code === 1 || err.code === 2) {
+        onLocationError(err);
+        return;
+      }
       console.log("No cached location found, waiting for hardware...");
       startContinuousWatch(); // Proceed to Stage 2 anyway
     },
@@ -896,17 +900,127 @@ function showPermissionDeniedModal(student) {
 
   const overlay = document.createElement('div');
   overlay.id = 'gps-denied-lock';
-  overlay.className = 'update-overlay visible'; // Force visible
-  overlay.style.zIndex = '10000000';
-  overlay.innerHTML = `
-    <div class="update-modal" style="border: 2px solid #ef4444;">
-      <div class="update-icon" style="background:rgba(239,68,68,0.2); color:#ef4444; box-shadow:0 8px 25px rgba(239,68,68,0.4);">🚫</div>
-      <h2 class="update-title" style="color:#ef4444;">Permission Denied</h2>
-      <p class="update-desc">Location access is <strong>MANDATORY</strong> for NexTrack attendance. The warden has been notified of this security bypass.</p>
-      <p class="update-desc" style="font-size:0.75rem; opacity:0.7;">Please enable GPS in system settings and browser permissions.</p>
-      <button class="update-btn" style="background:#ef4444;" onclick="location.reload();">📍 Turn On Location</button>
-    </div>
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 10000000;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(16px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.5rem; opacity: 0; visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
   `;
+
+  overlay.innerHTML = `
+    <div id="gps-modal-card" style="
+      max-width: 380px; width: 100%;
+      background: rgba(20, 10, 10, 0.9);
+      border: 2px solid rgba(239,68,68,0.6);
+      border-radius: 28px; padding: 2.5rem 2rem; text-align: center;
+      box-shadow: 0 0 60px rgba(239,68,68,0.25), 0 30px 60px rgba(0,0,0,0.6);
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+      font-family: 'Inter', sans-serif; color: white;
+    ">
+      <div id="gps-icon-wrap" style="
+        width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 1.5rem;
+        background: rgba(239,68,68,0.15); border: 2px solid rgba(239,68,68,0.4);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2.2rem;
+        box-shadow: 0 8px 25px rgba(239,68,68,0.3);
+        animation: gps-pulse 2s ease-in-out infinite;
+      ">🚫</div>
+      <h2 id="gps-title" style="font-size:1.4rem; font-weight:800; color:#ef4444; margin-bottom:0.8rem;">Location Required</h2>
+      <p id="gps-desc" style="font-size:0.92rem; color:rgba(255,255,255,0.7); line-height:1.6; margin-bottom:0.8rem;">
+        Location access is <strong style="color:#fff;">MANDATORY</strong> for NexTrack attendance.<br>The warden has been notified.
+      </p>
+      <p id="gps-sub" style="font-size:0.78rem; color:rgba(255,255,255,0.45); margin-bottom:2rem;">
+        Enable GPS in your phone settings, then this page will unlock automatically.
+      </p>
+      <div id="gps-status-bar" style="
+        background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+        border-radius: 12px; padding: 0.8rem 1rem; font-size:0.82rem; color:rgba(255,255,255,0.5);
+        display: flex; align-items: center; gap: 0.5rem; justify-content: center;
+      ">
+        <span id="gps-spinner" style="display:inline-block; animation: gps-spin 1s linear infinite;">⟳</span>
+        <span id="gps-status-text">Waiting for location to be enabled...</span>
+      </div>
+    </div>
+    <style>
+      @keyframes gps-pulse {
+        0%, 100% { box-shadow: 0 8px 25px rgba(239,68,68,0.3); }
+        50% { box-shadow: 0 8px 40px rgba(239,68,68,0.6); }
+      }
+      @keyframes gps-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes gps-countdown-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+    </style>
+  `;
+
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+
+  // Animate in
+  requestAnimationFrame(() => {
+    overlay.style.opacity = '1';
+    overlay.style.visibility = 'visible';
+    setTimeout(() => {
+      const card = document.getElementById('gps-modal-card');
+      if (card) card.style.transform = 'scale(1) translateY(0)';
+    }, 50);
+  });
+
+  // ── Auto-Poll for Location Recovery ──
+  let countdownStarted = false;
+
+  const pollInterval = setInterval(() => {
+    if (countdownStarted) return;
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        // Location is back!
+        if (countdownStarted) return;
+        countdownStarted = true;
+        clearInterval(pollInterval);
+
+        // Update UI to show success state
+        const icon = document.getElementById('gps-icon-wrap');
+        const title = document.getElementById('gps-title');
+        const desc = document.getElementById('gps-desc');
+        const sub = document.getElementById('gps-sub');
+        const statusBar = document.getElementById('gps-status-bar');
+        const spinner = document.getElementById('gps-spinner');
+        const statusText = document.getElementById('gps-status-text');
+
+        if (icon) { icon.textContent = '✅'; icon.style.background = 'rgba(16,185,129,0.15)'; icon.style.borderColor = 'rgba(16,185,129,0.4)'; icon.style.boxShadow = '0 8px 25px rgba(16,185,129,0.3)'; icon.style.animation = 'none'; }
+        if (title) { title.textContent = 'Location Detected!'; title.style.color = '#10b981'; }
+        if (desc) { desc.innerHTML = 'GPS confirmed! <strong style="color:#fff;">Entering NexTrack...</strong>'; }
+        if (sub) { sub.style.display = 'none'; }
+        if (statusBar) { statusBar.style.background = 'rgba(16,185,129,0.1)'; statusBar.style.borderColor = 'rgba(16,185,129,0.3)'; }
+        if (spinner) { spinner.style.animation = 'none'; spinner.textContent = ''; }
+
+        // Countdown 3 → 2 → 1
+        let count = 3;
+        if (statusText) statusText.textContent = `Unlocking in ${count}...`;
+        const card = document.getElementById('gps-modal-card');
+        if (card) card.style.animation = 'gps-countdown-pulse 0.8s ease-in-out infinite';
+
+        const countdown = setInterval(() => {
+          count--;
+          if (count > 0) {
+            if (statusText) statusText.textContent = `Unlocking in ${count}...`;
+          } else {
+            clearInterval(countdown);
+            window.location.reload();
+          }
+        }, 1000);
+      },
+      () => {
+        // Still denied — do nothing, keep polling
+      },
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 0 }
+    );
+  }, 3000); // Poll every 3 seconds
 }
+

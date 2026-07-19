@@ -42,50 +42,50 @@ if ('serviceWorker' in navigator) {
    */
 }
 
+// Inject CSS dynamically so it works on index.html (which lacks style.css)
+if (!document.getElementById('pwa-modal-styles')) {
+  const style = document.createElement('style');
+  style.id = 'pwa-modal-styles';
+  style.innerHTML = `
+    .update-overlay {
+      position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem; opacity: 0; visibility: hidden; transition: all 0.5s ease;
+    }
+    .update-overlay.visible { opacity: 1; visibility: visible; }
+    .update-modal {
+      max-width: 400px; width: 100%; background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(25px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px; padding: 2.5rem 2rem; text-align: center;
+      transform: scale(0.9) translateY(20px); transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(102, 126, 234, 0.15);
+      color: white; font-family: 'Inter', sans-serif;
+    }
+    .update-overlay.visible .update-modal { transform: scale(1) translateY(0); }
+    .update-icon {
+      width: 64px; height: 64px; margin: 0 auto 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    .update-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.8rem; color: #fff; }
+    .update-desc { font-size: 0.92rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-bottom: 2rem; }
+    .update-btn {
+      width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none; color: #fff; padding: 1rem; border-radius: 14px; font-weight: 700;
+      font-size: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .update-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
+  `;
+  document.head.appendChild(style);
+}
+
 /**
  * Shows the premium glassmorphism update modal
  */
 window.showPremiumUpdateModal = function(worker) {
   if (document.getElementById('pwa-update-modal')) return;
-
-  // Inject CSS dynamically so it works on index.html (which lacks style.css)
-  if (!document.getElementById('pwa-modal-styles')) {
-    const style = document.createElement('style');
-    style.id = 'pwa-modal-styles';
-    style.innerHTML = `
-      .update-overlay {
-        position: fixed; inset: 0; z-index: 10000;
-        background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px);
-        display: flex; align-items: center; justify-content: center;
-        padding: 1.5rem; opacity: 0; visibility: hidden; transition: all 0.5s ease;
-      }
-      .update-overlay.visible { opacity: 1; visibility: visible; }
-      .update-modal {
-        max-width: 400px; width: 100%; background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(25px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 28px; padding: 2.5rem 2rem; text-align: center;
-        transform: scale(0.9) translateY(20px); transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(102, 126, 234, 0.15);
-        color: white; font-family: 'Inter', sans-serif;
-      }
-      .update-overlay.visible .update-modal { transform: scale(1) translateY(0); }
-      .update-icon {
-        width: 64px; height: 64px; margin: 0 auto 1.5rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 20px; display: flex; align-items: center; justify-content: center;
-        font-size: 2rem; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-      }
-      .update-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.8rem; color: #fff; }
-      .update-desc { font-size: 0.92rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-bottom: 2rem; }
-      .update-btn {
-        width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none; color: #fff; padding: 1rem; border-radius: 14px; font-weight: 700;
-        font-size: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-      }
-      .update-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
-    `;
-    document.head.appendChild(style);
-  }
 
   const overlay = document.createElement('div');
   overlay.id = 'pwa-update-modal';
@@ -241,14 +241,13 @@ function initPWAAndTheme() {
     let initialVersionLoad = true;
     firebaseDB.ref('system/app_version').on('value', (snap) => {
       const v = snap.val();
-      if (!v) return;
       
       if (initialVersionLoad) {
         initialVersionLoad = false;
-        // Just record it, don't show pop-up on first load 
-        // (unless we want to compare with localStorage, but PWA handles init load)
-        localStorage.setItem('nexTrack_app_version', v);
+        // Record initial version if it exists
+        if (v) localStorage.setItem('nexTrack_app_version', v);
       } else {
+        if (!v) return; // ignore nulls on subsequent updates
         const storedV = localStorage.getItem('nexTrack_app_version');
         if (storedV !== v) {
           localStorage.setItem('nexTrack_app_version', v);
