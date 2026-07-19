@@ -205,9 +205,40 @@ window.installNexTrack = function() {
   }
 };
 
-window.addEventListener('DOMContentLoaded', () => {
+function initPWAAndTheme() {
   if (window.matchMedia('(display-mode: standalone)').matches) {
     const installBtn = document.getElementById('pwa-install-btn');
     if (installBtn) installBtn.style.display = 'none';
   }
-});
+
+  // ── Inject Theme Toggle Globally ──────
+  if (!document.getElementById('theme-toggle')) {
+    const btn = document.createElement('button');
+    btn.id = 'theme-toggle';
+    btn.className = 'theme-toggle';
+    const isLight = document.documentElement.classList.contains('light-theme');
+    btn.innerHTML = isLight ? '🌙' : '☀️';
+    document.body.appendChild(btn);
+
+    btn.addEventListener('click', () => {
+      document.documentElement.classList.toggle('light-theme');
+      const nowLight = document.documentElement.classList.contains('light-theme');
+      
+      btn.style.transform = 'scale(0.5) rotate(180deg)';
+      btn.style.opacity = '0';
+      setTimeout(() => {
+        btn.innerHTML = nowLight ? '🌙' : '☀️';
+        btn.style.transform = 'scale(1) rotate(0deg)';
+        btn.style.opacity = '1';
+      }, 150);
+
+      localStorage.setItem('nexTrackTheme', nowLight ? 'light' : 'dark');
+    });
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPWAAndTheme);
+} else {
+  initPWAAndTheme();
+}

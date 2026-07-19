@@ -1691,3 +1691,106 @@ tbody tr:hover {
   50% { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(1); opacity: 0.8; }
 }
+
+/* ══════════════════════════════════════════════════
+   GLOBAL LIGHT THEME OVERRIDES
+   ══════════════════════════════════════════════════ */
+html.light-theme {
+  --bg-deep:       #f4f7fa;
+  --bg-surface:    #ffffff;
+  --bg-card:       rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(240, 244, 248, 0.90);
+  --glass-border:  rgba(0, 0, 0, 0.12);
+  
+  --accent-1:      #5a52e6;
+  --accent-2:      #764ba2;
+
+  --text-primary:  #0f172a;
+  --text-secondary:#334155;
+  --text-muted:    #475569;
+
+  --shadow-sm:     0 2px 8px rgba(0,0,0,0.05);
+  --shadow-md:     0 8px 24px rgba(0,0,0,0.08);
+  --shadow-lg:     0 16px 40px rgba(0,0,0,0.12);
+  --shadow-glow:   0 0 30px rgba(102, 126, 234, 0.15);
+}
+
+html.light-theme body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
+html.light-theme input, 
+html.light-theme select {
+  background: rgba(0,0,0,0.03) !important;
+  border-color: rgba(0,0,0,0.2) !important;
+  color: #0f172a !important;
+}
+
+html.light-theme input::placeholder {
+  color: #475569 !important;
+}
+
+html.light-theme .chat-bubble-received {
+  background: rgba(0,0,0,0.05);
+  color: #0f172a;
+}
+
+/* Light Theme overrides for B&W Monitoring Table */
+html.light-theme .monitor-table-bw {
+  border-color: #0f172a !important;
+}
+
+html.light-theme .monitor-table-bw thead th {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid #0f172a !important;
+}
+
+html.light-theme .monitor-table-bw tbody tr {
+  background: #ffffff !important;
+}
+
+html.light-theme .monitor-table-bw tbody tr:nth-child(even) {
+  background: #f8fafc !important;
+}
+
+html.light-theme .monitor-table-bw tbody td {
+  color: #0f172a !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light-theme .monitor-table-bw tbody tr:hover {
+  background: #f1f5f9 !important;
+}
+
+html.light-theme .monitor-table-bw .status-badge {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #0f172a !important;
+}
+
+html.light-theme .monitor-table-bw .badge-out {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #0f172a !important;
+}
+
+html.light-theme .monitor-table-bw .call-btn {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #0f172a !important;
+}
+
+.theme-toggle {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--bg-surface, var(--surface, #fff));
+  border: 1px solid var(--glass-border, var(--border, #ddd));
+  color: var(--text-primary, var(--text, #0f172a));
+  font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 9999;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
