@@ -18,6 +18,10 @@
         ".write": "auth != null"
       }
     },
+    "messages": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
     "geofence": {
       ".read": "auth != null",
       ".write": "auth != null"
