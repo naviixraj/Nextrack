@@ -6,6 +6,12 @@ A modern, progressive web application for tracking student movement in hostels w
 
 **NexTrack** is an enterprise-level student movement tracking system designed for hostel management. It provides secure authentication, real-time data synchronization, and role-based dashboards for both students and administrators.
 
+### Latest Update
+- ✨ Fresh landing-page experience with a clearer startup flow and updated release messaging
+- 📱 Improved mobile install guidance and PWA-friendly updates
+- 🔐 Stronger user-facing status and smoother sign-in/register experience
+- 🧭 Better alignment of the admin and student experience around the newest release
+
 ### Key Features
 - 🔐 **Secure Authentication** - Email-based login and registration
 - 📱 **Progressive Web App (PWA)** - Works offline with service worker support
@@ -238,7 +244,7 @@ NexTrack works as a standalone app:
 
 ### Version Management
 - Current version tracked in `version.json`
-- Cache busting via query parameters (e.g., `?v=63`)
+- Cache busting via query parameters (e.g., `?v=89`)
 
 ---
 
