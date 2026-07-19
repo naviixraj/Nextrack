@@ -1724,7 +1724,7 @@ tbody tr:hover {
    GLOBAL LIGHT THEME OVERRIDES
    ══════════════════════════════════════════════════ */
 html.light-theme {
-  --bg-deep:       #f4f7fa;
+  --bg-deep:       #f2efff;
   --bg-surface:    #ffffff;
   --bg-card:       rgba(255, 255, 255, 0.85);
   --bg-card-hover: rgba(240, 244, 248, 0.90);

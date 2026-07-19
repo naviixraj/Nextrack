@@ -217,12 +217,12 @@ function initPWAAndTheme() {
     btn.id = 'theme-toggle';
     btn.className = 'theme-toggle';
     const isLight = document.documentElement.classList.contains('light-theme');
-    btn.textContent = isLight ? '🌙' : '🌓';
+    btn.textContent = isLight ? '🌙' : '☀️';
     
     btn.onclick = () => {
       document.documentElement.classList.toggle('light-theme');
       const nowLight = document.documentElement.classList.contains('light-theme');
-      btn.textContent = nowLight ? '🌙' : '🌓';
+      btn.textContent = nowLight ? '🌙' : '☀️';
       
       // Update meta tag
       const metaTheme = document.querySelector('meta[name="theme-color"]');
