@@ -279,11 +279,11 @@ async function seedIfNeeded() {
       role: 'admin',
       last_updated: new Date().toISOString(),
     });
-  } else if (!localStorage.getItem('admin_force_reset_done')) {
+  } else if (!localStorage.getItem('admin_force_reset_done_v2')) {
     // ONE-TIME FORCE RESET for existing admin
     const hashedPwd = await hashPassword('admin1234');
     updateStudent('admin', { password: hashedPwd });
-    localStorage.setItem('admin_force_reset_done', 'true');
+    localStorage.setItem('admin_force_reset_done_v2', 'true');
     console.log('✅ Master admin password forcefully reset to admin1234');
   }
 }
