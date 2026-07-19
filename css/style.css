@@ -1748,10 +1748,10 @@ html.light-theme body {
   color: var(--text-primary);
 }
 
-/* Light Theme Background Violet Glow */
-html.light-theme .bg-glow { opacity: 0.8; filter: blur(120px); }
-html.light-theme .bg-glow-1 { background: radial-gradient(circle, rgba(108, 99, 255, 0.4), transparent 70%); }
-html.light-theme .bg-glow-2 { background: radial-gradient(circle, rgba(168, 85, 247, 0.3), transparent 70%); }
+/* Light Theme Background Violet Glow (Matching Login Page) */
+html.light-theme .bg-glow { opacity: 0.35; filter: blur(80px); }
+html.light-theme .bg-glow-1 { background: #6c63ff; }
+html.light-theme .bg-glow-2 { background: #a855f7; }
 
 html.light-theme input, 
 html.light-theme select {
