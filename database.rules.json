@@ -25,6 +25,10 @@
     "geofence": {
       ".read": "auth != null",
       ".write": "auth != null"
+    },
+    "system": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }
