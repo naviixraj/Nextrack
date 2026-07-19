@@ -965,7 +965,7 @@ tbody tr:hover {
 /* Message Context Menu */
 .msg-context-menu {
   position: fixed;
-  z-index: 200;
+  z-index: 10005;
   background: rgba(22, 22, 40, 0.95);
   backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);

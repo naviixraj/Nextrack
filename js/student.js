@@ -649,7 +649,7 @@ function renderStudentChatFromMessages(msgs) {
       <div class="${bubbleClass}" data-key="${m.firebaseKey}" data-sender="${m.senderId}"
            oncontextmenu="showMsgMenu(event, '${m.firebaseKey}', '${m.senderId}')"
            ontouchstart="startLongPress(event, '${m.firebaseKey}', '${m.senderId}')"
-           ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()">
+           ontouchend="cancelLongPress(event)" ontouchmove="cancelLongPress(event)">
         ${!isMine ? `<span class="chat-sender">${escapeHtmlStu(m.senderName)}${isAdminMsg ? ' 🛡️' : ''}</span>` : ''}
         <span>${escapeHtmlStu(m.text)}${editedTag}</span>
         <span class="chat-time">${dateStr} ${timeStr}</span>
@@ -681,11 +681,15 @@ window.showMsgMenu = function (e, key, senderId) {
   menu.style.top = Math.min(e.clientY, window.innerHeight - 100) + 'px';
 };
 
+let isLongPressTriggered = false;
+
 window.startLongPress = function (e, key, senderId) {
   const session = getSession();
   if (senderId !== session.userId) return;
 
+  isLongPressTriggered = false;
   longPressTimer = setTimeout(() => {
+    isLongPressTriggered = true;
     selectedMsgKey = key;
     const touch = e.touches[0];
     const menu = document.getElementById('msg-context-menu');
@@ -695,11 +699,17 @@ window.startLongPress = function (e, key, senderId) {
   }, 500);
 };
 
-window.cancelLongPress = function () {
+window.cancelLongPress = function (e) {
   if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  
+  // If long press actually triggered the menu, prevent the synthesized click on touch release!
+  if (isLongPressTriggered && e && e.type === 'touchend') {
+    e.preventDefault();
+  }
 };
 
-window.editSelectedMessage = function () {
+window.editSelectedMessage = function (e) {
+  if(e) e.stopPropagation();
   document.getElementById('msg-context-menu').style.display = 'none';
   if (!selectedMsgKey) return;
 
@@ -713,7 +723,8 @@ window.editSelectedMessage = function () {
   selectedMsgKey = null;
 };
 
-window.deleteSelectedMessage = function () {
+window.deleteSelectedMessage = function (e) {
+  if(e) e.stopPropagation();
   document.getElementById('msg-context-menu').style.display = 'none';
   if (!selectedMsgKey) return;
 
@@ -724,8 +735,11 @@ window.deleteSelectedMessage = function () {
 };
 
 // Hide menu on click outside
-document.addEventListener('click', () => {
-  document.getElementById('msg-context-menu').style.display = 'none';
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('msg-context-menu');
+  if (menu && menu.style.display === 'block') {
+    menu.style.display = 'none';
+  }
 });
 
 window.sendStudentMessage = function (e) {
