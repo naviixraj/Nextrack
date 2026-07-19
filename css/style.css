@@ -1848,6 +1848,26 @@ html.light-theme .dev-stat-project { background: rgba(102,126,234,0.1); border-c
 html.light-theme .dev-stat-version { background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.2); }
 html.light-theme .dev-member { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #0f172a; }
 
+/* Student Page Dev Modal Specific */
+.dev-version-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 50px; border: 1px solid rgba(255,255,255,0.05); margin-top: 1rem; }
+.dev-version-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+.dev-version-value { font-size: 0.85rem; font-weight: 800; color: var(--accent-1); }
+html.light-theme .dev-version-badge { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+
+/* IN/OUT Badges Light Theme */
+html.light-theme .badge-in { background: rgba(16, 185, 129, 0.15) !important; color: #047857 !important; border-color: rgba(16, 185, 129, 0.4) !important; }
+html.light-theme .badge-out { background: rgba(245, 158, 11, 0.15) !important; color: #b45309 !important; border-color: rgba(245, 158, 11, 0.4) !important; }
+
+/* Geo Banners Light Theme (Detecting, Warning, Inside, Outside) */
+html.light-theme .geo-banner { color: #1e293b; border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); background: rgba(255, 255, 255, 0.9); }
+html.light-theme .geo-warning { color: #991b1b; background: rgba(254, 226, 226, 0.9); border-color: rgba(248, 113, 113, 0.4); }
+html.light-theme .geo-inside { color: #065f46; background: rgba(209, 250, 229, 0.9); border-color: rgba(52, 211, 153, 0.4); }
+html.light-theme .geo-outside { color: #9a3412; background: rgba(255, 237, 213, 0.9); border-color: rgba(251, 146, 60, 0.4); }
+
+/* Disabled Checkin/Checkout Buttons (Guarding Activity / Auto Checked Out) */
+html.light-theme .btn-checkin:disabled { color: #065f46 !important; background: rgba(16, 185, 129, 0.2) !important; opacity: 0.9 !important; border: 1px solid rgba(16, 185, 129, 0.4); }
+html.light-theme .btn-checkout:disabled { color: #9a3412 !important; background: rgba(245, 158, 11, 0.2) !important; opacity: 0.9 !important; border: 1px solid rgba(245, 158, 11, 0.4); }
+
 .theme-toggle {
   position: fixed; bottom: 24px; right: 24px;
   width: 52px; height: 52px; border-radius: 50%;
