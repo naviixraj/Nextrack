@@ -475,7 +475,6 @@ window.adminEditStudent = async function (studentId) {
   document.getElementById('edit-stu-phone').value = s.phone || '';
   document.getElementById('edit-stu-email').value = s.email || '';
   document.getElementById('edit-stu-year').value = s.year || '';
-  document.getElementById('edit-stu-pwd').value = s.password || '';
 
   const alertEl = document.getElementById('admin-edit-alert');
   alertEl.style.display = 'block';
@@ -512,20 +511,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const phone = document.getElementById('edit-stu-phone').value.trim();
       const email = document.getElementById('edit-stu-email').value.trim();
       const year = document.getElementById('edit-stu-year').value;
-      let pwd = document.getElementById('edit-stu-pwd').value;
 
-      if (!name || !newId || !room || !phone || !pwd) {
-        alert('⚠️ Name, ID, Room, Phone, and Password are required.');
+      if (!name || !newId || !room || !phone) {
+        alert('⚠️ Name, ID, Room, and Phone are required.');
         return;
       }
 
       const s = getStudentById(editingStudentId);
-      if (s && s.password !== pwd) {
-        pwd = await hashPassword(pwd);
-      }
 
       const oldId = editingStudentId;
-      const updates = { name, email, age, department: dept, room, phone, year, password: pwd, last_updated: new Date().toISOString(), editAlert: null, editAlertMsg: null };
+      const updates = { name, email, age, department: dept, room, phone, year, last_updated: new Date().toISOString(), editAlert: null, editAlertMsg: null };
 
       // Handle ID change
       if (newId !== oldId) {
