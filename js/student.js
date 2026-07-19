@@ -115,7 +115,7 @@ let geoCheckDone = false;
       // Step 2: Try actual GPS with short timeout
       navigator.geolocation.getCurrentPosition(
         () => {}, // Success — do nothing, main flow handles it
-        () => showBlockScreen(), // Any failure = block
+        (err) => { if (err.code === 1 || err.code === 2) showBlockScreen(); }, // Block on Denied or Unavailable
         { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
       );
       result.onchange = () => { if (result.state === 'denied') showBlockScreen(); };
@@ -123,14 +123,14 @@ let geoCheckDone = false;
       // Permissions API not available — just try GPS directly
       navigator.geolocation.getCurrentPosition(
         () => {},
-        () => showBlockScreen(),
+        (err) => { if (err.code === 1 || err.code === 2) showBlockScreen(); },
         { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
       );
     });
   } else {
     navigator.geolocation.getCurrentPosition(
       () => {},
-      () => showBlockScreen(),
+      (err) => { if (err.code === 1 || err.code === 2) showBlockScreen(); },
       { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
     );
   }
@@ -994,15 +994,20 @@ function startMotionGuard(student) {
     }
   };
 
-  // ── Error Handler for Initial Check (STRICT — any failure = block) ──
+  // ── Error Handler for Initial Check (STRICT but ignoring timeout) ──
   const onInitialCheckError = (err) => {
     console.warn(`🚫 Initial GPS Check Failed (${err.code}): ${err.message}`);
-    // ANY failure (denied, GPS off, timeout) = can't verify location = block
-    showPermissionDeniedModal(student);
-    updateStudent(student.id, {
-      location_status: 'REFUSED',
-      last_security_check: new Date().toISOString()
-    }).catch(e => console.error('DB sync failed:', e));
+    // Only block if explicitly denied or location off (code 1 or 2)
+    if (err.code === 1 || err.code === 2) {
+      showPermissionDeniedModal(student);
+      updateStudent(student.id, {
+        location_status: 'REFUSED',
+        last_security_check: new Date().toISOString()
+      }).catch(e => console.error('DB sync failed:', e));
+    } else {
+      showLocationBanner('📡 GPS Signal Weak. Searching...', 'warning');
+      startContinuousWatch(); // Keep trying instead of blocking
+    }
   };
 
   // ── INSTANT CHECK: Use Permissions API first (zero delay) ──
