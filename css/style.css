@@ -256,12 +256,13 @@ body {
 .btn-full { width: 100%; padding: 0.85rem; }
 
 .btn-ghost {
-  background: rgba(255,255,255,0.05); color: var(--text-secondary);
-  border: 1px solid transparent;
+  background: var(--bg-card); color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
 }
 .btn-ghost:hover {
-  background: rgba(255,255,255,0.08); color: var(--text-primary);
-  border-color: var(--glass-border);
+  background: var(--bg-card-hover); color: var(--text-primary);
+  border-color: var(--accent-1);
 }
 
 .btn-small { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 6px; }
@@ -294,7 +295,21 @@ body {
   font-weight: 700; font-size: 1.05rem;
 }
 
-.topbar-actions { display: flex; gap: 0.4rem; }
+.topbar-actions { display: flex; gap: 0.6rem; align-items: center; }
+.topbar-actions .btn-ghost {
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  padding: 0.5rem 0.8rem; border-radius: 10px; font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+html.light-theme .topbar-actions .btn-ghost {
+  background: rgba(102, 126, 234, 0.12); border: 1px solid rgba(102, 126, 234, 0.35);
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.15); color: #4338ca;
+  font-weight: 600;
+}
+html.light-theme .topbar-actions .btn-ghost:hover {
+  background: rgba(102, 126, 234, 0.2); border-color: rgba(102, 126, 234, 0.5);
+  color: #312e81;
+}
 
 .admin-label {
   font-size: 0.65rem; font-weight: 700;
@@ -1875,6 +1890,8 @@ html.light-theme .geo-outside { color: #9a3412; background: rgba(255, 237, 213, 
 /* Disabled Checkin/Checkout Buttons (Guarding Activity / Auto Checked Out) */
 html.light-theme .btn-checkin:disabled { color: #065f46 !important; background: rgba(16, 185, 129, 0.2) !important; opacity: 0.9 !important; border: 1px solid rgba(16, 185, 129, 0.4); }
 html.light-theme .btn-checkout:disabled { color: #9a3412 !important; background: rgba(245, 158, 11, 0.2) !important; opacity: 0.9 !important; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+
 
 /* Dev Modal Close Button */
 .dev-modal-close-btn { margin: 2rem auto 0; width: 100%; display: block; font-size: 1.1rem; padding: 0.8rem; }

@@ -22,7 +22,7 @@
   <link rel="apple-touch-icon" href="icon-512.png?v=85">
 
   <!-- CSS -->
-  <link rel="stylesheet" href="css/style.css?v=95">
+  <link rel="stylesheet" href="css/style.css?v=101">
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -54,13 +54,16 @@
 
   <!-- Top Bar -->
   <header class="topbar glass">
-    <div class="topbar-brand">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#grad3)" stroke-width="2">
+    <div class="topbar-brand" style="gap: 0.8rem;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#grad3)" stroke-width="2">
         <defs><linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/></linearGradient></defs>
         <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
         <circle cx="12" cy="10" r="3"/>
       </svg>
-      <span>NexTrack <small class="admin-label">Admin</small></span>
+      <div style="display: flex; flex-direction: column; align-items: center; line-height: 1;">
+        <span style="font-size: 1.25rem; font-weight: 800; letter-spacing: 0.5px;">NexTrack</span>
+        <small class="admin-label" style="margin-left: 0; margin-top: 3px; font-size: 0.6rem; padding: 2px 8px; border-radius: 6px;">ADMIN</small>
+      </div>
       <div id="sync-indicator" class="sync-dot" title="Live Sync Active"></div>
     </div>
     <div class="topbar-actions">
@@ -504,9 +507,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js?v=95"></script>
-  <script src="js/data.js?v=95"></script>
-  <script src="js/admin.js?v=95"></script>
-  <script src="js/pwa-v32.js?v=95"></script>
+  <script src="js/firebase-config.js?v=100"></script>
+  <script src="js/data.js?v=100"></script>
+  <script src="js/admin.js?v=100"></script>
+  <script src="js/pwa-v32.js?v=100"></script>
 </body>
 </html>
