@@ -22,7 +22,7 @@
   <link rel="apple-touch-icon" href="icon-512.png?v=2">
 
   <!-- CSS -->
-  <link rel="stylesheet" href="css/style.css?v=75">
+  <link rel="stylesheet" href="css/style.css?v=76">
 
   <!-- Leaflet CSS -->
 </head>
@@ -106,7 +106,19 @@
 
     <!-- Today History -->
     <section class="stu-history glass">
-      <h3>📋 Today's Movements</h3>
+      <h3>📋 History</h3>
+      
+      <!-- Date Filters -->
+      <div class="date-filters" style="margin-bottom: 1.5rem;">
+        <button class="date-filter-btn active" id="stu-filter-today">Today</button>
+        <button class="date-filter-btn" id="stu-filter-yesterday">Yesterday</button>
+        <div class="date-custom-wrap">
+          <input type="date" id="stu-filter-custom-date" class="date-input">
+          <button class="date-filter-btn" id="stu-filter-custom-btn">Go</button>
+        </div>
+        <span class="date-label" id="stu-table-date-label"></span>
+      </div>
+
       <div class="table-wrap">
         <table>
           <thead>
@@ -351,9 +363,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <!-- Custom Scripts -->
-  <script src="js/firebase-config.js?v=73"></script>
-  <script src="js/data.js?v=73"></script>
-  <script src="js/student.js?v=73"></script>
-  <script src="js/pwa-v32.js?v=73"></script>
+  <script src="js/firebase-config.js?v=76"></script>
+  <script src="js/data.js?v=76"></script>
+  <script src="js/student.js?v=76"></script>
+  <script src="js/pwa-v32.js?v=76"></script>
 </body>
 </html>

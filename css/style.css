@@ -1811,11 +1811,14 @@ html.light-theme .monitor-table-bw .call-btn {
 }
 
 /* Light Theme overrides for Filters */
-html.light-theme .year-filter-btn.active {
+html.light-theme .year-filter-btn.active,
+html.light-theme .date-filter-btn.active {
   background: rgba(15, 23, 42, 0.1);
   color: #0f172a;
   box-shadow: none;
 }
+html.light-theme .date-filter-btn { color: #334155; }
+html.light-theme .date-filter-btn:hover:not(.active) { background: rgba(0,0,0,0.05); }
 
 html.light-theme .date-input {
   color-scheme: light;

@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showProfileModal(student, true);
       }
 
+      initHistoryFilters();
       renderStudentUI(student);
 
       // ── Geolocation Check ──
@@ -310,12 +311,16 @@ function startDebounce() {
   }, 1000);
 }
 
-/* ── Today's History ─────────────────────────── */
-function renderTodayHistory(studentId) {
+/* ── History Filtering & Rendering ───────────────────────── */
+let currentStuHistoryDate = todayStr();
+
+function renderHistory(studentId) {
   const tbody = document.getElementById('history-body');
-  const movs = getMovementsByDate(todayStr()).filter(m => m.studentId === studentId);
+  const movs = getMovementsByDate(currentStuHistoryDate).filter(m => m.studentId === studentId);
+  
   if (movs.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No movements today</td></tr>';
+    let emptyMsg = (currentStuHistoryDate === todayStr()) ? "No movements today" : `No movements on ${currentStuHistoryDate}`;
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-row">${emptyMsg}</td></tr>`;
     return;
   }
   tbody.innerHTML = movs.map((m, i) => `
@@ -326,6 +331,57 @@ function renderTodayHistory(studentId) {
       <td>${calcDuration(m.outTime, m.inTime)}</td>
     </tr>
   `).join('');
+}
+
+function initHistoryFilters() {
+  const btnToday = document.getElementById('stu-filter-today');
+  const btnYest = document.getElementById('stu-filter-yesterday');
+  const customDateInput = document.getElementById('stu-filter-custom-date');
+  const customBtn = document.getElementById('stu-filter-custom-btn');
+  const dateLabel = document.getElementById('stu-table-date-label');
+
+  function updateActiveBtn(activeBtn) {
+    [btnToday, btnYest, customBtn].forEach(b => {
+      if(b) b.classList.remove('active');
+    });
+    if(activeBtn) activeBtn.classList.add('active');
+  }
+
+  function applyDate(dateStr, btnToActivate) {
+    currentStuHistoryDate = dateStr;
+    updateActiveBtn(btnToActivate);
+    
+    if (dateStr === todayStr()) dateLabel.textContent = 'Showing: Today';
+    else if (dateStr === yesterdayStr()) dateLabel.textContent = 'Showing: Yesterday';
+    else dateLabel.textContent = 'Showing: ' + dateStr;
+
+    const session = getSession();
+    if(session) renderHistory(session.userId);
+  }
+
+  if (btnToday) {
+    btnToday.addEventListener('click', () => {
+      customDateInput.value = '';
+      applyDate(todayStr(), btnToday);
+    });
+  }
+  
+  if (btnYest) {
+    btnYest.addEventListener('click', () => {
+      customDateInput.value = '';
+      applyDate(yesterdayStr(), btnYest);
+    });
+  }
+
+  if (customBtn) {
+    customBtn.addEventListener('click', () => {
+      const d = customDateInput.value;
+      if (d) applyDate(d, customBtn);
+    });
+  }
+
+  // Initialize label
+  if(dateLabel) dateLabel.textContent = 'Showing: Today';
 }
 
 /* ── Profile Update Modal ────────────────────── */
