@@ -907,7 +907,7 @@ tbody tr:hover {
   right: 1rem;
   width: 380px;
   max-height: 520px;
-  z-index: 150;
+  z-index: 10000;
   animation: slideUp 0.3s ease;
 }
 
@@ -1867,6 +1867,14 @@ html.light-theme .geo-outside { color: #9a3412; background: rgba(255, 237, 213, 
 /* Disabled Checkin/Checkout Buttons (Guarding Activity / Auto Checked Out) */
 html.light-theme .btn-checkin:disabled { color: #065f46 !important; background: rgba(16, 185, 129, 0.2) !important; opacity: 0.9 !important; border: 1px solid rgba(16, 185, 129, 0.4); }
 html.light-theme .btn-checkout:disabled { color: #9a3412 !important; background: rgba(245, 158, 11, 0.2) !important; opacity: 0.9 !important; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+/* Dev Modal Close Button */
+.dev-modal-close-btn { margin: 2rem auto 0; width: 100%; display: block; font-size: 1.1rem; padding: 0.8rem; }
+
+/* Chat Context Menu Light Theme */
+html.light-theme .msg-context-menu { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+html.light-theme .msg-context-menu button { color: #1e293b; border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
+html.light-theme .msg-context-menu button:hover { background: rgba(0, 0, 0, 0.05); }
 
 .theme-toggle {
   position: fixed; bottom: 24px; right: 24px;
