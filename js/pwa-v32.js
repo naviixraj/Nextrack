@@ -217,26 +217,53 @@ function initPWAAndTheme() {
     btn.id = 'theme-toggle';
     btn.className = 'theme-toggle';
     const isLight = document.documentElement.classList.contains('light-theme');
-    btn.innerHTML = isLight ? '🌙' : '☀️';
-    document.body.appendChild(btn);
-
-    btn.addEventListener('click', () => {
+    btn.textContent = isLight ? '🌙' : '🌓';
+    
+    btn.onclick = () => {
       document.documentElement.classList.toggle('light-theme');
       const nowLight = document.documentElement.classList.contains('light-theme');
+      btn.textContent = nowLight ? '🌙' : '🌓';
       
-      btn.style.transform = 'scale(0.5) rotate(180deg)';
-      btn.style.opacity = '0';
-      setTimeout(() => {
-        btn.innerHTML = nowLight ? '🌙' : '☀️';
-        btn.style.transform = 'scale(1) rotate(0deg)';
-        btn.style.opacity = '1';
-      }, 150);
-
+      // Update meta tag
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.setAttribute('content', nowLight ? '#ffffff' : '#1a1a2e');
+      }
+      
       localStorage.setItem('nexTrackTheme', nowLight ? 'light' : 'dark');
+      if (typeof renderTodayHistory === 'function') renderTodayHistory();
+    };
+    document.body.appendChild(btn);
+  }
+
+  // ── Firebase Real-Time Update Listener ──────
+  if (typeof firebaseDB !== 'undefined') {
+    let initialVersionLoad = true;
+    firebaseDB.ref('system/app_version').on('value', (snap) => {
+      const v = snap.val();
+      if (!v) return;
+      
+      if (initialVersionLoad) {
+        initialVersionLoad = false;
+        // Just record it, don't show pop-up on first load 
+        // (unless we want to compare with localStorage, but PWA handles init load)
+        localStorage.setItem('nexTrack_app_version', v);
+      } else {
+        const storedV = localStorage.getItem('nexTrack_app_version');
+        if (storedV !== v) {
+          localStorage.setItem('nexTrack_app_version', v);
+          console.log('🚀 Real-time update detected! Version:', v);
+          // Show the premium modal
+          if (typeof showPremiumUpdateModal === 'function') {
+            showPremiumUpdateModal(null);
+          }
+        }
+      }
     });
   }
 }
 
+// Automatically init if DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initPWAAndTheme);
 } else {

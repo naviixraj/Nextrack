@@ -1313,3 +1313,11 @@ window.closeSupportModal = function () {
   const modal = document.getElementById('support-modal');
   if (modal) modal.classList.remove('visible');
 };
+
+window.pushGlobalUpdate = function() {
+  if(confirm('⚠️ Are you sure you want to push a global update? This will trigger an update popup for all currently active users.')) {
+    firebaseDB.ref('system/app_version').set('v' + Date.now())
+      .then(() => alert('✅ Global update triggered!'))
+      .catch(e => alert('❌ Error: ' + e));
+  }
+};
