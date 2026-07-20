@@ -25,6 +25,33 @@
   <link rel="stylesheet" href="css/style.css?v=104">
 
   <!-- Leaflet CSS -->
+  <style>
+    .pwd-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .pwd-wrap input {
+      width: 100%;
+      padding-right: 2.5rem;
+    }
+    .pwd-toggle {
+      position: absolute;
+      right: 0.8rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem;
+      transition: color 0.3s;
+    }
+    .pwd-toggle:hover {
+      color: var(--text);
+    }
+  </style>
 </head>
 <body class="dashboard-page">
 
@@ -233,11 +260,27 @@
           <div class="form-row" style="margin-top:0.8rem;">
             <div class="form-group">
               <label for="profile-new-pwd">New Password</label>
-              <input type="password" id="profile-new-pwd" placeholder="Min 4 chars">
+              <div class="pwd-wrap">
+                <input type="password" id="profile-new-pwd" placeholder="Min 4 chars">
+                <button type="button" class="pwd-toggle" data-target="profile-new-pwd" aria-label="Toggle visibility">
+                  <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="profile-confirm-pwd">Confirm New</label>
-              <input type="password" id="profile-confirm-pwd" placeholder="Confirm new">
+              <div class="pwd-wrap">
+                <input type="password" id="profile-confirm-pwd" placeholder="Confirm new">
+                <button type="button" class="pwd-toggle" data-target="profile-confirm-pwd" aria-label="Toggle visibility">
+                  <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           <p id="profile-pwd-msg" style="font-size:0.75rem; color:#ef4444; margin-top:0.5rem; display:none;"></p>
@@ -367,9 +410,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <!-- Custom Scripts -->
-  <script src="js/firebase-config.js?v=106"></script>
-  <script src="js/data.js?v=106"></script>
-  <script src="js/student.js?v=106"></script>
-  <script src="js/pwa-v32.js?v=106"></script>
+  <script src="js/firebase-config.js?v=108"></script>
+  <script src="js/data.js?v=108"></script>
+  <script src="js/student.js?v=108"></script>
+  <script src="js/pwa-v32.js?v=108"></script>
 </body>
 </html>

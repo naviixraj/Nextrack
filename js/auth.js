@@ -336,10 +336,6 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const isPwd = input.type === 'password';
       input.type = isPwd ? 'text' : 'password';
-      
-      // Update SVG opacity or icon if needed
-      const icon = toggle.querySelector('svg');
-      if (icon) icon.style.opacity = isPwd ? '1' : '0.5';
     });
   });
 });

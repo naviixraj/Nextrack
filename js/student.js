@@ -1077,3 +1077,13 @@ function showPermissionDeniedModal(student) {
   });
 }
 
+
+// -- Password Visibility Toggle --
+document.addEventListener('click', (e) => {
+  const toggle = e.target.closest('.pwd-toggle');
+  if (!toggle) return;
+  const targetId = toggle.getAttribute('data-target');
+  const input = document.getElementById(targetId);
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+});
