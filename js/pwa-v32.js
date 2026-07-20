@@ -5,7 +5,7 @@
  */
 
 let deferredPrompt;
-const APP_VERSION = 'v57';
+const APP_VERSION = 'v105';
 
 // 1. Register Service Worker with a Static Version Buster
 if ('serviceWorker' in navigator) {
