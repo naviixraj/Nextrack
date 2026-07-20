@@ -241,10 +241,38 @@ document.addEventListener('DOMContentLoaded', () => {
       const pwd = document.getElementById('reg-pwd').value;
       const pwdC = document.getElementById('reg-pwd-confirm').value;
 
-      if (!newId || !name || !email || !room || !phone || !age || !dept || !pwd || !photoBase64) {
-        registerMsg.textContent = '⚠️ All fields are required.';
-        registerMsg.className = 'form-msg error';
-        return;
+      const fieldsToCheck = [
+        { id: 'reg-name', name: 'Name', value: name },
+        { id: 'reg-id', name: 'Registration No.', value: newId },
+        { id: 'reg-email', name: 'Email Address', value: email },
+        { id: 'reg-photo', name: 'Profile Photo', value: photoBase64 },
+        { id: 'reg-room', name: 'Room No.', value: room },
+        { id: 'reg-phone', name: 'Phone No.', value: phone },
+        { id: 'reg-age', name: 'Age', value: age },
+        { id: 'reg-dept', name: 'Department', value: dept },
+        { id: 'reg-year', name: 'Year of Study', value: year },
+        { id: 'reg-pwd', name: 'Password', value: pwd }
+      ];
+
+      for (const field of fieldsToCheck) {
+        if (!field.value) {
+          const el = document.getElementById(field.id);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (field.id === 'reg-photo') {
+              const previewBox = document.getElementById('reg-photo-preview');
+              if (previewBox) {
+                previewBox.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.5)';
+                setTimeout(() => previewBox.style.boxShadow = 'none', 2000);
+              }
+            } else {
+              el.focus();
+            }
+          }
+          registerMsg.textContent = `⚠️ Please fill out your ${field.name}.`;
+          registerMsg.className = 'form-msg error';
+          return;
+        }
       }
       if (pwd !== pwdC) {
         registerMsg.textContent = '⚠️ Passwords do not match.';
