@@ -51,61 +51,16 @@ let geoCheckDone = false;
         <p id="gps-sub" style="font-size:0.78rem; color:rgba(255,255,255,0.45); margin-bottom:2rem;">
           Enable GPS in your phone settings — this page will unlock automatically.
         </p>
-        <div id="gps-status-bar" style="
-          background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
-          border-radius: 12px; padding: 0.8rem 1rem; font-size:0.82rem;
-          color:rgba(255,255,255,0.5);
-          display: flex; align-items: center; gap: 0.5rem; justify-content: center;
-        ">
-          <span id="gps-spinner" style="display:inline-block; animation: gps-spin 1s linear infinite;">⟳</span>
-          <span id="gps-status-text">Waiting for location to be enabled...</span>
-        </div>
+        <button id="gps-retry-btn" class="btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-bottom: 0.5rem; border-radius: 12px !important;" onclick="this.textContent='Checking...'; this.style.opacity='0.7'; setTimeout(() => window.location.reload(), 100);">Try Again</button>
+        <p id="gps-error-msg" style="color: #fca5a5; font-size: 0.8rem; margin-top: 0.5rem; display: none;">Location is still off or denied.</p>
       </div>
       <style>
         @keyframes gps-pulse { 0%,100%{box-shadow:0 8px 25px rgba(239,68,68,0.3)} 50%{box-shadow:0 8px 40px rgba(239,68,68,0.6)} }
-        @keyframes gps-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes gps-success-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
       </style>
     `;
     // Force body overflow hidden
     document.body.style.overflow = 'hidden';
     document.body.appendChild(overlay);
-
-    // ── Auto-poll every 3s to detect when location is back on ──
-    let unlocking = false;
-    const poll = setInterval(() => {
-      if (unlocking) return;
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          // Location is back!
-          if (unlocking) return;
-          unlocking = true;
-          clearInterval(poll);
-          const icon = document.getElementById('gps-icon-wrap');
-          const title = document.getElementById('gps-title');
-          const desc = document.getElementById('gps-desc');
-          const sub = document.getElementById('gps-sub');
-          const bar = document.getElementById('gps-status-bar');
-          const spinner = document.getElementById('gps-spinner');
-          const statusText = document.getElementById('gps-status-text');
-          if (icon) { icon.textContent = '✅'; icon.style.background = 'rgba(16,185,129,0.15)'; icon.style.borderColor = 'rgba(16,185,129,0.4)'; icon.style.boxShadow = '0 8px 25px rgba(16,185,129,0.3)'; icon.style.animation = 'none'; }
-          if (title) { title.textContent = 'Location Detected!'; title.style.color = '#10b981'; }
-          if (desc) { desc.innerHTML = 'GPS confirmed! <strong style="color:#fff;">Entering NexTrack...</strong>'; }
-          if (sub) { sub.style.display = 'none'; }
-          if (bar) { bar.style.background = 'rgba(16,185,129,0.1)'; bar.style.borderColor = 'rgba(16,185,129,0.3)'; }
-          if (spinner) { spinner.style.animation = 'none'; spinner.textContent = ''; }
-          let count = 3;
-          if (statusText) statusText.textContent = `Unlocking in ${count}...`;
-          const cd = setInterval(() => {
-            count--;
-            if (count > 0) { if (statusText) statusText.textContent = `Unlocking in ${count}...`; }
-            else { clearInterval(cd); sessionStorage.setItem('gps_just_confirmed', 'true'); window.location.reload(); }
-          }, 1000);
-        },
-        () => {}, // Still denied — keep polling
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 0 }
-      );
-    }, 3000);
   };
 
   // Step 1: Check Permissions API instantly
@@ -1095,29 +1050,15 @@ function showPermissionDeniedModal(student) {
         Location access is <strong style="color:#fff;">MANDATORY</strong> for NexTrack attendance.<br>The warden has been notified.
       </p>
       <p id="gps-sub" style="font-size:0.78rem; color:rgba(255,255,255,0.45); margin-bottom:2rem;">
-        Enable GPS in your phone settings, then this page will unlock automatically.
+        Enable GPS in your phone settings, then tap Try Again to unlock.
       </p>
-      <div id="gps-status-bar" style="
-        background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
-        border-radius: 12px; padding: 0.8rem 1rem; font-size:0.82rem; color:rgba(255,255,255,0.5);
-        display: flex; align-items: center; gap: 0.5rem; justify-content: center;
-      ">
-        <span id="gps-spinner" style="display:inline-block; animation: gps-spin 1s linear infinite;">⟳</span>
-        <span id="gps-status-text">Waiting for location to be enabled...</span>
-      </div>
+      <button id="gps-retry-btn" class="btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-bottom: 0.5rem; border-radius: 12px !important;" onclick="this.textContent='Checking...'; this.style.opacity='0.7'; setTimeout(() => window.location.reload(), 100);">Try Again</button>
+      <p id="gps-error-msg" style="color: #fca5a5; font-size: 0.8rem; margin-top: 0.5rem; display: none;">Location is still off or denied.</p>
     </div>
     <style>
       @keyframes gps-pulse {
         0%, 100% { box-shadow: 0 8px 25px rgba(239,68,68,0.3); }
         50% { box-shadow: 0 8px 40px rgba(239,68,68,0.6); }
-      }
-      @keyframes gps-spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      @keyframes gps-countdown-pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
       }
     </style>
   `;
@@ -1134,56 +1075,5 @@ function showPermissionDeniedModal(student) {
       if (card) card.style.transform = 'scale(1) translateY(0)';
     }, 50);
   });
-
-  // ── Auto-Poll for Location Recovery ──
-  let countdownStarted = false;
-
-  const pollInterval = setInterval(() => {
-    if (countdownStarted) return;
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        // Location is back!
-        if (countdownStarted) return;
-        countdownStarted = true;
-        clearInterval(pollInterval);
-
-        // Update UI to show success state
-        const icon = document.getElementById('gps-icon-wrap');
-        const title = document.getElementById('gps-title');
-        const desc = document.getElementById('gps-desc');
-        const sub = document.getElementById('gps-sub');
-        const statusBar = document.getElementById('gps-status-bar');
-        const spinner = document.getElementById('gps-spinner');
-        const statusText = document.getElementById('gps-status-text');
-
-        if (icon) { icon.textContent = '✅'; icon.style.background = 'rgba(16,185,129,0.15)'; icon.style.borderColor = 'rgba(16,185,129,0.4)'; icon.style.boxShadow = '0 8px 25px rgba(16,185,129,0.3)'; icon.style.animation = 'none'; }
-        if (title) { title.textContent = 'Location Detected!'; title.style.color = '#10b981'; }
-        if (desc) { desc.innerHTML = 'GPS confirmed! <strong style="color:#fff;">Entering NexTrack...</strong>'; }
-        if (sub) { sub.style.display = 'none'; }
-        if (statusBar) { statusBar.style.background = 'rgba(16,185,129,0.1)'; statusBar.style.borderColor = 'rgba(16,185,129,0.3)'; }
-        if (spinner) { spinner.style.animation = 'none'; spinner.textContent = ''; }
-
-        // Countdown 3 → 2 → 1
-        let count = 3;
-        if (statusText) statusText.textContent = `Unlocking in ${count}...`;
-        const card = document.getElementById('gps-modal-card');
-        if (card) card.style.animation = 'gps-countdown-pulse 0.8s ease-in-out infinite';
-
-        const countdown = setInterval(() => {
-          count--;
-          if (count > 0) {
-            if (statusText) statusText.textContent = `Unlocking in ${count}...`;
-          } else {
-            clearInterval(countdown);
-            window.location.reload();
-          }
-        }, 1000);
-      },
-      () => {
-        // Still denied — do nothing, keep polling
-      },
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 0 }
-    );
-  }, 3000); // Poll every 3 seconds
 }
 
