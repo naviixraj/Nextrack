@@ -341,8 +341,11 @@ function getCurrentStatus(studentId) {
 /* ── Check-Out ───────────────────────────────── */
 function handleCheckOut(student) {
   const now = new Date().toISOString();
+  const movId = (typeof firebaseDB !== 'undefined' && firebaseDB) 
+                ? firebaseDB.ref('movements').push().key 
+                : generateId();
   addMovement({
-    id: generateId(),
+    id: movId,
     studentId: student.id,
     outTime: now,
     inTime: null,
@@ -903,6 +906,10 @@ function startMotionGuard(student) {
 
   // ── Success Handler (Shared) ──
   const onLocationSuccess = (pos) => {
+    if (window.code2GraceTimer) {
+      clearTimeout(window.code2GraceTimer);
+      window.code2GraceTimer = null;
+    }
     // Ignore inaccurate location fixes (e.g. cellular triangulation indoors) to avoid false check-outs
     if (pos.coords.accuracy > 150) {
       console.warn(`📡 Ignoring inaccurate location: ±${Math.round(pos.coords.accuracy)}m`);
@@ -937,14 +944,24 @@ function startMotionGuard(student) {
   const onLocationError = (err) => {
     geoCheckDone = true;
     console.warn(`🛑 GPS Watch Error (${err.code}): ${err.message}`);
-    if (err.code === 1 || err.code === 2) {
+    if (err.code === 1) { // Permission Denied
       showPermissionDeniedModal(student);
       updateStudent(student.id, {
         location_status: 'REFUSED',
         last_security_check: new Date().toISOString()
       }).catch(e => console.error('DB sync failed:', e));
-    } else {
-      // code 3 in continuous watch = just weak signal (student is inside, GPS dropped)
+    } else if (err.code === 2) { // Position Unavailable (e.g., inside elevator)
+      showLocationBanner('⚠️ GPS Signal Weak. Move to open area.', 'warning');
+      if (!window.code2GraceTimer) {
+        window.code2GraceTimer = setTimeout(() => {
+          showPermissionDeniedModal(student);
+          updateStudent(student.id, {
+            location_status: 'REFUSED',
+            last_security_check: new Date().toISOString()
+          }).catch(e => console.error('DB sync failed:', e));
+        }, 30000); // 30 second grace period
+      }
+    } else { // Timeout or unknown
       showLocationBanner('⚠️ GPS Signal Weak. Move to open area.', 'warning');
     }
   };
@@ -952,13 +969,24 @@ function startMotionGuard(student) {
   // ── Error Handler for Initial Check (STRICT but ignoring timeout) ──
   const onInitialCheckError = (err) => {
     console.warn(`🚫 Initial GPS Check Failed (${err.code}): ${err.message}`);
-    // Only block if explicitly denied or location off (code 1 or 2)
-    if (err.code === 1 || err.code === 2) {
+    if (err.code === 1) { // Permission Denied
       showPermissionDeniedModal(student);
       updateStudent(student.id, {
         location_status: 'REFUSED',
         last_security_check: new Date().toISOString()
       }).catch(e => console.error('DB sync failed:', e));
+    } else if (err.code === 2) { // Position Unavailable
+      showLocationBanner('📡 GPS Signal Weak. Searching...', 'warning');
+      startContinuousWatch();
+      if (!window.code2GraceTimer) {
+        window.code2GraceTimer = setTimeout(() => {
+          showPermissionDeniedModal(student);
+          updateStudent(student.id, {
+            location_status: 'REFUSED',
+            last_security_check: new Date().toISOString()
+          }).catch(e => console.error('DB sync failed:', e));
+        }, 30000); // 30 second grace period
+      }
     } else {
       showLocationBanner('📡 GPS Signal Weak. Searching...', 'warning');
       startContinuousWatch(); // Keep trying instead of blocking
