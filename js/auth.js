@@ -10,6 +10,14 @@
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ── RESET LINK CHECK ──
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetToken = urlParams.get('reset');
+  if (resetToken) {
+    handleResetLink(resetToken);
+    return;
+  }
+
   // ── INSTANT SESSION REDIRECT (Speed Boost) ──
   // If we already have a session, don't even wait for Cloud Sync or Loader
   const quickSession = getSession();
@@ -17,6 +25,54 @@ document.addEventListener('DOMContentLoaded', () => {
     if (quickSession.role === 'admin') window.location.href = 'admin.html';
     else window.location.href = 'student.html';
     return;
+  }
+
+  async function handleResetLink(token) {
+    document.body.innerHTML = '<div style="padding: 2rem; text-align: center; font-family: sans-serif;"><h2>Verifying secure link...</h2></div>';
+    
+    try {
+      const snap = await firebaseDB.ref('password_resets/' + token).once('value');
+      if (!snap.exists()) {
+        alert('❌ Invalid or expired reset link.');
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      const data = snap.val();
+      
+      // Link expires after 1 hour (3600000 ms)
+      if (Date.now() - data.timestamp > 3600000) {
+        alert('❌ This reset link has expired.');
+        await firebaseDB.ref('password_resets/' + token).remove();
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const newPwd = prompt(`Enter a new password for ${data.email}:\n(Must be at least 4 characters)`);
+      if (!newPwd || newPwd.length < 4) {
+        alert('Password must be at least 4 characters. Please click the link in your email again to retry.');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      document.body.innerHTML = '<div style="padding: 2rem; text-align: center; font-family: sans-serif;"><h2>Securely saving new password...</h2></div>';
+      
+      const hashedNewPwd = await hashPassword(newPwd);
+      
+      // Update password in Realtime DB
+      await updateStudent(data.uid, { password: hashedNewPwd });
+      
+      // Delete the used token
+      await firebaseDB.ref('password_resets/' + token).remove();
+      
+      alert('✅ Password updated successfully! You can now log in.');
+      window.location.href = 'index.html';
+
+    } catch (err) {
+      console.error(err);
+      alert('❌ Error updating password. Please try again.');
+      window.location.href = 'index.html';
+    }
   }
 
   const loader = document.getElementById('startup-loader');
@@ -152,44 +208,47 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const confirmMsg = `Reset password for ${user.name}? A new 8-digit password will be sent to ${user.email}.`;
+      const confirmMsg = `Send password reset email to ${user.email}?`;
       if (!confirm(confirmMsg)) return;
 
-      loginMsg.innerHTML = '<span class="status-toast-premium visible" style="position:static; transform:none; opacity:1; padding:0.5rem; margin-top:0.5rem;">💌 Sending reset email...</span>';
+      loginMsg.innerHTML = '<span class="status-toast-premium visible" style="position:static; transform:none; opacity:1; padding:0.5rem; margin-top:0.5rem;">💌 Sending reset link...</span>';
+
+      // 1. Generate 20 character secure token
+      const array = new Uint32Array(5);
+      window.crypto.getRandomValues(array);
+      const token = Array.from(array, dec => dec.toString(36)).join('');
       
-      // Generate random 8-digit password
-      const newPwd = Math.floor(10000000 + Math.random() * 90000000).toString();
-      const hashedNewPwd = await hashPassword(newPwd);
-
       try {
-        // 1. Update Password in Database
-        await updateStudent(uid, { password: hashedNewPwd });
+        // 2. Save token to Firebase
+        await firebaseDB.ref('password_resets/' + token).set({
+          uid: user.id,
+          email: user.email,
+          timestamp: Date.now()
+        });
 
-        // 2. Send via EmailJS
+        // 3. Send via EmailJS
+        const resetLink = `https://nextrack-34110.web.app/index.html?reset=${token}`;
         const templateParams = {
-          user_id: user.id,
-          new_password: newPwd,
+          user_name: user.name,
           to_email: user.email,
-          user_name: user.name
+          new_password: `Click this secure link to reset your password: ${resetLink}` // Re-using the new_password variable for the link
         };
 
-        // Explicitly passing public key for maximum reliability
-        const response = await emailjs.send(
+        await emailjs.send(
           'service_tmis0qo', 
           'template_ujbp5de', 
           templateParams,
           'FZBvXpRsuwPKew5dH'
         );
 
-        console.log('EmailJS Success:', response);
         loginMsg.className = 'form-msg success';
-        loginMsg.innerHTML = '✅ Success! Please check your email for the new 8-digit password.';
+        loginMsg.innerHTML = '✅ Success! Please check your email for the reset link.';
         forgotPwdLink.style.display = 'none';
       } catch (err) {
         console.error('Email error:', err);
         const errorText = err.text || err.message || JSON.stringify(err);
         loginMsg.className = 'form-msg error';
-        loginMsg.innerHTML = `❌ Email Error: ${errorText}. <br><small>Check if your Service ID and Template ID are correct in EmailJS.</small>`;
+        loginMsg.innerHTML = `❌ Error: ${errorText}`;
       }
     }
 

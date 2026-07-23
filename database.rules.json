@@ -1,21 +1,21 @@
 {
   "rules": {
     "students": {
-      ".read": "auth != null",
+      ".read": "true",
       "$student_id": {
-        ".write": "auth != null"
+        ".write": "true"
       }
     },
     "movements": {
-      ".read": "auth != null",
+      ".read": "true",
       "$movement_id": {
-        ".write": "auth != null"
+        ".write": "true"
       }
     },
     "admin_logins": {
-      ".read": "auth != null",
+      ".read": "true",
       "$admin_id": {
-        ".write": "auth != null"
+        ".write": "true"
       }
     },
     "messages": {
@@ -29,6 +29,10 @@
     "system": {
       ".read": "auth != null",
       ".write": "auth != null"
+    },
+    "password_resets": {
+      ".read": "true",
+      ".write": "true"
     }
   }
 }

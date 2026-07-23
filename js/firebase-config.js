@@ -20,15 +20,16 @@ try {
   firebase.initializeApp(firebaseConfig);
   firebaseDB = firebase.database();
 
-  // Auto sign-in anonymously for security
-  firebase.auth().signInAnonymously()
-    .then(() => {
+  // Listen to Firebase Auth state for security
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
       firebaseChatReady = true;
-      console.log('🔐 Signed in anonymously — chat is secure!');
-    })
-    .catch((err) => {
-      console.error('❌ Anonymous sign-in failed:', err);
-    });
+      console.log('🔐 Signed in as:', user.email);
+    } else {
+      firebaseChatReady = false;
+      console.log('⚠️ User is signed out');
+    }
+  });
 
   // Connection status
   firebaseDB.ref('.info/connected').on('value', (snap) => {
