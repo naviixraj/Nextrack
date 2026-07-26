@@ -54,16 +54,22 @@ function durationMinutes(outIso, inIso) {
   return Math.max(0, Math.floor((new Date(inIso) - new Date(outIso)) / 60000));
 }
 
+/** Convert any Date object to strict IST (UTC+5:30) */
+function toIST(dateObj) {
+  const utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 5.5));
+}
+
 /** Check if an ISO time's hour:minute is >= 19:00 */
 function isAfterCurfew(iso) {
   if (!iso) return false;
-  const d = new Date(iso);
+  const d = toIST(new Date(iso));
   return d.getHours() > 19 || (d.getHours() === 19 && d.getMinutes() >= 0);
 }
 
 /** Check if right now is past 19:01 */
 function isNowPastCurfew() {
-  const now = new Date();
+  const now = toIST(new Date());
   return now.getHours() > 19 || (now.getHours() === 19 && now.getMinutes() >= 1);
 }
 
@@ -74,6 +80,21 @@ let fbAdminLogins = [];
 let fbGeofence = null;
 let isCloudReady = false;
 
+/* ── Date and Time Logic ─────────────────────── */
+// Bug #7 Fix: Global Time Zone (IST UTC+5:30)
+function getISTDate() {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 5.5));
+}
+
+function getCurfewStatus() {
+  const istNow = getISTDate();
+  const h = istNow.getHours();
+  return h >= 19 || h < 6; // 7 PM to 6 AM IST
+}
+
+/* ── Exports for PWA & Debugging ─────────────── */
 /* ── Cloud Sync Engine ───────────────────────── */
 function initCloudSync(onReadyCallback) {
   if (typeof firebaseDB === 'undefined' || !firebaseDB) {

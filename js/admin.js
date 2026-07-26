@@ -278,9 +278,7 @@ function renderMonitoringTable() {
 
     // Row classes
     let rowClass = '';
-    const outHour = new Date(m.outTime).getHours();
-    const outMinute = new Date(m.outTime).getMinutes();
-    const isOutAfterCurfew = outHour > 19 || (outHour === 19 && outMinute >= 0);
+    const isOutAfterCurfew = isAfterCurfew(m.outTime);
 
     if (isOutAfterCurfew && m.inTime) {
       rowClass = 'row-red';   // out-time after 19:00 and returned
