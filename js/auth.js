@@ -338,6 +338,16 @@ document.addEventListener('DOMContentLoaded', () => {
         registerMsg.className = 'form-msg error';
         return;
       }
+      
+      // Firebase Key Validation
+      if (/[.#$\[\]]/.test(newId)) {
+        registerMsg.textContent = '⚠️ Student ID cannot contain special characters (., #, $, [, ]).';
+        registerMsg.className = 'form-msg error';
+        const idEl = document.getElementById('reg-id');
+        idEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        idEl.focus();
+        return;
+      }
       if (pwd.length < 4) {
         registerMsg.textContent = '⚠️ Password must be at least 4 characters.';
         registerMsg.className = 'form-msg error';
