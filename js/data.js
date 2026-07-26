@@ -93,15 +93,41 @@ function initCloudSync(onReadyCallback) {
       firebaseDB.ref('admin_logins').once('value'),
       firebaseDB.ref('geofence').once('value')
     ]).then(snapshots => {
-      fbStudents = snapshots[0].val() ? Object.values(snapshots[0].val()) : [];
+      const raw = snapshots[0].val() ? Object.values(snapshots[0].val()) : [];
+      fbStudents = raw.map(sanitizeStudent);
       fbMovements = snapshots[1].val() ? Object.values(snapshots[1].val()) : [];
       fbAdminLogins = snapshots[2].val() ? Object.values(snapshots[2].val()) : [];
       fbGeofence = snapshots[3].val() || null;
+/* ── XSS Sanitizer Shield (Bug #5) ──────────────────────── */
+function safeHTML(str) {
+  if (typeof str !== 'string') return str;
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function sanitizeStudent(s) {
+  if (!s) return s;
+  return {
+    ...s,
+    name: safeHTML(s.name),
+    photo: safeHTML(s.photo),
+    id: safeHTML(s.id),
+    email: safeHTML(s.email),
+    phone: safeHTML(s.phone),
+    room: safeHTML(s.room),
+    dept: safeHTML(s.dept),
+    year: safeHTML(s.year),
+    role: safeHTML(s.role)
+  };
+}
+
       isCloudReady = true;
 
       // Attach Real-Time Observers for Cross-Device Sync
       firebaseDB.ref('students').on('value', snap => {
-        fbStudents = snap.val() ? Object.values(snap.val()) : [];
+        const raw = snap.val() ? Object.values(snap.val()) : [];
+        fbStudents = raw.map(sanitizeStudent);
         window.dispatchEvent(new Event('db_updated'));
       });
       firebaseDB.ref('movements').on('value', snap => {
@@ -189,10 +215,24 @@ function getMovementsByDate(dateStr) {
 
 /* ── Session ─────────────────────────────────── */
 function getSession() {
-  return JSON.parse(localStorage.getItem(DB.SESSION) || 'null');
+  const sessionStr = localStorage.getItem(DB.SESSION);
+  if (!sessionStr) return null;
+  const session = JSON.parse(sessionStr);
+  
+  // Bug #11 (Infinite Sessions) -> 6 Month Expiration (180 days = 15552000000 ms)
+  if (session && session.timestamp) {
+    const age = Date.now() - session.timestamp;
+    if (age > 15552000000) {
+      console.warn("Session expired (older than 6 months). Logging out.");
+      localStorage.removeItem(DB.SESSION);
+      return null;
+    }
+  }
+  return session;
 }
 
 function setSession(obj) {
+  obj.timestamp = Date.now();
   localStorage.setItem(DB.SESSION, JSON.stringify(obj));
 }
 
