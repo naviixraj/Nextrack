@@ -35,7 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initCloudSync(() => {
     const session = getSession();
-    if (!session || session.role !== 'admin') {
+    
+    // Fake Admin Bypass Lockdown (Bug #2)
+    const adminUser = getStudents().find(s => s.id === session?.userId && s.role === 'admin');
+    if (!session || session.role !== 'admin' || !adminUser || session.hash !== adminUser.password) {
+      console.warn("🚨 Unauthorized Admin Access Attempt Blocked.");
+      clearSession();
       window.location.href = 'index.html';
       return;
     }
@@ -1174,7 +1179,7 @@ window.sendAdminMessage = function (e) {
     senderName: admin ? admin.name : 'Admin',
     senderRole: 'admin',
     text: text,
-    timestamp: new Date().toISOString()
+    timestamp: firebase.database.ServerValue.TIMESTAMP
   });
 
   input.value = '';

@@ -277,11 +277,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      setSession({ userId: user.id, role: user.role || 'student' });
-
       if (user.role === 'admin') {
+        setSession({ userId: user.id, role: 'admin', hash: user.password });
         window.location.href = 'admin.html';
       } else {
+        setSession({ userId: user.id, role: 'student' });
         window.location.href = 'student.html';
       }
     });

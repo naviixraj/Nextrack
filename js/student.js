@@ -844,7 +844,7 @@ window.sendStudentMessage = function (e) {
     senderName: student ? student.name : 'Student',
     senderRole: 'student',
     text: text,
-    timestamp: new Date().toISOString()
+    timestamp: firebase.database.ServerValue.TIMESTAMP
   });
 
   input.value = '';
