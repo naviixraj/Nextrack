@@ -339,9 +339,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      // Firebase Key Validation
-      if (/[.#$\[\]]/.test(newId)) {
-        registerMsg.textContent = '⚠️ Student ID cannot contain special characters (., #, $, [, ]).';
+      // Strict Numeric Validation
+      if (!/^\d+$/.test(newId)) {
+        registerMsg.textContent = '⚠️ Registration ID can only contain numbers (0-9).';
         registerMsg.className = 'form-msg error';
         const idEl = document.getElementById('reg-id');
         idEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
