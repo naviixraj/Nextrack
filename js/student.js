@@ -921,21 +921,26 @@ function startMotionGuard(student) {
     studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     geoCheckDone = true;
     
-    // Update location status in DB to "ACTIVE"
-    updateStudent(student.id, { location_status: 'ACTIVE' });
+    // NOTE: Removed continuous updateStudent location_status ping to preserve database storage and bandwidth
 
     const result = checkGeofence(studentLocation.lat, studentLocation.lng);
     const status = getCurrentStatus(student.id);
 
-    if (result && result.inside) {
-      showLocationBanner(`📍 Inside hostel zone`, 'inside');
-      if (status === 'OUT' && !debounceTimer) {
-        handleCheckIn(student); // Auto check-in
-      }
-    } else if (result && !result.inside) {
-      showLocationBanner(`🚶 Outside hostel`, 'outside');
-      if (status === 'IN' && !debounceTimer) {
-        handleCheckOut(student); // Auto check-out
+    if (result) {
+      const geo = getGeofence();
+      const checkInRadius = geo.radius;
+      const checkOutRadius = geo.radius + 50; // Hysteresis: add 50m to check-out
+
+      if (result.distance <= checkInRadius) {
+        showLocationBanner(`📍 Inside hostel zone`, 'inside');
+        if (status === 'OUT' && !debounceTimer) {
+          handleCheckIn(student); // Auto check-in
+        }
+      } else if (result.distance >= checkOutRadius) {
+        showLocationBanner(`🚶 Outside hostel`, 'outside');
+        if (status === 'IN' && !debounceTimer) {
+          handleCheckOut(student); // Auto check-out
+        }
       }
     }
   };
