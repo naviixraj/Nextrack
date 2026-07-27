@@ -238,7 +238,7 @@
 
 
       <div style="text-align: center; margin-top: 2rem; margin-bottom: 2rem; color: #888; font-size: 0.9rem; font-weight: bold;">
-        App Version: v139
+        App Version: v140
       </div>
     </section>
 
@@ -402,16 +402,40 @@
         
         <div class="form-group">
           <label for="admin-prof-old-pwd">Old Password</label>
-          <input type="password" id="admin-prof-old-pwd" placeholder="Required to change password">
+          <div class="pwd-wrap">
+            <input type="password" id="admin-prof-old-pwd" placeholder="Required to change password">
+            <button type="button" class="pwd-toggle" data-target="admin-prof-old-pwd" aria-label="Toggle visibility">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label for="admin-prof-new-pwd">New Password</label>
-            <input type="password" id="admin-prof-new-pwd" placeholder="Min 4 chars">
+            <div class="pwd-wrap">
+              <input type="password" id="admin-prof-new-pwd" placeholder="Min 4 chars">
+              <button type="button" class="pwd-toggle" data-target="admin-prof-new-pwd" aria-label="Toggle visibility">
+                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label for="admin-prof-confirm-pwd">Confirm New</label>
-            <input type="password" id="admin-prof-confirm-pwd" placeholder="Confirm new">
+            <div class="pwd-wrap">
+              <input type="password" id="admin-prof-confirm-pwd" placeholder="Confirm new">
+              <button type="button" class="pwd-toggle" data-target="admin-prof-confirm-pwd" aria-label="Toggle visibility">
+                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
         <div style="text-align:right;margin-bottom:1.5rem;">
@@ -451,7 +475,15 @@
         </div>
         <div class="form-group">
           <label for="add-admin-pwd">Initial Password</label>
-          <input type="password" id="add-admin-pwd" required placeholder="Min 4 chars">
+          <div class="pwd-wrap">
+            <input type="password" id="add-admin-pwd" required placeholder="Min 4 chars">
+            <button type="button" class="pwd-toggle" data-target="add-admin-pwd" aria-label="Toggle visibility">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="modal-btns">
           <button type="submit" class="btn btn-primary">Create Admin</button>
@@ -481,15 +513,20 @@
             <option value="4">4th Year</option>
           </select>
         </div>
-        <div class="form-group">
-          <label for="edit-admin-new-pwd">Reset Password (Optional)</label>
-          <input type="password" id="edit-admin-new-pwd" placeholder="Leave blank to keep current">
-        </div>
+
         <hr style="border:0;border-top:1px solid rgba(255,255,255,0.1);margin:1.5rem 0;">
         <h4 style="margin-bottom:1rem;font-size:0.95rem;color:var(--danger);">Security Verification</h4>
         <div class="form-group">
           <label for="edit-admin-master-pwd">Your Master Password</label>
-          <input type="password" id="edit-admin-master-pwd" required placeholder="Required to save changes">
+          <div class="pwd-wrap">
+            <input type="password" id="edit-admin-master-pwd" required placeholder="Required to save changes">
+            <button type="button" class="pwd-toggle" data-target="edit-admin-master-pwd" aria-label="Toggle visibility">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="modal-btns">
           <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -508,7 +545,15 @@
         <input type="hidden" id="delete-admin-target-id">
         <div class="form-group" style="text-align:left;">
           <label for="delete-admin-master-pwd">Verify Your Password</label>
-          <input type="password" id="delete-admin-master-pwd" required placeholder="Enter Master Password">
+          <div class="pwd-wrap">
+            <input type="password" id="delete-admin-master-pwd" required placeholder="Enter Master Password">
+            <button type="button" class="pwd-toggle" data-target="delete-admin-master-pwd" aria-label="Toggle visibility">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="modal-btns" style="justify-content:center;margin-top:1.5rem;">
           <button type="button" class="btn btn-ghost" onclick="document.getElementById('delete-admin-modal').classList.remove('visible')">Cancel</button>
@@ -625,9 +670,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js?v=139"></script>
-  <script src="js/data.js?v=139"></script>
-  <script src="js/admin.js?v=139"></script>
-  <script src="js/pwa-v32.js?v=139"></script>
+  <script src="js/firebase-config.js?v=140"></script>
+  <script src="js/data.js?v=140"></script>
+  <script src="js/admin.js?v=140"></script>
+  <script src="js/pwa-v32.js?v=140"></script>
 </body>
 </html>

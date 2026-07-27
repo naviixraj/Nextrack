@@ -1911,6 +1911,201 @@ html.light-theme .msg-context-menu button:hover { background: rgba(0, 0, 0, 0.05
   color: var(--text-primary, var(--text, #0f172a));
   font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
   cursor: pointer; z-index: 9999;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.sync-dot.online {
+  background: #10b981;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+  animation: sync-pulse 2s infinite ease-in-out;
+}
+
+.sync-dot.offline {
+  background: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+}
+
+@keyframes sync-pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* ══════════════════════════════════════════════════
+   GLOBAL LIGHT THEME OVERRIDES
+   ══════════════════════════════════════════════════ */
+html.light-theme {
+  --bg-deep:       #f2efff;
+  --bg-surface:    #ffffff;
+  --bg-card:       rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(240, 244, 248, 0.90);
+  --glass-border:  rgba(0, 0, 0, 0.12);
+  
+  --accent-1:      #5a52e6;
+  --accent-2:      #764ba2;
+
+  --text-primary:  #0f172a;
+  --text-secondary:#334155;
+  --text-muted:    #475569;
+
+  --shadow-sm:     0 2px 8px rgba(0,0,0,0.05);
+  --shadow-md:     0 8px 24px rgba(0,0,0,0.08);
+  --shadow-lg:     0 16px 40px rgba(0,0,0,0.12);
+  --shadow-glow:   0 0 30px rgba(102, 126, 234, 0.15);
+}
+
+html.light-theme body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
+/* Light Theme Background Violet Glow (Matching Login Page) */
+html.light-theme .bg-glow { opacity: 0.35; filter: blur(80px); }
+html.light-theme .bg-glow-1 { background: #6c63ff; }
+html.light-theme .bg-glow-2 { background: #a855f7; }
+
+html.light-theme input, 
+html.light-theme select {
+  background: rgba(0,0,0,0.03) !important;
+  border-color: rgba(0,0,0,0.2) !important;
+  color: #0f172a !important;
+}
+
+html.light-theme input::placeholder {
+  color: #475569 !important;
+}
+
+html.light-theme .chat-bubble-received {
+  background: rgba(0,0,0,0.05);
+  color: #0f172a;
+}
+
+/* Light Theme overrides for B&W Monitoring Table */
+html.light-theme .monitor-table-bw {
+  border-color: #0f172a !important;
+}
+
+html.light-theme .monitor-table-bw thead th {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid #0f172a !important;
+}
+
+html.light-theme .monitor-table-bw tbody tr {
+  background: #ffffff !important;
+}
+
+html.light-theme .monitor-table-bw tbody tr:nth-child(even) {
+  background: #f8fafc !important;
+}
+
+html.light-theme .monitor-table-bw tbody td {
+  color: #0f172a !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light-theme .monitor-table-bw tbody tr:hover {
+  background: #f1f5f9 !important;
+}
+
+html.light-theme .monitor-table-bw .status-badge {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #0f172a !important;
+}
+
+html.light-theme .monitor-table-bw .badge-out {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #0f172a !important;
+}
+
+html.light-theme .monitor-table-bw .call-btn {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #0f172a !important;
+}
+
+/* Light Theme overrides for Filters */
+html.light-theme .year-filter-btn.active,
+html.light-theme .date-filter-btn.active {
+  background: rgba(15, 23, 42, 0.1);
+  color: #0f172a;
+  box-shadow: none;
+}
+html.light-theme .date-filter-btn { color: #334155; }
+html.light-theme .date-filter-btn:hover:not(.active) { background: rgba(0,0,0,0.05); }
+
+html.light-theme .date-input {
+  color-scheme: light;
+}
+
+html.light-theme .location-refused strong { color: #991b1b; }
+html.light-theme .location-refused .recovery-meta { color: #7f1d1d; }
+html.light-theme .location-refused .blocked-subtitle { color: #dc2626; }
+html.light-theme .location-refused .blocked-badge { background: #b91c1c; color: #ffffff; }
+
+/* Light Theme overrides for Admin Dropdown */
+html.light-theme .admin-dropdown {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+html.light-theme .dropdown-item {
+  color: #0f172a;
+}
+html.light-theme .dropdown-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Light Theme overrides for Developers Modal */
+html.light-theme .dev-modal-header h2 { background: linear-gradient(135deg, #0f172a 30%, #4338ca 60%, #7e22ce 90%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+html.light-theme .dev-brand-icon-wrap { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+html.light-theme .dev-quote-box { background: linear-gradient(135deg, rgba(0,0,0,0.02), rgba(0,0,0,0.01)); border-color: rgba(0,0,0,0.05); box-shadow: none; }
+html.light-theme .dev-quote-box p { color: #334155; }
+html.light-theme .dev-stat-project { background: rgba(102,126,234,0.1); border-color: rgba(102,126,234,0.2); }
+html.light-theme .dev-stat-version { background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.2); }
+html.light-theme .dev-member { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #0f172a; }
+
+/* Student Page Dev Modal Specific */
+.dev-version-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 50px; border: 1px solid rgba(255,255,255,0.05); margin-top: 1rem; }
+.dev-version-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+.dev-version-value { font-size: 0.85rem; font-weight: 800; color: var(--accent-1); }
+html.light-theme .dev-version-badge { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+
+/* IN/OUT Badges Light Theme */
+html.light-theme .badge-in { background: rgba(16, 185, 129, 0.15) !important; color: #047857 !important; border-color: rgba(16, 185, 129, 0.4) !important; }
+html.light-theme .badge-out { background: rgba(245, 158, 11, 0.15) !important; color: #b45309 !important; border-color: rgba(245, 158, 11, 0.4) !important; }
+
+/* Geo Banners Light Theme (Detecting, Warning, Inside, Outside) */
+html.light-theme .geo-banner { color: #1e293b; border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); background: rgba(255, 255, 255, 0.9); }
+html.light-theme .geo-warning { color: #991b1b; background: rgba(254, 226, 226, 0.9); border-color: rgba(248, 113, 113, 0.4); }
+html.light-theme .geo-inside { color: #065f46; background: rgba(209, 250, 229, 0.9); border-color: rgba(52, 211, 153, 0.4); }
+html.light-theme .geo-outside { color: #9a3412; background: rgba(255, 237, 213, 0.9); border-color: rgba(251, 146, 60, 0.4); }
+
+/* Disabled Checkin/Checkout Buttons (Guarding Activity / Auto Checked Out) */
+html.light-theme .btn-checkin:disabled { color: #065f46 !important; background: rgba(16, 185, 129, 0.2) !important; opacity: 0.9 !important; border: 1px solid rgba(16, 185, 129, 0.4); }
+html.light-theme .btn-checkout:disabled { color: #9a3412 !important; background: rgba(245, 158, 11, 0.2) !important; opacity: 0.9 !important; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+
+
+/* Dev Modal Close Button */
+.dev-modal-close-btn { margin: 2rem auto 0; width: 100%; display: block; font-size: 1.1rem; padding: 0.8rem; }
+
+/* Chat Context Menu Light Theme */
+html.light-theme .msg-context-menu { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+html.light-theme .msg-context-menu button { color: #1e293b; border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
+html.light-theme .msg-context-menu button:hover { background: rgba(0, 0, 0, 0.05); }
+
+.theme-toggle {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--bg-surface, var(--surface, #fff));
+  border: 1px solid var(--glass-border, var(--border, #ddd));
+  color: var(--text-primary, var(--text, #0f172a));
+  font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 9999;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -1919,4 +2114,30 @@ html.light-theme .msg-context-menu button:hover { background: rgba(0, 0, 0, 0.05
 option {
   background-color: var(--bg-main, #1a1a2e);
   color: var(--text-primary, #fff);
+}
+
+.pwd-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pwd-wrap input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+.pwd-toggle {
+  position: absolute;
+  right: 0.8rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  transition: color 0.3s;
+}
+.pwd-toggle:hover {
+  color: var(--text);
 }

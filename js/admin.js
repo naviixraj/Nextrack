@@ -675,7 +675,6 @@ window.editSubAdmin = function (targetAdminId) {
   document.getElementById('edit-admin-target-id').value = targetAdminId;
   document.getElementById('edit-admin-name').value = targetAdmin.name;
   document.getElementById('edit-admin-year').value = targetAdmin.allocated_year ? targetAdmin.allocated_year.charAt(0) : '1';
-  document.getElementById('edit-admin-new-pwd').value = '';
   document.getElementById('edit-admin-master-pwd').value = '';
   document.getElementById('edit-admin-modal').classList.add('visible');
 };
@@ -695,17 +694,10 @@ document.getElementById('edit-admin-form').addEventListener('submit', async (e) 
 
   const targetId = document.getElementById('edit-admin-target-id').value;
   const newName = document.getElementById('edit-admin-name').value.trim();
-  const newPwd = document.getElementById('edit-admin-new-pwd').value;
   const yearNum = document.getElementById('edit-admin-year').value;
 
   const updates = { name: newName, last_updated: new Date().toISOString() };
   updates.allocated_year = yearNum + (yearNum === '1' ? 'st' : yearNum === '2' ? 'nd' : yearNum === '3' ? 'rd' : 'th') + ' Year';
-
-  if (newPwd && newPwd.length >= 4) {
-    updates.password = await hashPassword(newPwd);
-  } else if (newPwd && newPwd.length > 0 && newPwd.length < 4) {
-    alert('⚠️ New password must be at least 4 characters.'); return;
-  }
 
   updateStudent(targetId, updates);
   alert(`✅ Admin "${targetId}" updated successfully!`);
@@ -1353,6 +1345,21 @@ function updateChatBadge() {
 if (typeof listenForMessages === 'function') {
   listenForMessages(renderAdminChatFromMessages);
 }
+
+// Initialize application
+document.addEventListener('DOMContentLoaded', () => {
+  initAdminDashboard();
+});
+
+// -- Password Visibility Toggle --
+document.addEventListener('click', (e) => {
+  const toggle = e.target.closest('.pwd-toggle');
+  if (!toggle) return;
+  const targetId = toggle.getAttribute('data-target');
+  const input = document.getElementById(targetId);
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+});
 
 // Initial badge check
 document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });
