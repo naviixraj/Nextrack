@@ -1,0 +1,42 @@
+[debug] [2026-07-27T10:35:59.578Z] ----------------------------------------------------------------------
+[debug] [2026-07-27T10:35:59.581Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\SWIFT\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting
+[debug] [2026-07-27T10:35:59.581Z] CLI Version:   15.13.0
+[debug] [2026-07-27T10:35:59.581Z] Platform:      win32
+[debug] [2026-07-27T10:35:59.582Z] Node Version:  v24.14.1
+[debug] [2026-07-27T10:35:59.582Z] Time:          Mon Jul 27 2026 16:05:59 GMT+0530 (India Standard Time)
+[debug] [2026-07-27T10:35:59.582Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-27T10:36:02.107Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-27T10:36:02.108Z] > authorizing via signed-in user (naveenraj7756@gmail.com)
+[debug] [2026-07-27T10:36:02.108Z] [iam] checking project nextrack-34110 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-07-27T10:36:02.109Z] Checked if tokens are valid: true, expires at: 1785151147677
+[debug] [2026-07-27T10:36:02.109Z] Checked if tokens are valid: true, expires at: 1785151147677
+[debug] [2026-07-27T10:36:02.110Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/nextrack-34110:testIamPermissions [none]
+[debug] [2026-07-27T10:36:02.110Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/nextrack-34110:testIamPermissions  x-goog-user-project=nextrack-34110
+[debug] [2026-07-27T10:36:02.110Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/nextrack-34110:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-07-27T10:36:12.965Z] *** [apiv2] error from fetch(https://cloudresourcemanager.googleapis.com/v1/projects/nextrack-34110:testIamPermissions, {"headers":{},"method":"POST","body":"{\"permissions\":[\"firebase.projects.get\",\"firebasehosting.sites.update\"]}"}): FetchError: request to https://cloudresourcemanager.googleapis.com/v1/projects/nextrack-34110:testIamPermissions failed, reason: Client network socket disconnected before secure TLS connection was established
+[debug] [2026-07-27T10:36:12.966Z] [iam] error while checking permissions, command may fail: Failed to make request to https://cloudresourcemanager.googleapis.com/v1/projects/nextrack-34110:testIamPermissions
+[debug] [2026-07-27T10:36:12.967Z] Checked if tokens are valid: true, expires at: 1785151147677
+[debug] [2026-07-27T10:36:12.967Z] Checked if tokens are valid: true, expires at: 1785151147677
+[debug] [2026-07-27T10:36:12.968Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/nextrack-34110 [none]
+[debug] [2026-07-27T10:36:23.994Z] *** [apiv2] error from fetch(https://firebase.googleapis.com/v1beta1/projects/nextrack-34110, {"headers":{},"method":"GET","signal":{"reason":""}}): FetchError: request to https://firebase.googleapis.com/v1beta1/projects/nextrack-34110 failed, reason: Client network socket disconnected before secure TLS connection was established
+[debug] [2026-07-27T10:36:23.994Z] Failed to make request to https://firebase.googleapis.com/v1beta1/projects/nextrack-34110 (original: request to https://firebase.googleapis.com/v1beta1/projects/nextrack-34110 failed, reason: Client network socket disconnected before secure TLS connection was established)
+[debug] [2026-07-27T10:36:29.020Z] Error: Timed out.
+    at Timeout._onTimeout (C:\Users\SWIFT\AppData\Roaming\npm\node_modules\firebase-tools\lib\utils.js:309:49)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-07-27T10:36:56.727Z] ----------------------------------------------------------------------
+[debug] [2026-07-27T10:36:56.731Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\SWIFT\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js login --reauth
+[debug] [2026-07-27T10:36:56.731Z] CLI Version:   15.13.0
+[debug] [2026-07-27T10:36:56.731Z] Platform:      win32
+[debug] [2026-07-27T10:36:56.731Z] Node Version:  v24.14.1
+[debug] [2026-07-27T10:36:56.731Z] Time:          Mon Jul 27 2026 16:06:56 GMT+0530 (India Standard Time)
+[debug] [2026-07-27T10:36:56.731Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+[info] Visit this URL on this device to log in:
+[info] https://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=232002170&redirect_uri=http%3A%2F%2Flocalhost%3A9005&login_hint=naveenraj7756%40gmail.com
+[info] 
+[info] Waiting for authentication...

@@ -123,6 +123,10 @@ function applyRoleRestrictions() {
     // Hide Admins Tab
     const adminsTabBtn = document.querySelector('.admin-tab[data-panel="panel-admins"]');
     if (adminsTabBtn) adminsTabBtn.style.display = 'none';
+
+    // Hide Geofence Settings
+    const geofenceBlock = document.getElementById('geofence-settings-block');
+    if (geofenceBlock) geofenceBlock.style.display = 'none';
   }
 }
 
@@ -615,17 +619,19 @@ function renderAdminList() {
     const isCurrent = session && session.userId === a.id;
     const photo = a.photo ? `<img src="${a.photo}" class="table-avatar">` : '<span class="table-avatar-placeholder">👤</span>';
     const lastSeen = login ? formatTime(login.lastSeen) : 'Never';
+    const allocatedYearText = a.allocated_year ? ` · <span style="color:var(--accent-primary);">${a.allocated_year}</span>` : ' · <span style="color:#ef4444;">Master</span>';
     return `
       <div class="recovery-card">
         <div style="display:flex;align-items:center;gap:0.8rem;">
           ${photo}
           <div class="recovery-info">
             <strong>${a.name} ${isCurrent ? '<span class="status-badge badge-in" style="font-size:0.6rem;">YOU</span>' : ''}</strong>
-            <span class="recovery-meta">${a.id} · Last seen: ${lastSeen}</span>
+            <span class="recovery-meta">${a.id}${allocatedYearText} · Last seen: ${lastSeen}</span>
           </div>
         </div>
         ${!isCurrent ? `
         <div class="recovery-actions">
+          <button class="btn btn-small btn-secondary" onclick="editSubAdmin('${a.id}')">✏️ Edit</button>
           <button class="btn btn-small" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2);" onclick="removeAdmin('${a.id}')">🗑 Remove</button>
         </div>` : ''}
       </div>
@@ -663,6 +669,56 @@ window.registerNewAdmin = async function () {
   });
   alert(`✅ Sub-Admin "${name.trim()}" created for ${allocatedYear}`);
   renderAdminList();
+};
+
+window.editSubAdmin = async function (targetAdminId) {
+  const session = getSession();
+  const currentAdmin = getStudentById(session.userId);
+  if (!currentAdmin) return;
+
+  const targetAdmin = getStudentById(targetAdminId);
+  if (!targetAdmin) return;
+
+  const pwd = prompt(`🔐 SECURITY VERIFICATION\nEnter YOUR admin password to edit admin "${targetAdminId}":`);
+  if (!pwd) return;
+  const hashedPwd = await hashPassword(pwd);
+  if (hashedPwd !== currentAdmin.password) {
+    alert('❌ Incorrect password! Unauthorized editing blocked.');
+    return;
+  }
+
+  const newName = prompt('Update name (leave blank to keep current):', targetAdmin.name);
+  const newPwd = prompt('Enter new password (min 4 chars) OR leave blank to keep current:');
+  
+  let newYear = prompt('Update allocated year (1, 2, 3, or 4) OR leave blank to keep current:', 
+    targetAdmin.allocated_year ? targetAdmin.allocated_year.charAt(0) : '');
+
+  const updates = {};
+  if (newName && newName.trim()) updates.name = newName.trim();
+  
+  if (newPwd && newPwd.length >= 4) {
+    updates.password = await hashPassword(newPwd);
+  } else if (newPwd && newPwd.length > 0 && newPwd.length < 4) {
+    alert('⚠️ New password must be at least 4 characters. Password was not changed.');
+  }
+
+  if (newYear && newYear.trim()) {
+    const y = newYear.trim();
+    if (['1','2','3','4'].includes(y)) {
+      updates.allocated_year = y + (y === '1' ? 'st' : y === '2' ? 'nd' : y === '3' ? 'rd' : 'th') + ' Year';
+    } else {
+      alert('⚠️ Invalid year entered. Year was not changed.');
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    updates.last_updated = new Date().toISOString();
+    updateStudent(targetAdminId, updates);
+    alert(`✅ Admin "${targetAdminId}" updated successfully!`);
+    renderAdminList();
+  } else {
+    alert('No changes made.');
+  }
 };
 
 window.removeAdmin = async function (targetAdminId) {
