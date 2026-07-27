@@ -565,18 +565,18 @@ tbody tr:hover {
 
 /* Admin Tabs */
 .admin-tabs-bar {
-  display: flex; gap: 0.6rem;
-  padding: 0.5rem; border-radius: var(--radius-md);
-  justify-content: center;
-  flex-wrap: wrap;
+  display: flex; gap: 0.5rem;
+  padding: 0.4rem; border-radius: var(--radius-md);
 }
 
 .admin-tab {
+  flex: 1;
   padding: 0.65rem 1rem;
   background: none; border: none; border-radius: var(--radius-sm);
   color: var(--text-muted); font-family: var(--font);
   font-weight: 600; font-size: 0.85rem;
   cursor: pointer; transition: var(--transition);
+  text-align: center;
 }
 .admin-tab.active {
   background: var(--accent-grad); color: #fff;
