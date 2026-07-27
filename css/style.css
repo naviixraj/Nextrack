@@ -1915,3 +1915,8 @@ html.light-theme .msg-context-menu button:hover { background: rgba(0, 0, 0, 0.05
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+option {
+  background-color: var(--bg-main, #1a1a2e);
+  color: var(--text-primary, #fff);
+}
