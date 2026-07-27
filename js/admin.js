@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      initDashboard();
       initTabs();
+      initDashboard();
       startCurfewCheck();
 
       // The Magic: Listen for any cloud updates and instantly re-render!
@@ -203,8 +203,18 @@ function initTabs() {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
       panels.forEach(p => p.classList.remove('active'));
+      
       tab.classList.add('active');
-      document.getElementById(tab.dataset.panel).classList.add('active');
+      const targetPanel = document.getElementById(tab.dataset.panel);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+      }
+
+      try {
+        tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      } catch(e) {
+        // Safe fallback for older browsers
+      }
     });
   });
 
@@ -313,11 +323,11 @@ function renderMonitoringTable() {
 function renderDirectory(filteredStudents) {
   let source = filteredStudents || getStudents().filter(s => s.role !== 'admin');
   
-  if (globalYearFilter !== 'All' && !filteredStudents) {
+  if (globalYearFilter !== 'All') {
     source = source.filter(s => s.year === globalYearFilter);
   }
 
-  const students = source.sort((a, b) => a.name.localeCompare(b.name));
+  const students = source.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   const tbody = document.getElementById('directory-body');
 
   if (students.length === 0) {
@@ -357,11 +367,11 @@ window.searchDirectory = function() {
   }
 
   const filtered = students.filter(s => 
-    s.id.toLowerCase().includes(query) || 
-    s.name.toLowerCase().includes(query) || 
-    s.room.toLowerCase().includes(query) ||
+    (s.id || '').toLowerCase().includes(query) || 
+    (s.name || '').toLowerCase().includes(query) || 
+    (s.room || '').toLowerCase().includes(query) ||
     (s.phone && s.phone.includes(query))
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   renderDirectory(filtered);
 };
@@ -862,8 +872,14 @@ window.refreshDashboard = function () {
 
   renderCards();
   renderMonitoringTable();
-  renderDirectory();
+  searchDirectory();
   renderAdminList();
+
+  // Reactive: If the outside modal is open, refresh it now!
+  const outsideModal = document.getElementById('outside-modal');
+  if (outsideModal && outsideModal.classList.contains('visible')) {
+    window.showOutsideStudents();
+  }
 };
 
 /* ═══════════════════════════════════════════════
@@ -884,10 +900,10 @@ window.searchStudentHistory = function () {
   }
 
   const matches = students.filter(s =>
-    s.id.toLowerCase().includes(query) ||
-    s.name.toLowerCase().includes(query) ||
-    s.room.toLowerCase().includes(query)
-  );
+    (s.id || '').toLowerCase().includes(query) ||
+    (s.name || '').toLowerCase().includes(query) ||
+    (s.room || '').toLowerCase().includes(query)
+  ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   if (matches.length === 0) {
     container.innerHTML = '<p class="empty-row">No matching students found.</p>';
@@ -1222,41 +1238,9 @@ if (typeof listenForMessages === 'function') {
 // Initial badge check
 document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });
 
-function refreshDashboard() {
-  initDashboard();
-  
-  // Reactive: If the outside modal is open, refresh it now!
-  const outsideModal = document.getElementById('outside-modal');
-  if (outsideModal && outsideModal.classList.contains('visible')) {
-    window.showOutsideStudents();
-  }
 
-  // 🔔 Global Security Monitor: Alert warden of any GPS bypass
-  checkGlobalGpsStatus();
-}
 
-function checkGlobalGpsStatus() {
-  const refused = getStudents().filter(s => s.location_status === 'REFUSED');
-  let banner = document.getElementById('global-security-banner');
-  
-  if (refused.length > 0) {
-    if (!banner) {
-      banner = document.createElement('div');
-      banner.id = 'global-security-banner';
-      banner.className = 'security-alert-bar';
-      document.body.prepend(banner);
-    }
-    banner.innerHTML = `
-      <div class="security-alert-content">
-        <span>🚨 SECURITY ALERT: ${refused.length} student(s) have turned off location!</span>
-        <button onclick="window.showOutsideStudents()">View Details</button>
-      </div>
-    `;
-    banner.style.display = 'flex';
-  } else if (banner) {
-    banner.style.display = 'none';
-  }
-}
+
 
 /* ── Admin Dropdown Logic ── */
 window.toggleAdminMenu = function (event) {
