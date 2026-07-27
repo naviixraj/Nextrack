@@ -565,12 +565,14 @@ tbody tr:hover {
 
 /* Admin Tabs */
 .admin-tabs-bar {
-  display: flex; gap: 0.3rem;
-  padding: 0.4rem; border-radius: var(--radius-md);
+  display: flex; gap: 0.6rem;
+  padding: 0.5rem; border-radius: var(--radius-md);
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .admin-tab {
-  flex: 1; padding: 0.65rem 0.8rem;
+  padding: 0.65rem 1rem;
   background: none; border: none; border-radius: var(--radius-sm);
   color: var(--text-muted); font-family: var(--font);
   font-weight: 600; font-size: 0.85rem;

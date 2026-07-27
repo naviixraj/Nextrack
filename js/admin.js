@@ -746,46 +746,6 @@ document.getElementById('delete-admin-form').addEventListener('submit', async (e
   }
 });
 
-/* ═══════════════════════════════════════════════
-   ADMIN PROFILE EDITING
-   ═══════════════════════════════════════════════ */
-window.editAdminProfile = async function () {
-  const session = getSession();
-  const admin = getStudentById(session.userId);
-  if (!admin) return;
-
-  const currentPwd = prompt('🔐 Please enter your current password to edit your profile:');
-  if (!currentPwd) return;
-
-  const hashedCurrentPwd = await hashPassword(currentPwd);
-  if (hashedCurrentPwd !== admin.password) {
-    alert('❌ Incorrect password.');
-    return;
-  }
-
-  const newName = prompt('Enter your name (leave blank to keep current):', admin.name);
-  const newPhone = prompt('Enter your phone number (leave blank to keep current):', admin.phone || '');
-  const newPwd = prompt('Enter a new password (min 4 chars) OR leave blank to keep current:');
-
-  const updates = {};
-  if (newName && newName.trim()) updates.name = newName.trim();
-  if (newPhone !== null) updates.phone = newPhone.trim();
-
-  if (newPwd && newPwd.length >= 4) {
-    updates.password = await hashPassword(newPwd);
-  } else if (newPwd && newPwd.length > 0 && newPwd.length < 4) {
-    alert('⚠️ New password must be at least 4 characters. Password was not changed.');
-  }
-
-  if (Object.keys(updates).length > 0) {
-    updates.last_updated = new Date().toISOString();
-    updateStudent(admin.id, updates);
-    alert('✅ Profile updated successfully!');
-    refreshDashboard();
-  } else {
-    alert('No changes made.');
-  }
-};
 
 /* ═══════════════════════════════════════════════
    ACCOUNT RECOVERY
