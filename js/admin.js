@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
    DASHBOARD – Status Cards
    ═══════════════════════════════════════════════ */
 function initDashboard() {
+  applyRoleRestrictions();
   renderCards();
   renderMonitoringTable();
   renderDirectory();
@@ -99,6 +100,29 @@ function initDashboard() {
         }
       }
     });
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   ROLE RESTRICTIONS (Master vs Sub-Admin)
+   ═══════════════════════════════════════════════ */
+function applyRoleRestrictions() {
+  const session = getSession();
+  if (!session) return;
+  const adminUser = getStudentById(session.userId);
+  if (!adminUser) return;
+
+  // If this is a Sub-Admin (they have an allocated_year and are not the master 'admin')
+  if (adminUser.id !== 'admin' && adminUser.allocated_year) {
+    globalYearFilter = adminUser.allocated_year;
+
+    // Hide Year Filter Bar
+    const filterBar = document.querySelector('.year-filter-bar');
+    if (filterBar) filterBar.style.display = 'none';
+
+    // Hide Admins Tab
+    const adminsTabBtn = document.querySelector('.admin-tab[data-panel="panel-admins"]');
+    if (adminsTabBtn) adminsTabBtn.style.display = 'none';
   }
 }
 
@@ -619,6 +643,12 @@ window.registerNewAdmin = async function () {
   const pwd = prompt('Enter password (min 4 characters):');
   if (!pwd || pwd.length < 4) { alert('⚠️ Password must be at least 4 characters.'); return; }
 
+  const yearNum = prompt('Enter allocated year number (1, 2, 3, or 4):');
+  if (!yearNum || !['1','2','3','4'].includes(yearNum.trim())) {
+    alert('⚠️ Invalid year. Must be 1, 2, 3, or 4.'); return;
+  }
+  const allocatedYear = yearNum.trim() + (yearNum.trim() === '1' ? 'st' : yearNum.trim() === '2' ? 'nd' : yearNum.trim() === '3' ? 'rd' : 'th') + ' Year';
+
   const hashedPwd = await hashPassword(pwd);
 
   addStudent({
@@ -628,9 +658,10 @@ window.registerNewAdmin = async function () {
     phone: '—',
     password: hashedPwd,
     role: 'admin',
+    allocated_year: allocatedYear,
     last_updated: new Date().toISOString(),
   });
-  alert(`✅ Admin "${name.trim()}" created with ID: ${id.trim()}`);
+  alert(`✅ Sub-Admin "${name.trim()}" created for ${allocatedYear}`);
   renderAdminList();
 };
 
@@ -660,6 +691,47 @@ window.removeAdmin = async function (targetAdminId) {
     }).catch(err => {
       alert('❌ Failed to delete admin: ' + err.message);
     });
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   ADMIN PROFILE EDITING
+   ═══════════════════════════════════════════════ */
+window.editAdminProfile = async function () {
+  const session = getSession();
+  const admin = getStudentById(session.userId);
+  if (!admin) return;
+
+  const currentPwd = prompt('🔐 Please enter your current password to edit your profile:');
+  if (!currentPwd) return;
+
+  const hashedCurrentPwd = await hashPassword(currentPwd);
+  if (hashedCurrentPwd !== admin.password) {
+    alert('❌ Incorrect password.');
+    return;
+  }
+
+  const newName = prompt('Enter your name (leave blank to keep current):', admin.name);
+  const newPhone = prompt('Enter your phone number (leave blank to keep current):', admin.phone || '');
+  const newPwd = prompt('Enter a new password (min 4 chars) OR leave blank to keep current:');
+
+  const updates = {};
+  if (newName && newName.trim()) updates.name = newName.trim();
+  if (newPhone !== null) updates.phone = newPhone.trim();
+
+  if (newPwd && newPwd.length >= 4) {
+    updates.password = await hashPassword(newPwd);
+  } else if (newPwd && newPwd.length > 0 && newPwd.length < 4) {
+    alert('⚠️ New password must be at least 4 characters. Password was not changed.');
+  }
+
+  if (Object.keys(updates).length > 0) {
+    updates.last_updated = new Date().toISOString();
+    updateStudent(admin.id, updates);
+    alert('✅ Profile updated successfully!');
+    refreshDashboard();
+  } else {
+    alert('No changes made.');
   }
 };
 
