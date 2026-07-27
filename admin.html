@@ -73,7 +73,6 @@
       <div class="admin-menu-container">
         <button class="btn btn-ghost btn-dots" id="admin-menu-trigger" onclick="toggleAdminMenu(event)">⋮</button>
         <div class="admin-dropdown glass" id="admin-dropdown-menu">
-          <button class="dropdown-item" onclick="changeAdminPassword()">🔐 Password</button>
           <button class="dropdown-item" onclick="showDevelopers()">👨‍💻 Developers</button>
           <button class="dropdown-item" onclick="showSupport()">🛠️ Support</button>
           <button class="dropdown-item" onclick="manualCheckForUpdate()">🚀 Check for Update</button>
@@ -243,7 +242,7 @@
         <button class="btn btn-secondary btn-full" onclick="editAdminProfile()">✏️ Edit My Profile</button>
       </div>
       <div style="text-align: center; margin-top: 2rem; margin-bottom: 2rem; color: #888; font-size: 0.9rem; font-weight: bold;">
-        App Version: v135
+        App Version: v136
       </div>
     </section>
 
@@ -401,9 +400,123 @@
           <label for="admin-prof-email">Email</label>
           <input type="email" id="admin-prof-email" required placeholder="admin@example.com">
         </div>
+        
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.1);margin:1.5rem 0;">
+        <h4 style="margin-bottom:1rem;font-size:0.95rem;">Change Password</h4>
+        
+        <div class="form-group">
+          <label for="admin-prof-old-pwd">Old Password</label>
+          <input type="password" id="admin-prof-old-pwd" placeholder="Required to change password">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="admin-prof-new-pwd">New Password</label>
+            <input type="password" id="admin-prof-new-pwd" placeholder="Min 4 chars">
+          </div>
+          <div class="form-group">
+            <label for="admin-prof-confirm-pwd">Confirm New</label>
+            <input type="password" id="admin-prof-confirm-pwd" placeholder="Confirm new">
+          </div>
+        </div>
+        <div style="text-align:right;margin-bottom:1.5rem;">
+          <a href="#" onclick="document.getElementById('admin-profile-modal').classList.remove('visible'); setTimeout(() => document.getElementById('forgot-modal').classList.add('visible'), 300); return false;" style="font-size:0.8rem;color:var(--accent-primary);text-decoration:none;">Forgot Password?</a>
+        </div>
         <div class="modal-btns">
           <button type="submit" class="btn btn-primary">Save</button>
           <button type="button" class="btn btn-ghost" onclick="closeAdminProfile()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Premium Add Admin Modal -->
+  <div class="modal-overlay" id="add-admin-modal">
+    <div class="modal glass" style="max-width:420px;">
+      <button class="modal-x-btn" onclick="document.getElementById('add-admin-modal').classList.remove('visible')">&times;</button>
+      <h3 style="margin-bottom:1.2rem;">✨ New Admin</h3>
+      <form id="add-admin-form">
+        <div class="form-group">
+          <label for="add-admin-id">Admin Login ID</label>
+          <input type="text" id="add-admin-id" required placeholder="e.g. warden123">
+        </div>
+        <div class="form-group">
+          <label for="add-admin-name">Full Name</label>
+          <input type="text" id="add-admin-name" required placeholder="e.g. John Doe">
+        </div>
+        <div class="form-group">
+          <label for="add-admin-year">Allocated Year</label>
+          <select id="add-admin-year" required style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(100,120,255,0.12);border-radius:8px;color:#e8ecf5;font-family:inherit;font-size:0.92rem;outline:none;cursor:pointer;">
+            <option value="" disabled selected>Select Year Allocation...</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="add-admin-pwd">Initial Password</label>
+          <input type="password" id="add-admin-pwd" required placeholder="Min 4 chars">
+        </div>
+        <div class="modal-btns">
+          <button type="submit" class="btn btn-primary">Create Admin</button>
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('add-admin-modal').classList.remove('visible')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Premium Edit Admin Modal -->
+  <div class="modal-overlay" id="edit-admin-modal">
+    <div class="modal glass" style="max-width:420px;">
+      <button class="modal-x-btn" onclick="document.getElementById('edit-admin-modal').classList.remove('visible')">&times;</button>
+      <h3 style="margin-bottom:1.2rem;">✏️ Edit Sub-Admin</h3>
+      <form id="edit-admin-form">
+        <input type="hidden" id="edit-admin-target-id">
+        <div class="form-group">
+          <label for="edit-admin-name">Name</label>
+          <input type="text" id="edit-admin-name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-admin-year">Allocated Year</label>
+          <select id="edit-admin-year" required style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(100,120,255,0.12);border-radius:8px;color:#e8ecf5;font-family:inherit;font-size:0.92rem;outline:none;cursor:pointer;">
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-admin-new-pwd">Reset Password (Optional)</label>
+          <input type="password" id="edit-admin-new-pwd" placeholder="Leave blank to keep current">
+        </div>
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.1);margin:1.5rem 0;">
+        <h4 style="margin-bottom:1rem;font-size:0.95rem;color:var(--danger);">Security Verification</h4>
+        <div class="form-group">
+          <label for="edit-admin-master-pwd">Your Master Password</label>
+          <input type="password" id="edit-admin-master-pwd" required placeholder="Required to save changes">
+        </div>
+        <div class="modal-btns">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('edit-admin-modal').classList.remove('visible')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Secure Delete Admin Modal -->
+  <div class="modal-overlay" id="delete-admin-modal">
+    <div class="modal glass" style="max-width:400px;text-align:center;">
+      <h3 style="margin-bottom:1rem;color:#ef4444;">⚠️ Delete Admin</h3>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1.5rem;">Are you absolutely sure you want to permanently delete admin <strong id="delete-admin-target-label" style="color:#fff;"></strong>? This cannot be undone.</p>
+      <form id="delete-admin-form">
+        <input type="hidden" id="delete-admin-target-id">
+        <div class="form-group" style="text-align:left;">
+          <label for="delete-admin-master-pwd">Verify Your Password</label>
+          <input type="password" id="delete-admin-master-pwd" required placeholder="Enter Master Password">
+        </div>
+        <div class="modal-btns" style="justify-content:center;margin-top:1.5rem;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('delete-admin-modal').classList.remove('visible')">Cancel</button>
+          <button type="submit" class="btn" style="background:#ef4444;color:#fff;">Yes, Delete Admin</button>
         </div>
       </form>
     </div>
@@ -516,9 +629,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js?v=135"></script>
-  <script src="js/data.js?v=135"></script>
-  <script src="js/admin.js?v=135"></script>
-  <script src="js/pwa-v32.js?v=135"></script>
+  <script src="js/firebase-config.js?v=136"></script>
+  <script src="js/data.js?v=136"></script>
+  <script src="js/admin.js?v=136"></script>
+  <script src="js/pwa-v32.js?v=136"></script>
 </body>
 </html>

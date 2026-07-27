@@ -124,9 +124,9 @@ function applyRoleRestrictions() {
     const adminsTabBtn = document.querySelector('.admin-tab[data-panel="panel-admins"]');
     if (adminsTabBtn) adminsTabBtn.style.display = 'none';
 
-    // Hide Geofence Settings
-    const geofenceBlock = document.getElementById('geofence-settings-block');
-    if (geofenceBlock) geofenceBlock.style.display = 'none';
+    // Hide Settings Tab
+    const settingsTabBtn = document.querySelector('.admin-tab[data-panel="panel-settings"]');
+    if (settingsTabBtn) settingsTabBtn.style.display = 'none';
   }
 }
 
@@ -639,116 +639,112 @@ function renderAdminList() {
   }).join('');
 }
 
-window.registerNewAdmin = async function () {
-  const name = prompt('Enter new admin name:');
-  if (!name || !name.trim()) return;
-  const id = prompt('Enter login ID for the new admin:');
-  if (!id || !id.trim()) return;
-  const existing = getStudentById(id.trim());
-  if (existing) { alert('⚠️ That ID is already taken.'); return; }
-  const pwd = prompt('Enter password (min 4 characters):');
-  if (!pwd || pwd.length < 4) { alert('⚠️ Password must be at least 4 characters.'); return; }
+window.registerNewAdmin = function () {
+  document.getElementById('add-admin-form').reset();
+  document.getElementById('add-admin-modal').classList.add('visible');
+};
 
-  const yearNum = prompt('Enter allocated year number (1, 2, 3, or 4):');
-  if (!yearNum || !['1','2','3','4'].includes(yearNum.trim())) {
-    alert('⚠️ Invalid year. Must be 1, 2, 3, or 4.'); return;
-  }
-  const allocatedYear = yearNum.trim() + (yearNum.trim() === '1' ? 'st' : yearNum.trim() === '2' ? 'nd' : yearNum.trim() === '3' ? 'rd' : 'th') + ' Year';
+document.getElementById('add-admin-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('add-admin-id').value.trim();
+  const name = document.getElementById('add-admin-name').value.trim();
+  const pwd = document.getElementById('add-admin-pwd').value;
+  const yearNum = document.getElementById('add-admin-year').value;
 
+  if (getStudentById(id)) { alert('⚠️ That ID is already taken.'); return; }
+  if (pwd.length < 4) { alert('⚠️ Password must be at least 4 characters.'); return; }
+
+  const allocatedYear = yearNum + (yearNum === '1' ? 'st' : yearNum === '2' ? 'nd' : yearNum === '3' ? 'rd' : 'th') + ' Year';
   const hashedPwd = await hashPassword(pwd);
 
   addStudent({
-    id: id.trim(),
-    name: name.trim(),
-    room: '—',
-    phone: '—',
-    password: hashedPwd,
-    role: 'admin',
-    allocated_year: allocatedYear,
-    last_updated: new Date().toISOString(),
+    id, name, room: '—', phone: '—',
+    password: hashedPwd, role: 'admin', allocated_year: allocatedYear,
+    last_updated: new Date().toISOString()
   });
-  alert(`✅ Sub-Admin "${name.trim()}" created for ${allocatedYear}`);
+
+  alert(`✅ Sub-Admin "${name}" created for ${allocatedYear}`);
+  document.getElementById('add-admin-modal').classList.remove('visible');
   renderAdminList();
-};
+});
 
-window.editSubAdmin = async function (targetAdminId) {
-  const session = getSession();
-  const currentAdmin = getStudentById(session.userId);
-  if (!currentAdmin) return;
-
+window.editSubAdmin = function (targetAdminId) {
   const targetAdmin = getStudentById(targetAdminId);
   if (!targetAdmin) return;
 
-  const pwd = prompt(`🔐 SECURITY VERIFICATION\nEnter YOUR admin password to edit admin "${targetAdminId}":`);
-  if (!pwd) return;
-  const hashedPwd = await hashPassword(pwd);
-  if (hashedPwd !== currentAdmin.password) {
-    alert('❌ Incorrect password! Unauthorized editing blocked.');
+  document.getElementById('edit-admin-target-id').value = targetAdminId;
+  document.getElementById('edit-admin-name').value = targetAdmin.name;
+  document.getElementById('edit-admin-year').value = targetAdmin.allocated_year ? targetAdmin.allocated_year.charAt(0) : '1';
+  document.getElementById('edit-admin-new-pwd').value = '';
+  document.getElementById('edit-admin-master-pwd').value = '';
+  document.getElementById('edit-admin-modal').classList.add('visible');
+};
+
+document.getElementById('edit-admin-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const session = getSession();
+  const currentAdmin = getStudentById(session.userId);
+  if (!currentAdmin) return;
+
+  const masterPwd = document.getElementById('edit-admin-master-pwd').value;
+  const hashedMaster = await hashPassword(masterPwd);
+  if (hashedMaster !== currentAdmin.password) {
+    alert('❌ Incorrect master password! Unauthorized editing blocked.');
     return;
   }
 
-  const newName = prompt('Update name (leave blank to keep current):', targetAdmin.name);
-  const newPwd = prompt('Enter new password (min 4 chars) OR leave blank to keep current:');
-  
-  let newYear = prompt('Update allocated year (1, 2, 3, or 4) OR leave blank to keep current:', 
-    targetAdmin.allocated_year ? targetAdmin.allocated_year.charAt(0) : '');
+  const targetId = document.getElementById('edit-admin-target-id').value;
+  const newName = document.getElementById('edit-admin-name').value.trim();
+  const newPwd = document.getElementById('edit-admin-new-pwd').value;
+  const yearNum = document.getElementById('edit-admin-year').value;
 
-  const updates = {};
-  if (newName && newName.trim()) updates.name = newName.trim();
-  
+  const updates = { name: newName, last_updated: new Date().toISOString() };
+  updates.allocated_year = yearNum + (yearNum === '1' ? 'st' : yearNum === '2' ? 'nd' : yearNum === '3' ? 'rd' : 'th') + ' Year';
+
   if (newPwd && newPwd.length >= 4) {
     updates.password = await hashPassword(newPwd);
   } else if (newPwd && newPwd.length > 0 && newPwd.length < 4) {
-    alert('⚠️ New password must be at least 4 characters. Password was not changed.');
+    alert('⚠️ New password must be at least 4 characters.'); return;
   }
 
-  if (newYear && newYear.trim()) {
-    const y = newYear.trim();
-    if (['1','2','3','4'].includes(y)) {
-      updates.allocated_year = y + (y === '1' ? 'st' : y === '2' ? 'nd' : y === '3' ? 'rd' : 'th') + ' Year';
-    } else {
-      alert('⚠️ Invalid year entered. Year was not changed.');
-    }
-  }
+  updateStudent(targetId, updates);
+  alert(`✅ Admin "${targetId}" updated successfully!`);
+  document.getElementById('edit-admin-modal').classList.remove('visible');
+  renderAdminList();
+});
 
-  if (Object.keys(updates).length > 0) {
-    updates.last_updated = new Date().toISOString();
-    updateStudent(targetAdminId, updates);
-    alert(`✅ Admin "${targetAdminId}" updated successfully!`);
-    renderAdminList();
-  } else {
-    alert('No changes made.');
-  }
+window.removeAdmin = function (targetAdminId) {
+  document.getElementById('delete-admin-target-id').value = targetAdminId;
+  document.getElementById('delete-admin-target-label').textContent = targetAdminId;
+  document.getElementById('delete-admin-master-pwd').value = '';
+  document.getElementById('delete-admin-modal').classList.add('visible');
 };
 
-window.removeAdmin = async function (targetAdminId) {
+document.getElementById('delete-admin-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
   const session = getSession();
   const currentAdmin = getStudentById(session.userId);
   
-  if (!currentAdmin) return;
-
-  const pwd = prompt(`🔐 SECURITY VERIFICATION\nEnter YOUR admin password to delete admin "${targetAdminId}":`);
-  const hashedPwd = await hashPassword(pwd);
-  if (hashedPwd !== currentAdmin.password) {
+  const masterPwd = document.getElementById('delete-admin-master-pwd').value;
+  const hashedMaster = await hashPassword(masterPwd);
+  if (hashedMaster !== currentAdmin.password) {
     alert('❌ Incorrect password! Unauthorized deletion blocked.');
     return;
   }
 
-  if (!confirm(`⚠️ Are you absolutely sure you want to permanently delete the admin account "${targetAdminId}"?`)) {
-    return;
-  }
-
-  // Remove from Firebase completely
+  const targetId = document.getElementById('delete-admin-target-id').value;
+  
   if (typeof firebaseDB !== 'undefined' && firebaseDB) {
-    firebaseDB.ref('students/' + targetAdminId).remove().then(() => {
-      firebaseDB.ref('admin_logins/' + targetAdminId).remove();
-      alert(`✅ Admin "${targetAdminId}" has been deleted.`);
+    firebaseDB.ref('students/' + targetId).remove().then(() => {
+      firebaseDB.ref('admin_logins/' + targetId).remove();
+      alert(`✅ Admin "${targetId}" has been deleted.`);
+      document.getElementById('delete-admin-modal').classList.remove('visible');
       renderAdminList();
     }).catch(err => {
       alert('❌ Failed to delete admin: ' + err.message);
     });
   }
-};
+});
 
 /* ═══════════════════════════════════════════════
    ADMIN PROFILE EDITING
@@ -872,6 +868,9 @@ window.openAdminProfile = function () {
   document.getElementById('admin-prof-name').value = admin.name || '';
   document.getElementById('admin-prof-phone').value = admin.phone || '';
   document.getElementById('admin-prof-email').value = admin.email || '';
+  document.getElementById('admin-prof-old-pwd').value = '';
+  document.getElementById('admin-prof-new-pwd').value = '';
+  document.getElementById('admin-prof-confirm-pwd').value = '';
 
   modal.classList.add('visible');
 };
@@ -909,18 +908,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const profileForm = document.getElementById('admin-profile-form');
   if (profileForm) {
-    profileForm.addEventListener('submit', (e) => {
+    profileForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const session = getSession();
+      const currentAdmin = getStudentById(session.userId);
+      if (!currentAdmin) return;
+
       const newId = document.getElementById('admin-prof-id').value.trim();
       const name = document.getElementById('admin-prof-name').value.trim();
       const phone = document.getElementById('admin-prof-phone').value.trim();
       const email = document.getElementById('admin-prof-email').value.trim();
+      
+      const oldPwd = document.getElementById('admin-prof-old-pwd').value;
+      const newPwd = document.getElementById('admin-prof-new-pwd').value;
+      const confirmPwd = document.getElementById('admin-prof-confirm-pwd').value;
+
       if (!name || !newId) return;
+
+      if (newPwd) {
+        if (!oldPwd) {
+          alert('⚠️ You must enter your Old Password to change your password.');
+          return;
+        }
+        const hashedOld = await hashPassword(oldPwd);
+        if (hashedOld !== currentAdmin.password) {
+          alert('❌ Old Password is incorrect.');
+          return;
+        }
+        if (newPwd.length < 4) {
+          alert('⚠️ New Password must be at least 4 characters.');
+          return;
+        }
+        if (newPwd !== confirmPwd) {
+          alert('⚠️ New Passwords do not match.');
+          return;
+        }
+      }
 
       const oldId = session.userId;
       const updates = { name, phone, email, last_updated: new Date().toISOString() };
       if (adminPhotoBase64) updates.photo = adminPhotoBase64;
+      
+      if (newPwd) {
+        updates.password = await hashPassword(newPwd);
+      }
 
       // Handle ID change
       if (newId !== oldId) {
