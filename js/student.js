@@ -93,6 +93,7 @@ let geoCheckDone = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.style.overflow = 'hidden'; // Lock scroll during startup
+  document.title = 'NexTrack — Student Dashboard'; // Bug #36 fix
 
   const loader = document.getElementById('startup-loader');
   const msgEl = document.getElementById('startup-msg');

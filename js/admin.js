@@ -238,6 +238,10 @@ function initTabs() {
         targetPanel.classList.add('active');
       }
 
+      // Bug #36 fix: Update document title for screen readers
+      const tabName = tab.textContent.trim();
+      document.title = 'NexTrack — ' + tabName;
+
       try {
         tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       } catch(e) {
