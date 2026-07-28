@@ -548,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       if (!editingStudentId) return;
 
-      const newId = document.getElementById('edit-stu-id').value.trim();
+      const newId = document.getElementById('edit-stu-id').value.trim().toUpperCase();
       const name = document.getElementById('edit-stu-name').value.trim();
       const age = document.getElementById('edit-stu-age').value.trim();
       const dept = document.getElementById('edit-stu-dept').value.trim();
@@ -650,7 +650,7 @@ window.registerNewAdmin = function () {
 
 document.getElementById('add-admin-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const id = document.getElementById('add-admin-id').value.trim();
+  const id = document.getElementById('add-admin-id').value.trim().toUpperCase();
   const name = document.getElementById('add-admin-name').value.trim();
   const pwd = document.getElementById('add-admin-pwd').value;
   const yearNum = document.getElementById('add-admin-year').value;

@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Forgot Password Logic ──
     forgotPwdLink.addEventListener('click', (e) => {
       e.preventDefault();
-      const uid = document.getElementById('login-id').value.trim();
+      const uid = document.getElementById('login-id').value.trim().toUpperCase();
       if (!uid) {
         loginMsg.innerHTML = '⚠️ Please enter your ID first.';
         loginMsg.className = 'form-msg error';
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Login ──
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const uid = document.getElementById('login-id').value.trim();
+      const uid = document.getElementById('login-id').value.trim().toUpperCase();
       const pwd = document.getElementById('login-pwd').value;
 
       const students = getStudents();
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Register ──
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const newId = document.getElementById('reg-id').value.trim();
+      const newId = document.getElementById('reg-id').value.trim().toUpperCase();
       const name = document.getElementById('reg-name').value.trim();
       const email = document.getElementById('reg-email').value.trim();
       const room = document.getElementById('reg-room').value.trim();
