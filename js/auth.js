@@ -339,9 +339,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      // Strict Numeric Validation
-      if (!/^\d+$/.test(newId)) {
-        registerMsg.textContent = '⚠️ Registration ID can only contain numbers (0-9).';
+      // Strict Alphanumeric Validation
+      if (!/^[a-zA-Z0-9]+$/.test(newId)) {
+        registerMsg.textContent = '⚠️ Registration ID can only contain letters and numbers.';
         registerMsg.className = 'form-msg error';
         const idEl = document.getElementById('reg-id');
         idEl.scrollIntoView({ behavior: 'smooth', block: 'center' });

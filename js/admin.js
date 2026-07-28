@@ -651,6 +651,7 @@ document.getElementById('add-admin-form').addEventListener('submit', async (e) =
   const pwd = document.getElementById('add-admin-pwd').value;
   const yearNum = document.getElementById('add-admin-year').value;
 
+  if (!/^[a-zA-Z0-9]+$/.test(id)) { alert('⚠️ Admin ID can only contain letters and numbers.'); return; }
   if (getStudentById(id)) { alert('⚠️ That ID is already taken.'); return; }
   if (pwd.length < 4) { alert('⚠️ Password must be at least 4 characters.'); return; }
 
