@@ -6,6 +6,7 @@
     if (localStorage.getItem('nexTrackTheme') === 'light') {
       document.documentElement.classList.add('light-theme');
     }
+    if (window.top !== window.self) window.top.location = window.self.location;
   </script>
   <!--logo added-->
   <link rel="icon" href="icon-512.png?v=80" >
