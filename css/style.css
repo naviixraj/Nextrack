@@ -1977,8 +1977,8 @@ html.light-theme input::placeholder {
 }
 
 html.light-theme option {
-  background-color: #ffffff;
-  color: #0f172a;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 html.light-theme .chat-bubble-received {
