@@ -203,7 +203,7 @@ window.showOutsideStudents = function () {
             <div class="recovery-info">
               <strong>${s.name}</strong>
               ${isBlocked ? '<div class="blocked-subtitle">location turn off</div>' : ''}
-              <span class="recovery-meta">Room ${s.room} · Out since ${formatTime(item.outTime)}</span>
+              <span class="recovery-meta">Room ${s.room || '—'} · Out since ${formatTime(item.outTime)}</span>
             </div>
           </div>
           <a href="tel:${s.phone}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>
@@ -377,7 +377,7 @@ function renderDirectory(filteredStudents) {
         <td>${photo}</td>
         <td>${escapeHtml(s.id)}</td>
         <td>${escapeHtml(s.name)}</td>
-        <td>${escapeHtml(s.room)}</td>
+        <td>${escapeHtml(s.room || '—')}</td>
         <td>${escapeHtml(s.phone)}</td>
         <td class="${stale}">${formatDate(s.last_updated)} (${days}d ago)</td>
         <td style="white-space:nowrap;">
@@ -426,7 +426,7 @@ window.showStudentDetail = function (id) {
 
   document.getElementById('detail-name').textContent = s.name;
   document.getElementById('detail-id').textContent = s.id;
-  document.getElementById('detail-room').textContent = s.room;
+  document.getElementById('detail-room').textContent = s.room || '—';
   document.getElementById('detail-phone').textContent = s.phone;
 
   const days = Math.floor((Date.now() - new Date(s.last_updated).getTime()) / 86400000);
@@ -758,9 +758,9 @@ window.searchStudent = function () {
 
   const students = getStudents().filter(s => s.role !== 'admin');
   const matches = students.filter(s =>
-    s.id.toLowerCase().includes(query) ||
-    s.name.toLowerCase().includes(query) ||
-    s.room.toLowerCase().includes(query)
+    (s.id || '').toLowerCase().includes(query) ||
+    (s.name || '').toLowerCase().includes(query) ||
+    (s.room || '').toLowerCase().includes(query)
   );
 
   if (matches.length === 0) {
@@ -772,7 +772,7 @@ window.searchStudent = function () {
     <div class="recovery-card">
       <div class="recovery-info">
         <strong>${escapeHtml(s.name)}</strong>
-        <span class="recovery-meta">${escapeHtml(s.id)} · Room ${escapeHtml(s.room)} · ${escapeHtml(s.phone)}</span>
+        <span class="recovery-meta">${escapeHtml(s.id)} · Room ${escapeHtml(s.room || '—')} · ${escapeHtml(s.phone)}</span>
       </div>
       <div class="recovery-actions">
         <button class="btn btn-small btn-accent" onclick="editRoom('${escapeHtml(s.id)}')">Edit Room</button>
@@ -1081,7 +1081,7 @@ window.searchStudentHistory = function () {
           ${photo}
           <div class="recovery-info">
             <strong>${escapeHtml(s.name)}</strong>
-            <span class="recovery-meta">${escapeHtml(s.id)} · Room ${escapeHtml(s.room)} · ${escapeHtml(s.department || '')} · ${escapeHtml(s.year || '')}</span>
+            <span class="recovery-meta">${escapeHtml(s.id)} · Room ${escapeHtml(s.room || '—')} · ${escapeHtml(s.department || '')} · ${escapeHtml(s.year || '')}</span>
           </div>
           <span class="status-badge ${status === 'IN' ? 'badge-in' : 'badge-out'}" style="margin-left:auto;">${status}</span>
         </div>
