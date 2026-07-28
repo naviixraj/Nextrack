@@ -2146,3 +2146,28 @@ option {
 .pwd-toggle:hover {
   color: var(--text);
 }
+
+/* ═══════════════════════════════════════════════
+   Bug #41 Fix: Print Styles for Warden Reports
+   ═══════════════════════════════════════════════ */
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .bg-glow, .bg-glow-1, .bg-glow-2,
+  .topbar, .admin-tabs-bar, .chat-panel,
+  .modal-overlay, .btn, .pwd-toggle,
+  #startup-loader, .admin-dropdown,
+  .chat-btn, .fab-checkin, .fab-checkout,
+  noscript { display: none !important; }
+  .tab-panel { display: block !important; }
+  .glass, .card, .monitor-table-bw,
+  .detail-section { 
+    background: #fff !important; 
+    border: 1px solid #ddd !important; 
+    box-shadow: none !important;
+    color: #000 !important;
+  }
+  .monitor-table-bw th { background: #f0f0f0 !important; color: #000 !important; }
+  .monitor-table-bw td { color: #000 !important; border-color: #ddd !important; }
+  .badge-in, .badge-out { border: 1px solid #000 !important; color: #000 !important; background: transparent !important; }
+  a { color: #000 !important; text-decoration: underline; }
+}
