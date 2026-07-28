@@ -1976,6 +1976,11 @@ html.light-theme input::placeholder {
   color: #475569 !important;
 }
 
+html.light-theme option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
 html.light-theme .chat-bubble-received {
   background: rgba(0,0,0,0.05);
   color: #0f172a;
