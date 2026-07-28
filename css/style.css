@@ -341,9 +341,9 @@ html.light-theme .topbar-actions .btn-ghost:hover {
   border-radius: var(--radius-md);
 }
 
-.stu-details { flex: 1; }
-.stu-details h2 { font-size: 1.25rem; font-weight: 700; }
-.stu-meta { font-size: 0.82rem; color: var(--text-secondary); }
+.stu-details { flex: 1; min-width: 0; }
+.stu-details h2 { font-size: 1.25rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stu-meta { font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stu-meta .label { font-weight: 600; color: var(--text-muted); }
 
 .stu-status-wrap { text-align: right; }
@@ -433,6 +433,9 @@ tbody td {
   padding: 0.65rem 0.8rem;
   border-bottom: 1px solid rgba(100,120,255,0.05);
   white-space: nowrap;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 tbody tr {
@@ -632,8 +635,9 @@ tbody tr:hover {
 }
 .recovery-card:hover { background: var(--bg-card-hover); }
 
-.recovery-info { display: flex; flex-direction: column; gap: 0.15rem; }
-.recovery-meta { font-size: 0.8rem; color: var(--text-muted); }
+.recovery-info { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 0; }
+.recovery-info h4 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recovery-meta { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .recovery-actions { display: flex; gap: 0.5rem; }
 
 /* ══════════════════════════════════════════════════
