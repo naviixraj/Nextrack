@@ -395,7 +395,7 @@
         </div>
         <div class="form-group">
           <label for="admin-prof-name">Name</label>
-          <input type="text" id="admin-prof-name" required>
+          <input type="text" id="admin-prof-name" placeholder="Name" required maxlength="40">
         </div>
         <div class="form-group">
           <label for="admin-prof-phone">Phone</label>
@@ -412,7 +412,7 @@
         <div class="form-group">
           <label for="admin-prof-old-pwd">Old Password</label>
           <div class="pwd-wrap">
-            <input type="password" id="admin-prof-old-pwd" placeholder="Required to change password">
+            <input type="password" id="admin-prof-old-pwd" required placeholder="Enter current" maxlength="50">
             <button type="button" class="pwd-toggle" data-target="admin-prof-old-pwd" aria-label="Toggle visibility">
               <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -425,7 +425,7 @@
           <div class="form-group">
             <label for="admin-prof-new-pwd">New Password</label>
             <div class="pwd-wrap">
-              <input type="password" id="admin-prof-new-pwd" placeholder="Min 4 chars">
+              <input type="password" id="admin-prof-new-pwd" placeholder="Leave blank to keep" maxlength="50">
               <button type="button" class="pwd-toggle" data-target="admin-prof-new-pwd" aria-label="Toggle visibility">
                 <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -437,7 +437,7 @@
           <div class="form-group">
             <label for="admin-prof-confirm-pwd">Confirm New</label>
             <div class="pwd-wrap">
-              <input type="password" id="admin-prof-confirm-pwd" placeholder="Confirm new">
+              <input type="password" id="admin-prof-confirm-pwd" placeholder="Confirm new" maxlength="50">
               <button type="button" class="pwd-toggle" data-target="admin-prof-confirm-pwd" aria-label="Toggle visibility">
                 <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -466,11 +466,11 @@
       <form id="add-admin-form">
         <div class="form-group">
           <label for="add-admin-id">Admin Login ID</label>
-          <input type="text" id="add-admin-id" required placeholder="e.g. warden123">
+          <input type="text" id="add-admin-id" required placeholder="e.g. warden123" maxlength="20">
         </div>
         <div class="form-group">
           <label for="add-admin-name">Full Name</label>
-          <input type="text" id="add-admin-name" required placeholder="Admin Name">
+          <input type="text" id="add-admin-name" required placeholder="Admin Name" maxlength="40">
         </div>
         <div class="form-group">
           <label for="add-admin-year">Allocated Year</label>
@@ -486,7 +486,7 @@
         <div class="form-group">
           <label for="add-admin-pwd">Initial Password</label>
           <div class="pwd-wrap">
-            <input type="password" id="add-admin-pwd" required placeholder="Min 4 chars">
+            <input type="password" id="add-admin-pwd" required placeholder="Min 4 chars" maxlength="50">
             <button type="button" class="pwd-toggle" data-target="add-admin-pwd" aria-label="Toggle visibility">
               <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -512,7 +512,7 @@
         <input type="hidden" id="edit-admin-target-id">
         <div class="form-group">
           <label for="edit-admin-name">Name</label>
-          <input type="text" id="edit-admin-name" required>
+          <input type="text" id="edit-admin-name" required maxlength="40">
         </div>
         <div class="form-group">
           <label for="edit-admin-year">Allocated Year</label>
