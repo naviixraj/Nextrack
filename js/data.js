@@ -240,11 +240,11 @@ function getSession() {
   if (!sessionStr) return null;
   const session = JSON.parse(sessionStr);
   
-  // Bug #11 (Infinite Sessions) -> 6 Month Expiration (180 days = 15552000000 ms)
+  // Bug #11 (Infinite Sessions) -> 24 Hour Expiration (86400000 ms)
   if (session && session.timestamp) {
     const age = Date.now() - session.timestamp;
-    if (age > 15552000000) {
-      console.warn("Session expired (older than 6 months). Logging out.");
+    if (age > 86400000) {
+      console.warn("Session expired (older than 24 hours). Logging out.");
       localStorage.removeItem(DB.SESSION);
       return null;
     }
