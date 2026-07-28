@@ -259,6 +259,9 @@ function setSession(obj) {
 
 function clearSession() {
   localStorage.removeItem(DB.SESSION);
+  fbStudents = [];
+  fbMovements = [];
+  firebaseMessages = [];
 }
 
 /* ── Chat Messages ───────────────────────────── */
