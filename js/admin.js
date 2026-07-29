@@ -1331,7 +1331,7 @@ window.cancelLongPress = function () {
   if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
 };
 
-window.editSelectedMessage = function () {
+window.editSelectedMessage = async function () {
   document.getElementById('msg-context-menu').style.display = 'none';
   if (!selectedMsgKey) return;
 
