@@ -193,7 +193,7 @@ function saveStudents(arr) {
 }
 
 function getStudentById(id) {
-  return fbStudents.find(s => s.id === id) || null;
+  return fbStudents.find(s => s.id.toUpperCase() === id.toUpperCase()) || null;
 }
 
 function addStudent(student) {

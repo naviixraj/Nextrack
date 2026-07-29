@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleForgotPassword(uid) {
       const students = getStudents();
-      const user = students.find(s => s.id === uid);
+      const user = students.find(s => s.id.toUpperCase() === uid);
       
       if (!user || !user.email) {
         loginMsg.innerHTML = '❌ User ID not found or no email registered.';
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pwd = document.getElementById('login-pwd').value;
 
       const students = getStudents();
-      const user = students.find(s => s.id === uid);
+      const user = students.find(s => s.id.toUpperCase() === uid);
 
       if (!user) {
         loginMsg.textContent = '❌ Invalid ID.';
