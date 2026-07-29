@@ -308,6 +308,8 @@
       </div>
       <div class="detail-actions">
         <a href="#" id="detail-call-btn" class="btn btn-primary btn-small">📞 Call</a>
+        <button id="detail-edit-btn" class="btn btn-accent btn-small" onclick="adminEditStudent(document.getElementById('detail-id').textContent); closeStudentModal();">✏️ Edit</button>
+        <button id="detail-remove-btn" class="btn btn-warning btn-small" onclick="removeStudent(document.getElementById('detail-id').textContent); closeStudentModal();">🗑 Remove</button>
       </div>
     </div>
   </div>
