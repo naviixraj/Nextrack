@@ -238,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const resetLink = `https://nextrack-34110.web.app/index.html?reset=${token}`;
         const templateParams = {
           user_name: user.name,
+          user_id: user.id,
           to_email: user.email,
           new_password: `Click this secure link to reset your password: ${resetLink}` // Re-using the new_password variable for the link
         };
