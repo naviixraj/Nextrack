@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      const lastSent = localStorage.getItem('smt_pwd_reset_cooldown');
+      const lastSent = localStorage.getItem('smt_pwd_reset_cooldown_' + uid);
       if (lastSent && Date.now() - parseInt(lastSent) < 300000) {
         const remainingMinutes = Math.ceil((300000 - (Date.now() - parseInt(lastSent))) / 60000);
         loginMsg.innerHTML = `⚠️ Please wait ${remainingMinutes} minute(s) before requesting another reset email.`;
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginMsg.className = 'form-msg success';
         loginMsg.innerHTML = '✅ Success! Please check your email for the reset link.';
         forgotPwdLink.style.display = 'none';
-        localStorage.setItem('smt_pwd_reset_cooldown', Date.now().toString());
+        localStorage.setItem('smt_pwd_reset_cooldown_' + uid, Date.now().toString());
       } catch (err) {
         console.error('Email error:', err);
         const errorText = err.text || err.message || JSON.stringify(err);
