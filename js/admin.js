@@ -460,10 +460,65 @@ window.closeLightbox = function () {
 };
 
 /* ── Remove Student ───────────────────────────── */
-window.removeStudent = function (id) {
+window.removeStudent = async function (id) {
   const student = getStudentById(id);
   if (!student) return;
-  if (!confirm(`Are you sure you want to remove ${student.name} (${id})? This cannot be undone.`)) return;
+  
+  const { isConfirmed } = await Swal.fire({
+    title: 'Are you sure?',
+    text: `Remove ${student.name} (${id})? This cannot be undone.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#374151',
+    confirmButtonText: 'Yes, remove student',
+    background: '#1f2937',
+    color: '#f3f4f6'
+  });
+
+  if (!isConfirmed) return;
+
+  const { value: password } = await Swal.fire({
+    title: 'Authentication Required',
+    input: 'password',
+    inputLabel: 'Enter your Admin Password',
+    inputPlaceholder: 'Password',
+    showCancelButton: true,
+    background: '#1f2937',
+    color: '#f3f4f6',
+    confirmButtonColor: '#3b82f6',
+    cancelButtonColor: '#374151',
+    preConfirm: (pwd) => {
+      if (!pwd) {
+        Swal.showValidationMessage('Please enter your password');
+      }
+      return pwd;
+    }
+  });
+
+  if (!password) return;
+
+  const currentAdminId = sessionStorage.getItem('smt_admin_id');
+  const admins = getStudents().filter(s => s.role === 'admin');
+  const me = admins.find(a => a.id === currentAdminId);
+  
+  // Create a temporary hashPassword function here since it's global
+  const msgUint8 = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashedPwd = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (!me || me.password !== hashedPwd) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Unauthorized',
+      text: 'Incorrect admin password!',
+      background: '#1f2937',
+      color: '#f3f4f6',
+      confirmButtonColor: '#3b82f6'
+    });
+    return;
+  }
 
   firebaseDB.ref('students/' + id).remove().then(() => {
     // Delete the student's movements individually
@@ -471,10 +526,27 @@ window.removeStudent = function (id) {
     movements.forEach(m => {
       firebaseDB.ref('movements/' + m.id).remove();
     });
-    alert(`✅ ${student.name} has been removed.`);
+    
+    Swal.fire({
+      icon: 'success',
+      title: 'Removed!',
+      text: `${student.name} has been removed.`,
+      timer: 2000,
+      showConfirmButton: false,
+      background: '#1f2937',
+      color: '#f3f4f6'
+    });
+    
     refreshDashboard();
   }).catch(err => {
-    alert('❌ Failed to remove student: ' + err.message);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Failed to remove student: ' + err.message,
+      background: '#1f2937',
+      color: '#f3f4f6',
+      confirmButtonColor: '#3b82f6'
+    });
   });
 };
 
