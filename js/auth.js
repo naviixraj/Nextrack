@@ -240,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
           user_name: user.name,
           user_id: user.id,
           to_email: user.email,
+          email: user.email,
           new_password: `Click this secure link to reset your password: ${resetLink}` // Re-using the new_password variable for the link
         };
 
