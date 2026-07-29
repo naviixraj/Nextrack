@@ -472,8 +472,14 @@ window.removeStudent = async function (id) {
     confirmButtonColor: '#ef4444',
     cancelButtonColor: '#374151',
     confirmButtonText: 'Yes, remove student',
-    background: '#1f2937',
-    color: '#f3f4f6'
+    background: 'rgba(20, 20, 25, 0.7)',
+    color: '#f3f4f6',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'glass',
+      confirmButton: 'btn btn-warning',
+      cancelButton: 'btn btn-ghost'
+    }
   });
 
   if (!isConfirmed) return;
@@ -484,10 +490,15 @@ window.removeStudent = async function (id) {
     inputLabel: 'Enter your Admin Password',
     inputPlaceholder: 'Password',
     showCancelButton: true,
-    background: '#1f2937',
+    background: 'rgba(20, 20, 25, 0.7)',
     color: '#f3f4f6',
-    confirmButtonColor: '#3b82f6',
-    cancelButtonColor: '#374151',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'glass',
+      confirmButton: 'btn btn-primary',
+      cancelButton: 'btn btn-ghost',
+      input: 'swal-custom-input'
+    },
     preConfirm: (pwd) => {
       if (!pwd) {
         Swal.showValidationMessage('Please enter your password');
@@ -509,14 +520,7 @@ window.removeStudent = async function (id) {
   const hashedPwd = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
   if (!me || me.password !== hashedPwd) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Unauthorized',
-      text: 'Incorrect admin password!',
-      background: '#1f2937',
-      color: '#f3f4f6',
-      confirmButtonColor: '#3b82f6'
-    });
+    alert('❌ Incorrect admin password!');
     return;
   }
 
@@ -527,26 +531,11 @@ window.removeStudent = async function (id) {
       firebaseDB.ref('movements/' + m.id).remove();
     });
     
-    Swal.fire({
-      icon: 'success',
-      title: 'Removed!',
-      text: `${student.name} has been removed.`,
-      timer: 2000,
-      showConfirmButton: false,
-      background: '#1f2937',
-      color: '#f3f4f6'
-    });
+    alert('✅ ' + student.name + ' has been removed.');
     
     refreshDashboard();
   }).catch(err => {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Failed to remove student: ' + err.message,
-      background: '#1f2937',
-      color: '#f3f4f6',
-      confirmButtonColor: '#3b82f6'
-    });
+    alert('❌ Failed to remove student: ' + err.message);
   });
 };
 

@@ -18,10 +18,13 @@ window.alert = function(msg) {
   Swal.fire({
     text: text,
     icon: icon,
-    background: '#1f2937',
+    background: 'rgba(20, 20, 25, 0.7)',
     color: '#f3f4f6',
-    confirmButtonColor: '#3b82f6',
-    confirmButtonText: 'OK'
+    buttonsStyling: false,
+    customClass: {
+      popup: 'glass',
+      confirmButton: 'btn btn-primary'
+    }
   });
 };
 
@@ -31,11 +34,14 @@ window.premiumConfirm = async function(msg, isDestructive = false) {
     text: msg,
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonColor: isDestructive ? '#ef4444' : '#3b82f6',
-    cancelButtonColor: '#374151',
-    confirmButtonText: 'Yes',
-    background: '#1f2937',
-    color: '#f3f4f6'
+    background: 'rgba(20, 20, 25, 0.7)',
+    color: '#f3f4f6',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'glass',
+      confirmButton: isDestructive ? 'btn btn-warning' : 'btn btn-primary',
+      cancelButton: 'btn btn-ghost'
+    }
   });
   return isConfirmed;
 };
@@ -46,10 +52,15 @@ window.premiumPrompt = async function(label, type = 'text', defaultValue = '') {
     input: type,
     inputValue: defaultValue,
     showCancelButton: true,
-    confirmButtonColor: '#3b82f6',
-    cancelButtonColor: '#374151',
-    background: '#1f2937',
-    color: '#f3f4f6'
+    background: 'rgba(20, 20, 25, 0.7)',
+    color: '#f3f4f6',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'glass',
+      confirmButton: 'btn btn-primary',
+      cancelButton: 'btn btn-ghost',
+      input: 'swal-custom-input'
+    }
   });
   return value;
 };
