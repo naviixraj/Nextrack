@@ -1053,6 +1053,14 @@ window.refreshDashboard = function () {
   searchDirectory();
   renderAdminList();
 
+  // Hide the global loading screen once initial render is complete
+  const loader = document.getElementById('global-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    loader.style.visibility = 'hidden';
+    setTimeout(() => { if(loader.parentNode) loader.parentNode.removeChild(loader); }, 400);
+  }
+
   // Reactive: If the outside modal is open, refresh it now!
   const outsideModal = document.getElementById('outside-modal');
   if (outsideModal && outsideModal.classList.contains('visible')) {
