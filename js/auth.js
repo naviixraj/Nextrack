@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const newPwd = prompt(`Enter a new password for ${data.email}:\n(Must be at least 4 characters)`);
+      const newPwd = await premiumPrompt(`Enter a new password for ${data.email}:\n(Must be at least 4 characters)`, 'password');
       if (!newPwd || newPwd.length < 4) {
         alert('Password must be at least 4 characters. Please click the link in your email again to retry.');
         window.location.href = 'index.html';
@@ -217,7 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const confirmMsg = `Send password reset email to ${user.email}?`;
-      if (!confirm(confirmMsg)) return;
+      const isConfirmed = await premiumConfirm(confirmMsg);
+      if (!isConfirmed) return;
 
       loginMsg.innerHTML = '<span class="status-toast-premium visible" style="position:static; transform:none; opacity:1; padding:0.5rem; margin-top:0.5rem;">💌 Sending reset link...</span>';
 

@@ -556,7 +556,7 @@ window.removeStudent = async function (id) {
 let editingStudentId = null;
 
 window.adminEditStudent = async function (studentId) {
-  const adminPwd = prompt('🔐 Enter your admin password to edit this student:');
+  const adminPwd = await premiumPrompt('🔐 Enter your admin password to edit this student:', 'password');
   if (!adminPwd) return;
 
   const session = getSession();
@@ -854,7 +854,7 @@ window.searchStudent = function () {
 };
 
 window.resetPassword = async function (id) {
-  const newPwd = prompt('Enter new password for ' + id + ':');
+  const newPwd = await premiumPrompt('Enter new password for ' + id + ':', 'password');
   if (newPwd && newPwd.length >= 4) {
     const hashedPwd = await hashPassword(newPwd);
     updateStudent(id, { password: hashedPwd });
@@ -864,8 +864,8 @@ window.resetPassword = async function (id) {
   }
 };
 
-window.editRoom = function (id) {
-  const newRoom = prompt('Enter new room number for ' + id + ':');
+window.editRoom = async function (id) {
+  const newRoom = await premiumPrompt('Enter new room number for ' + id + ':');
   if (newRoom && newRoom.trim()) {
     updateStudent(id, { room: newRoom.trim(), last_updated: new Date().toISOString() });
     alert('✅ Room updated successfully.');
@@ -1011,7 +1011,7 @@ window.changeAdminPassword = async function () {
   const admin = getStudentById(session.userId);
   if (!admin) return;
 
-  const current = prompt('Enter your current password:');
+  const current = await premiumPrompt('Enter your current password:', 'password');
   if (!current) return;
   const hashedCurrent = await hashPassword(current);
   if (hashedCurrent !== admin.password) {
@@ -1019,13 +1019,13 @@ window.changeAdminPassword = async function () {
     return;
   }
 
-  const newPwd = prompt('Enter new password (min 4 characters):');
+  const newPwd = await premiumPrompt('Enter new password (min 4 characters):', 'password');
   if (!newPwd || newPwd.length < 4) {
     alert('⚠️ Password must be at least 4 characters.');
     return;
   }
 
-  const confirm = prompt('Confirm new password:');
+  const confirm = await premiumPrompt('Confirm new password:', 'password');
   if (newPwd !== confirm) {
     alert('⚠️ Passwords do not match.');
     return;
@@ -1037,8 +1037,9 @@ window.changeAdminPassword = async function () {
 };
 
 /* ── Logout ──────────────────────────────────── */
-window.logout = function () {
-  if (confirm('🚪 Are you sure you want to logout of NexTrack?')) {
+window.logout = async function () {
+  const isConfirmed = await premiumConfirm('Are you sure you want to logout of NexTrack?');
+  if (isConfirmed) {
     clearSession();
     window.location.href = 'index.html';
   }
@@ -1201,8 +1202,9 @@ window.saveGeofenceSettings = function () {
   alert('✅ Geofence settings saved successfully!');
 };
 
-window.clearGeofenceSettings = function () {
-  if (!confirm('Remove geofence? Students will be able to check-in from anywhere.')) return;
+window.clearGeofenceSettings = async function () {
+  const isConfirmed = await premiumConfirm('Remove geofence? Students will be able to check-in from anywhere.', true);
+  if (!isConfirmed) return;
   
   if (typeof firebaseDB !== 'undefined' && firebaseDB) {
     firebaseDB.ref('geofence').remove().then(() => {
@@ -1339,18 +1341,19 @@ window.editSelectedMessage = function () {
   const msg = firebaseMessages.find(m => m.firebaseKey === selectedMsgKey);
   if (!msg) return;
 
-  const newText = prompt('Edit message:', msg.text);
+  const newText = await premiumPrompt('Edit message:', 'text', msg.text);
   if (newText === null || newText.trim() === '') return;
 
   editFirebaseMessage(selectedMsgKey, newText.trim());
   selectedMsgKey = null;
 };
 
-window.deleteSelectedMessage = function () {
+window.deleteSelectedMessage = async function () {
   document.getElementById('msg-context-menu').style.display = 'none';
   if (!selectedMsgKey) return;
 
-  if (!confirm('Delete this message?')) { selectedMsgKey = null; return; }
+  const isConfirmed = await premiumConfirm('Delete this message?');
+  if (!isConfirmed) { selectedMsgKey = null; return; }
 
   deleteFirebaseMessage(selectedMsgKey);
   selectedMsgKey = null;
@@ -1361,9 +1364,11 @@ document.addEventListener('click', () => {
   document.getElementById('msg-context-menu').style.display = 'none';
 });
 
-window.deleteAllChats = function () {
-  if (!confirm('⚠️ Delete ALL messages from everyone?\nThis cannot be undone!')) return;
-  if (!confirm('Are you really sure? This will permanently delete all chat history.')) return;
+window.deleteAllChats = async function () {
+  const isConfirmed1 = await premiumConfirm('⚠️ Delete ALL messages from everyone?\nThis cannot be undone!', true);
+  if (!isConfirmed1) return;
+  const isConfirmed2 = await premiumConfirm('Are you really sure? This will permanently delete all chat history.', true);
+  if (!isConfirmed2) return;
   deleteAllFirebaseMessages();
 };
 
@@ -1504,8 +1509,9 @@ window.closeSupportModal = function () {
   if (modal) modal.classList.remove('visible');
 };
 
-window.pushGlobalUpdate = function() {
-  if(confirm('⚠️ Are you sure you want to push a global update? This will trigger an update popup for all currently active users.')) {
+window.pushGlobalUpdate = async function() {
+  const isConfirmed = await premiumConfirm('Are you sure you want to push a global update? This will trigger an update popup for all active users.');
+  if (isConfirmed) {
     firebaseDB.ref('system/app_version').set('v' + Date.now())
       .then(() => alert('✅ Global update triggered!'))
       .catch(e => alert('❌ Error: ' + e));

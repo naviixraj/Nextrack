@@ -632,8 +632,9 @@ window.openProfileModal = () => {
 };
 
 // Logout
-window.logout = () => {
-  if (confirm('🚪 Are you sure you want to logout?')) {
+window.logout = async () => {
+  const isConfirmed = await premiumConfirm('Are you sure you want to logout?');
+  if (isConfirmed) {
     clearSession();
     window.location.href = 'index.html';
   }
@@ -797,7 +798,7 @@ window.cancelLongPress = function (e) {
   }
 };
 
-window.editSelectedMessage = function (e) {
+window.editSelectedMessage = async function (e) {
   if(e) e.stopPropagation();
   document.getElementById('msg-context-menu').style.display = 'none';
   if (!selectedMsgKey) return;
@@ -805,19 +806,20 @@ window.editSelectedMessage = function (e) {
   const msg = firebaseStudentMessages.find(m => m.firebaseKey === selectedMsgKey);
   if (!msg) return;
 
-  const newText = prompt('Edit message:', msg.text);
+  const newText = await premiumPrompt('Edit message:', 'text', msg.text);
   if (newText === null || newText.trim() === '') return;
 
   editFirebaseMessage(selectedMsgKey, newText.trim());
   selectedMsgKey = null;
 };
 
-window.deleteSelectedMessage = function (e) {
+window.deleteSelectedMessage = async function (e) {
   if(e) e.stopPropagation();
   document.getElementById('msg-context-menu').style.display = 'none';
   if (!selectedMsgKey) return;
 
-  if (!confirm('Delete this message?')) { selectedMsgKey = null; return; }
+  const isConfirmed = await premiumConfirm('Delete this message?');
+  if (!isConfirmed) { selectedMsgKey = null; return; }
 
   deleteFirebaseMessage(selectedMsgKey);
   selectedMsgKey = null;
