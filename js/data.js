@@ -146,7 +146,7 @@ function saveStudents(arr) {
 }
 
 function getStudentById(id) {
-  return fbStudents.find(s => s.id === id) || null;
+  return fbStudents.find(s => s && s.id === id) || null;
 }
 
 function addStudent(student) {
@@ -245,11 +245,16 @@ function geoDistance(lat1, lon1, lat2, lon2) {
  * Check if given coordinates are inside the geofence
  * Returns { inside: bool, distance: number (meters) } or null if no geofence
  */
-function checkGeofence(lat, lng) {
+function checkGeofence(lat, lng, accuracy = 0) {
   const geo = getGeofence();
   if (!geo || !geo.lat || !geo.lng || !geo.radius) return null;
-  const dist = geoDistance(lat, lng, geo.lat, geo.lng);
-  return { inside: dist <= geo.radius, distance: Math.round(dist) };
+  const latNum = parseFloat(geo.lat);
+  const lngNum = parseFloat(geo.lng);
+  const radNum = parseFloat(geo.radius);
+  if (isNaN(latNum) || isNaN(lngNum) || isNaN(radNum)) return null;
+  const dist = geoDistance(lat, lng, latNum, lngNum);
+  // Add the GPS accuracy as a grace buffer to the radius
+  return { inside: dist <= (radNum + accuracy), distance: Math.round(dist) };
 }
 
 /* ── Seed / Init ─────────────────────────────── */

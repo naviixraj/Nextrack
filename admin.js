@@ -109,27 +109,47 @@ function startCurfewCheck() {
    TABS
    ═══════════════════════════════════════════════ */
 function initTabs() {
-  const tabs = document.querySelectorAll('.admin-tab');
-  const panels = document.querySelectorAll('.tab-panel');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById(tab.dataset.panel).classList.add('active');
-    });
+  console.log('initTabs called'); // Debug
+  const tabContainer = document.querySelector('.admin-tabs-bar');
+  if (!tabContainer) { console.warn('admin-tabs-bar not found'); return; }
+  console.log('tabContainer element:', tabContainer);
+  tabContainer.style.pointerEvents = 'auto';
+  tabContainer.addEventListener('click', (e) => {
+    const tab = e.target.closest('.admin-tab');
+    if (!tab) return;
+    console.log('Tab clicked:', tab.dataset.panel); // Debug
+    const tabs = document.querySelectorAll('.admin-tab');
+    const panels = document.querySelectorAll('.tab-panel');
+    tabs.forEach(t => t.classList.remove('active'));
+    panels.forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    const panel = document.getElementById(tab.dataset.panel);
+    if (panel) {
+      panel.classList.add('active');
+    } else {
+      console.warn('Panel not found for', tab.dataset.panel);
+    }
   });
 
   // Date filter buttons
-  document.getElementById('filter-today').addEventListener('click', () => setDateFilter('today'));
-  document.getElementById('filter-yesterday').addEventListener('click', () => setDateFilter('yesterday'));
-  document.getElementById('filter-custom-btn').addEventListener('click', () => {
-    const val = document.getElementById('filter-custom-date').value;
-    if (val) {
-      customDate = val;
-      setDateFilter('custom');
-    }
-  });
+  const todayBtn = document.getElementById('filter-today');
+  if (todayBtn) {
+    todayBtn.addEventListener('click', () => setDateFilter('today'));
+  }
+  const yesterdayBtn = document.getElementById('filter-yesterday');
+  if (yesterdayBtn) {
+    yesterdayBtn.addEventListener('click', () => setDateFilter('yesterday'));
+  }
+  const customBtn = document.getElementById('filter-custom-btn');
+  if (customBtn) {
+    customBtn.addEventListener('click', () => {
+      const val = document.getElementById('filter-custom-date').value;
+      if (val) {
+        customDate = val;
+        setDateFilter('custom');
+      }
+    });
+  }
 }
 
 function setDateFilter(mode) {
@@ -212,7 +232,9 @@ function renderMonitoringTable() {
    STUDENT DIRECTORY
    ═══════════════════════════════════════════════ */
 function renderDirectory() {
-  const students = getStudents().filter(s => s.role !== 'admin');
+  // Safely retrieve and sort students alphabetically by name
+  const rawStudents = Array.isArray(getStudents()) ? getStudents().filter(s => s.role !== 'admin') : [];
+  const students = rawStudents.sort((a, b) => a.name.localeCompare(b.name));
   const tbody = document.getElementById('directory-body');
 
   if (students.length === 0) {

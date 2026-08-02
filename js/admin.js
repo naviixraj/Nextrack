@@ -98,7 +98,7 @@ function initDashboard() {
 }
 
 function renderCards() {
-  let students = getStudents().filter(s => s.role !== 'admin');
+  let students = getStudents().filter(s => s && s.role !== 'admin');
   if (globalYearFilter !== 'All') {
     students = students.filter(s => s.year === globalYearFilter);
   }
@@ -132,7 +132,7 @@ function renderCards() {
 }
 
 window.showOutsideStudents = function () {
-  let students = getStudents().filter(s => s.role !== 'admin');
+  let students = getStudents().filter(s => s && s.role !== 'admin');
   if (globalYearFilter !== 'All') {
     students = students.filter(s => s.year === globalYearFilter);
   }
@@ -308,13 +308,14 @@ function renderMonitoringTable() {
    STUDENT DIRECTORY
    ═══════════════════════════════════════════════ */
 function renderDirectory(filteredStudents) {
-  let source = filteredStudents || getStudents().filter(s => s.role !== 'admin');
+  let source = filteredStudents || getStudents().filter(s => s && s.role !== 'admin');
   
   if (globalYearFilter !== 'All' && !filteredStudents) {
     source = source.filter(s => s.year === globalYearFilter);
   }
 
-  const students = source.sort((a, b) => a.name.localeCompare(b.name));
+  // Safely sort even if name is undefined
+  const students = source.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   const tbody = document.getElementById('directory-body');
 
   if (students.length === 0) {
@@ -358,7 +359,7 @@ window.searchDirectory = function() {
     s.name.toLowerCase().includes(query) || 
     s.room.toLowerCase().includes(query) ||
     (s.phone && s.phone.includes(query))
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   renderDirectory(filtered);
 };
@@ -559,7 +560,7 @@ function trackAdminLogin() {
 function renderAdminList() {
   const container = document.getElementById('admin-list-body');
   if (!container) return;
-  const allStudents = getStudents().filter(s => s.role === 'admin');
+  const allStudents = getStudents().filter(s => s && s.role === 'admin');
   const logins = typeof fbAdminLogins !== 'undefined' ? fbAdminLogins : [];
   const session = getSession();
 
@@ -956,7 +957,9 @@ function initGeofenceUI() {
     document.getElementById('geo-lat').value = geo.lat || '';
     document.getElementById('geo-lng').value = geo.lng || '';
     document.getElementById('geo-radius').value = geo.radius || '';
-    status.innerHTML = `<span style="color:#4ade80;">✅ Geofence active — ${geo.radius}m radius around (${geo.lat.toFixed(5)}, ${geo.lng.toFixed(5)})</span>`;
+    const latStr = typeof geo.lat === 'number' ? geo.lat.toFixed(5) : (geo.lat || 'N/A');
+    const lngStr = typeof geo.lng === 'number' ? geo.lng.toFixed(5) : (geo.lng || 'N/A');
+    status.innerHTML = `<span style="color:#4ade80;">✅ Geofence active — ${geo.radius || 0}m radius around (${latStr}, ${lngStr})</span>`;
   } else {
     status.innerHTML = '<span style="color:var(--text-muted);">No geofence configured. Check-in allowed from anywhere.</span>';
   }
@@ -1018,7 +1021,7 @@ window.detectMyLocation = function () {
     (err) => {
       status.innerHTML = `<span style="color:#f87171;">❌ Location error: ${err.message}. Please enter coordinates manually or allow location access in browser settings.</span>`;
     },
-    { enableHighAccuracy: true, timeout: 15000 }
+    { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
   );
 };
 
@@ -1221,7 +1224,7 @@ function refreshDashboard() {
 }
 
 function checkGlobalGpsStatus() {
-  const refused = getStudents().filter(s => s.location_status === 'REFUSED');
+  const refused = getStudents().filter(s => s && s.location_status === 'REFUSED');
   let banner = document.getElementById('global-security-banner');
   
   if (refused.length > 0) {

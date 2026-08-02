@@ -751,16 +751,17 @@ function startMotionGuard(student) {
     // Update location status in DB to "ACTIVE"
     updateStudent(student.id, { location_status: 'ACTIVE' });
 
-    const result = checkGeofence(studentLocation.lat, studentLocation.lng);
+    // Include GPS accuracy to act as a buffer for the geofence calculation
+    const result = checkGeofence(studentLocation.lat, studentLocation.lng, pos.coords.accuracy);
     const status = getCurrentStatus(student.id);
 
     if (result && result.inside) {
-      showLocationBanner(`📍 Inside hostel zone`, 'inside');
+      showLocationBanner(`📍 Inside hostel zone (${result.distance}m)`, 'inside');
       if (status === 'OUT' && !debounceTimer) {
         handleCheckIn(student); // Auto check-in
       }
     } else if (result && !result.inside) {
-      showLocationBanner(`🚶 Outside hostel`, 'outside');
+      showLocationBanner(`🚶 Outside hostel (${result.distance}m away)`, 'outside');
       if (status === 'IN' && !debounceTimer) {
         handleCheckOut(student); // Auto check-out
       }
