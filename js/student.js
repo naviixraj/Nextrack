@@ -742,14 +742,16 @@ function startMotionGuard(student) {
 
   if (motionWatcher) navigator.geolocation.clearWatch(motionWatcher);
 
+  // Set to ACTIVE once when tracking starts, instead of every 5 seconds
+  if (student.location_status !== 'ACTIVE') {
+    updateStudent(student.id, { location_status: 'ACTIVE' });
+  }
+
   // ── Success Handler (Shared) ──
   const onLocationSuccess = (pos) => {
     console.log(`📍 Location Sync: ${pos.coords.latitude}, ${pos.coords.longitude} (±${Math.round(pos.coords.accuracy)}m)`);
     studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     geoCheckDone = true;
-    
-    // Update location status in DB to "ACTIVE"
-    updateStudent(student.id, { location_status: 'ACTIVE' });
 
     // Include GPS accuracy to act as a buffer for the geofence calculation
     const result = checkGeofence(studentLocation.lat, studentLocation.lng, pos.coords.accuracy);
