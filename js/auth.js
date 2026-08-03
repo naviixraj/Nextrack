@@ -61,6 +61,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (loader) loader.classList.add('fade-out');
     }, remaining);
 
+    // ── Global Update Listener ──
+    if (typeof firebaseDB !== 'undefined' && firebaseDB) {
+      firebaseDB.ref('globalUpdate').on('value', snap => {
+        const ts = snap.val();
+        if (!ts) return;
+        const lastSeen = localStorage.getItem('lastSeenGlobalUpdate');
+        if (!lastSeen || ts > lastSeen) {
+          // Show update banner using existing premium modal
+          if (typeof showPremiumUpdateModal === 'function') {
+            showPremiumUpdateModal();
+          }
+          localStorage.setItem('lastSeenGlobalUpdate', ts);
+        }
+      });
+    }
+
     const loginTab = document.getElementById('tab-login');
     const registerTab = document.getElementById('tab-register');
     const loginForm = document.getElementById('login-form');
