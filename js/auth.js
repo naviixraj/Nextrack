@@ -61,18 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (loader) loader.classList.add('fade-out');
     }, remaining);
 
-    // ── Global Update Listener ──
-    if (typeof firebaseDB !== 'undefined' && firebaseDB) {
-      firebaseDB.ref('globalUpdate').on('value', snap => {
-        const ts = snap.val();
-        if (!ts) return;
-        const lastSeen = localStorage.getItem('lastSeenGlobalUpdate');
-        if (!lastSeen || ts > lastSeen) {
-          // Show update banner using existing premium modal
-          showUpdateBanner();
-          localStorage.setItem('lastSeenGlobalUpdate', ts);
-        }
-      });
+    // Initialize global update listener
+    if (typeof initGlobalUpdateListener === 'function') {
+      initGlobalUpdateListener();
     }
     // ── Update Banner Helper ──
     function showUpdateBanner() {
@@ -80,12 +71,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const banner = document.createElement('div');
       banner.id = 'global-update-banner';
       banner.className = 'update-banner';
-      banner.innerHTML = `<span>New update available. Refresh to get the latest version.</span><button class="update-btn">Update Now</button>`;
+      banner.innerHTML = `
+        <span>🚀 <strong>New update available.</strong> Refresh to get the latest version.</span>
+        <button class="update-btn">Update Now</button>
+      `;
       document.body.appendChild(banner);
-      setTimeout(() => banner.classList.add('visible'), 10);
+      // use requestAnimationFrame for smooth slide‑in
+      requestAnimationFrame(() => banner.classList.add('visible'));
       const btn = banner.querySelector('.update-btn');
       btn.addEventListener('click', () => {
-        if (typeof showPremiumUpdateModal === 'function') { showPremiumUpdateModal(); }
+        if (typeof showPremiumUpdateModal === 'function') {
+          showPremiumUpdateModal();
+        }
         banner.remove();
       });
       // Auto‑dismiss after 30 s if ignored

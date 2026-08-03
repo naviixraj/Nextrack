@@ -632,6 +632,11 @@ tbody tr:hover {
 .modal-overlay.visible { opacity: 1; pointer-events: all; }
 
 .modal {
+  width: 100%; max-width: 380px;
+  padding: 1.8rem; border-radius: var(--radius-xl);
+  animation: fadeIn 0.3s ease;
+}
+
 /* Update Banner */
 .update-banner {
   position: fixed;
@@ -660,6 +665,7 @@ tbody tr:hover {
   cursor: pointer;
   font-weight: 600;
 }
+
 
   width: 100%; max-width: 380px;
   padding: 1.8rem; border-radius: var(--radius-xl);
