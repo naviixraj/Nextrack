@@ -245,7 +245,7 @@ function geoDistance(lat1, lon1, lat2, lon2) {
  * Check if given coordinates are inside the geofence
  * Returns { inside: bool, distance: number (meters) } or null if no geofence
  */
-function checkGeofence(lat, lng, accuracy = 0) {
+function checkGeofence(lat, lng, accuracy = 0, currentStatus = 'IN') {
   const geo = getGeofence();
   if (!geo || !geo.lat || !geo.lng || !geo.radius) return null;
   const latNum = parseFloat(geo.lat);
@@ -253,8 +253,8 @@ function checkGeofence(lat, lng, accuracy = 0) {
   const radNum = parseFloat(geo.radius);
   if (isNaN(latNum) || isNaN(lngNum) || isNaN(radNum)) return null;
   const dist = geoDistance(lat, lng, latNum, lngNum);
-  // Add the GPS accuracy AND a 20m flat buffer to prevent border lagging/jitter
-  const SAFE_BUFFER = 20;
+  // True Directional Hysteresis: Only apply the 20m buffer if they are already INSIDE
+  const SAFE_BUFFER = (currentStatus === 'IN') ? 20 : 0;
   return { inside: dist <= (radNum + accuracy + SAFE_BUFFER), distance: Math.round(dist) };
 }
 

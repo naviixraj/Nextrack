@@ -753,9 +753,9 @@ function startMotionGuard(student) {
     studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     geoCheckDone = true;
 
-    // Include GPS accuracy to act as a buffer for the geofence calculation
-    const result = checkGeofence(studentLocation.lat, studentLocation.lng, pos.coords.accuracy);
+    // Include GPS accuracy and current status for directional hysteresis
     const status = getCurrentStatus(student.id);
+    const result = checkGeofence(studentLocation.lat, studentLocation.lng, pos.coords.accuracy, status);
 
     if (result && result.inside) {
       showLocationBanner(`📍 Inside hostel zone (${result.distance}m)`, 'inside');
