@@ -69,12 +69,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const lastSeen = localStorage.getItem('lastSeenGlobalUpdate');
         if (!lastSeen || ts > lastSeen) {
           // Show update banner using existing premium modal
-          if (typeof showPremiumUpdateModal === 'function') {
-            showPremiumUpdateModal();
-          }
+          showUpdateBanner();
           localStorage.setItem('lastSeenGlobalUpdate', ts);
         }
       });
+    }
+    // ── Update Banner Helper ──
+    function showUpdateBanner() {
+      if (document.getElementById('global-update-banner')) return;
+      const banner = document.createElement('div');
+      banner.id = 'global-update-banner';
+      banner.className = 'update-banner';
+      banner.innerHTML = `<span>New update available. Refresh to get the latest version.</span><button class="update-btn">Update Now</button>`;
+      document.body.appendChild(banner);
+      setTimeout(() => banner.classList.add('visible'), 10);
+      const btn = banner.querySelector('.update-btn');
+      btn.addEventListener('click', () => {
+        if (typeof showPremiumUpdateModal === 'function') { showPremiumUpdateModal(); }
+        banner.remove();
+      });
+      // Auto‑dismiss after 30 s if ignored
+      setTimeout(() => { if (banner.parentNode) banner.remove(); }, 30000);
     }
 
     const loginTab = document.getElementById('tab-login');

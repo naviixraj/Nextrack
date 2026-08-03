@@ -632,6 +632,35 @@ tbody tr:hover {
 .modal-overlay.visible { opacity: 1; pointer-events: all; }
 
 .modal {
+/* Update Banner */
+.update-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  z-index: 200;
+  transform: translateY(-100%);
+  transition: transform var(--transition);
+}
+.update-banner.visible { transform: translateY(0); }
+.update-banner .update-btn {
+  background: var(--accent-grad);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+}
+
   width: 100%; max-width: 380px;
   padding: 1.8rem; border-radius: var(--radius-xl);
   animation: fadeIn 0.3s ease;
