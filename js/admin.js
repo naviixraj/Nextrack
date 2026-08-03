@@ -355,9 +355,9 @@ window.searchDirectory = function() {
   }
 
   const filtered = students.filter(s => 
-    s.id.toLowerCase().includes(query) || 
-    s.name.toLowerCase().includes(query) || 
-    s.room.toLowerCase().includes(query) ||
+    (s.id || '').toLowerCase().includes(query) || 
+    (s.name || '').toLowerCase().includes(query) || 
+    (s.room || '').toLowerCase().includes(query) ||
     (s.phone && s.phone.includes(query))
   ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
@@ -657,9 +657,9 @@ window.searchStudent = function () {
 
   const students = getStudents().filter(s => s.role !== 'admin');
   const matches = students.filter(s =>
-    s.id.toLowerCase().includes(query) ||
-    s.name.toLowerCase().includes(query) ||
-    s.room.toLowerCase().includes(query)
+    (s.id || '').toLowerCase().includes(query) ||
+    (s.name || '').toLowerCase().includes(query) ||
+    (s.room || '').toLowerCase().includes(query)
   );
 
   if (matches.length === 0) {
@@ -870,9 +870,9 @@ window.searchStudentHistory = function () {
   }
 
   const matches = students.filter(s =>
-    s.id.toLowerCase().includes(query) ||
-    s.name.toLowerCase().includes(query) ||
-    s.room.toLowerCase().includes(query)
+    (s.id || '').toLowerCase().includes(query) ||
+    (s.name || '').toLowerCase().includes(query) ||
+    (s.room || '').toLowerCase().includes(query)
   );
 
   if (matches.length === 0) {
