@@ -328,7 +328,7 @@ async function seedIfNeeded() {
   const adminExists = students.some(s => s.role === 'admin');
   
   if (!adminExists) {
-    // 🔓 EMERGENCY PASSWORD RESET (Force Overwrite)
+    // Only seed the default admin if no admin account exists in the system
     const hashedPwd = await hashPassword('admin1234');
     addStudent({
       id: 'admin',
@@ -340,11 +340,5 @@ async function seedIfNeeded() {
       role: 'admin',
       last_updated: new Date().toISOString(),
     });
-  } else if (!localStorage.getItem('admin_force_reset_done_v2')) {
-    // ONE-TIME FORCE RESET for existing admin
-    const hashedPwd = await hashPassword('admin1234');
-    updateStudent('admin', { password: hashedPwd });
-    localStorage.setItem('admin_force_reset_done_v2', 'true');
-    console.log('✅ Master admin password forcefully reset to admin1234');
   }
 }
