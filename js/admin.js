@@ -346,21 +346,24 @@ function renderDirectory(filteredStudents) {
 }
 
 window.searchDirectory = function() {
-  const query = document.getElementById('directory-search').value.toLowerCase().trim();
+  const query = document.getElementById('directory-search').value.trim().toLowerCase();
+  console.log('searchDirectory triggered, query:', query);
   const students = getStudents().filter(s => s.role !== 'admin');
-  
+
   if (!query) {
+    console.log('Empty query, rendering full directory');
     renderDirectory();
     return;
   }
 
-  const filtered = students.filter(s => 
-    (s.id || '').toLowerCase().includes(query) || 
-    (s.name || '').toLowerCase().includes(query) || 
-    (s.room || '').toLowerCase().includes(query) ||
-    (s.phone && s.phone.includes(query))
+  const filtered = students.filter(s =>
+    (s.id || '').toString().toLowerCase().includes(query) ||
+    (s.name || '').toString().toLowerCase().includes(query) ||
+    (s.room || '').toString().toLowerCase().includes(query) ||
+    (s.phone || '').toString().toLowerCase().includes(query)
   ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
+  console.log('Filtered results count:', filtered.length);
   renderDirectory(filtered);
 };
 
@@ -782,43 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (idx !== -1) {
           Object.assign(students[idx], updates);
           students[idx].id = newId;
-          window.searchStudentHistory = function () {
-  const query = document.getElementById('history-search').value.trim().toLowerCase();
-  const container = document.getElementById('history-search-results');
-
-  if (!query) {
-    container.innerHTML = '';
-    return;
-  }
-
-  let students = getStudents().filter(s => s.role !== 'admin');
-  if (globalYearFilter !== 'All') {
-    students = students.filter(s => s.year === globalYearFilter);
-  }
-
-  const matches = students.filter(s =>
-    (s.id || '').toLowerCase().includes(query) ||
-    (s.name || '').toLowerCase().includes(query) ||
-    (s.room || '').toLowerCase().includes(query)
-  );
-
-  if (matches.length === 0) {
-    container.innerHTML = '<p class="empty-row">No matching students found.</p>';
-    return;
-  }
-
-  // Render simple list of matching students
-  container.innerHTML = matches.map(s => {
-    const photo = s.photo ? `<img src="${s.photo}" class="table-avatar" alt="">` : '<span class="table-avatar-placeholder">👤</span>';
-    return `<div class="search-result-item" style="display:flex;align-items:center;margin:0.5rem 0;">
-      ${photo}
-      <div style="margin-left:0.8rem;">
-        <div><strong>${s.name || 'Unnamed'}</strong> (ID: ${s.id})</div>
-        <div>Room: ${s.room || '—'}, Phone: ${s.phone || '—'}</div>
-      </div>
-    </div>`;
-  }).join('');
-};
+          
           saveStudents(students);
           setSession({ userId: newId, role: 'admin' });
         }
