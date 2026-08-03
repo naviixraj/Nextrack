@@ -46,6 +46,8 @@ if ('serviceWorker' in navigator) {
  * Shows the premium glassmorphism update modal
  */
 window.showPremiumUpdateModal = function(worker) {
+  // If we are already displaying the global update banner, let it handle the action
+  if (document.getElementById('global-update-banner')) return;
   if (document.getElementById('pwa-update-modal')) return;
 
   const overlay = document.createElement('div');
@@ -68,28 +70,20 @@ window.showPremiumUpdateModal = function(worker) {
       overlay.classList.remove('visible');
       
       try {
-        // Step 1: Unregister current SW to break the cache loop
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (let registration of registrations) {
           await registration.unregister();
         }
-        
-        // Step 2: Signal worker to skip waiting if possible
         if (worker) {
           worker.postMessage({ type: 'SKIP_WAITING' });
         }
-        
-        // Step 3: Hard reload with cache-buster
-        const url = new URL(window.location.href);
-        url.searchParams.set('upd', Date.now());
-        window.location.replace(url.href);
+        window.location.reload(true);
       } catch (err) {
         window.location.reload();
       }
     });
   }
 
-  // Show with minor delay for animation smoothness
   setTimeout(() => overlay.classList.add('visible'), 100);
 }
 

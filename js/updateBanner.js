@@ -18,11 +18,9 @@
     requestAnimationFrame(() => banner.classList.add('visible'));
     const btn = banner.querySelector('.update-btn');
     btn.addEventListener('click', () => {
-      if (typeof showPremiumUpdateModal === 'function') {
-        // Re‑use the existing premium modal logic from pwa‑v32.js
-        showPremiumUpdateModal();
-      }
       banner.remove();
+      // Hard refresh to reload latest resources from server
+      window.location.reload(true);
     });
     // Auto‑dismiss after 30 s if ignored
     setTimeout(() => { if (banner.parentNode) banner.remove(); }, 30000);
