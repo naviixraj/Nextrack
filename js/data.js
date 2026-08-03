@@ -253,8 +253,9 @@ function checkGeofence(lat, lng, accuracy = 0) {
   const radNum = parseFloat(geo.radius);
   if (isNaN(latNum) || isNaN(lngNum) || isNaN(radNum)) return null;
   const dist = geoDistance(lat, lng, latNum, lngNum);
-  // Add the GPS accuracy as a grace buffer to the radius
-  return { inside: dist <= (radNum + accuracy), distance: Math.round(dist) };
+  // Add the GPS accuracy AND a 20m flat buffer to prevent border lagging/jitter
+  const SAFE_BUFFER = 20;
+  return { inside: dist <= (radNum + accuracy + SAFE_BUFFER), distance: Math.round(dist) };
 }
 
 /* ── Seed / Init ─────────────────────────────── */
