@@ -345,7 +345,7 @@ function renderDirectory(filteredStudents) {
   }).join('');
 }
 
-window.searchDirectory = function() {
+window.searchDirectory = async function () {
   const query = document.getElementById('directory-search').value.trim().toLowerCase();
   console.log('searchDirectory triggered, query:', query);
   const students = getStudents().filter(s => s.role !== 'admin');
@@ -859,7 +859,7 @@ window.refreshDashboard = function () {
 /* ═══════════════════════════════════════════════
    STUDENT HISTORY SEARCH
    ═══════════════════════════════════════════════ */
-window.searchStudentHistory = function () {
+window.searchStudentHistory = async function () {
   const query = document.getElementById('history-search').value.trim().toLowerCase();
   const container = document.getElementById('history-search-results');
 
