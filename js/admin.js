@@ -62,6 +62,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }, remaining);
     }
   });
+// Attach search input listeners
+const dirInput = document.getElementById('directory-search');
+if (dirInput) {
+    dirInput.addEventListener('input', () => searchDirectory());
+    dirInput.addEventListener('keyup', () => searchDirectory());
+}
+const histInput = document.getElementById('history-search');
+if (histInput) {
+    histInput.addEventListener('input', () => searchStudentHistory());
+    histInput.addEventListener('keyup', () => searchStudentHistory());
+}
 });
 
 /* ═══════════════════════════════════════════════
@@ -346,9 +357,11 @@ function renderDirectory(filteredStudents) {
 }
 
 window.searchDirectory = async function () {
+  // Ensure student data is loaded
+  const allStudents = await getStudents();
+  const students = (allStudents || []).filter(s => s.role !== 'admin');
   const query = document.getElementById('directory-search').value.trim().toLowerCase();
   console.log('searchDirectory triggered, query:', query);
-  const students = getStudents().filter(s => s.role !== 'admin');
 
   if (!query) {
     console.log('Empty query, rendering full directory');
@@ -860,6 +873,9 @@ window.refreshDashboard = function () {
    STUDENT HISTORY SEARCH
    ═══════════════════════════════════════════════ */
 window.searchStudentHistory = async function () {
+  // Ensure student data is loaded
+  const allStudents = await getStudents();
+  const students = (allStudents || []).filter(s => s.role !== 'admin');
   const query = document.getElementById('history-search').value.trim().toLowerCase();
   const container = document.getElementById('history-search-results');
 
@@ -868,7 +884,6 @@ window.searchStudentHistory = async function () {
     return;
   }
 
-  let students = getStudents().filter(s => s.role !== 'admin');
   if (globalYearFilter !== 'All') {
     students = students.filter(s => s.year === globalYearFilter);
   }
