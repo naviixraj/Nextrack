@@ -932,12 +932,12 @@ function startMotionGuard(student) {
       const checkOutRadius = geo.radius + 50; // Hysteresis: add 50m to check-out
 
       if (result.distance <= checkInRadius) {
-        showLocationBanner(`📍 Inside hostel zone`, 'inside');
+        showLocationBanner(`📍 Inside hostel zone (${result.distance}m)`, 'inside');
         if (status === 'OUT' && !debounceTimer) {
           handleCheckIn(student); // Auto check-in
         }
       } else if (result.distance >= checkOutRadius) {
-        showLocationBanner(`🚶 Outside hostel`, 'outside');
+        showLocationBanner(`🚶 Outside hostel (${result.distance}m)`, 'outside');
         if (status === 'IN' && !debounceTimer) {
           handleCheckOut(student); // Auto check-out
         }
