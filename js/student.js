@@ -307,8 +307,12 @@ function showLocationBanner(text, type) {
     banner = document.createElement('div');
     banner.id = 'geo-banner';
     const main = document.querySelector('.stu-main');
-    if (main) main.insertBefore(banner, main.firstChild);
-    else return;
+    if (main) {
+      main.insertBefore(banner, main.firstChild);
+    } else {
+      // Fallback if DOM is not fully ready
+      document.body.insertBefore(banner, document.body.firstChild);
+    }
   }
   
   // Use icons based on type
