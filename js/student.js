@@ -7,89 +7,7 @@ let debounceSeconds = 0;
 let studentLocation = null; // { lat, lng } or null
 let geoCheckDone = false;
 
-// ── IMMEDIATE GPS CHECK (runs before everything, even the startup loader) ──
-// This catches GPS-off / permission-denied before the student even sees the UI
-(function immediateGPSCheck() {
-  if (!navigator.geolocation) return;
-
-  // If we just reloaded after GPS was confirmed (to avoid warm-up loop), skip check
-  if (sessionStorage.getItem('gps_just_confirmed')) {
-    // We leave it in sessionStorage so startMotionGuard can also see it
-    return;
-  }
-
-  const showBlockScreen = () => {
-    if (document.getElementById('gps-denied-lock')) return;
-    const overlay = document.createElement('div');
-    overlay.id = 'gps-denied-lock';
-    overlay.style.cssText = `
-      position: fixed; inset: 0; z-index: 99999999;
-      background: rgba(0,0,0,0.92); backdrop-filter: blur(16px);
-      display: flex; align-items: center; justify-content: center;
-      padding: 1.5rem;
-    `;
-    overlay.innerHTML = `
-      <div id="gps-modal-card" style="
-        max-width: 380px; width: 100%;
-        background: rgba(20, 10, 10, 0.95);
-        border: 2px solid rgba(239,68,68,0.6);
-        border-radius: 28px; padding: 2.5rem 2rem; text-align: center;
-        box-shadow: 0 0 60px rgba(239,68,68,0.25), 0 30px 60px rgba(0,0,0,0.6);
-        font-family: 'Inter', sans-serif; color: white;
-      ">
-        <div id="gps-icon-wrap" style="
-          width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 1.5rem;
-          background: rgba(239,68,68,0.15); border: 2px solid rgba(239,68,68,0.4);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 2.2rem; box-shadow: 0 8px 25px rgba(239,68,68,0.3);
-          animation: gps-pulse 2s ease-in-out infinite;
-        ">🚫</div>
-        <h2 id="gps-title" style="font-size:1.4rem; font-weight:800; color:#ef4444; margin-bottom:0.8rem;">Location Required</h2>
-        <p id="gps-desc" style="font-size:0.92rem; color:rgba(255,255,255,0.75); line-height:1.6; margin-bottom:0.8rem;">
-          Location access is <strong style="color:#fff;">MANDATORY</strong> for NexTrack attendance.<br>The warden has been notified.
-        </p>
-        <p id="gps-sub" style="font-size:0.78rem; color:rgba(255,255,255,0.45); margin-bottom:2rem;">
-          Enable GPS in your phone settings — this page will unlock automatically.
-        </p>
-        <button id="gps-retry-btn" class="btn-primary" style="width: 100%; padding: 0.8rem; font-size: 0.95rem; margin-bottom: 0.5rem; border-radius: 12px !important;" onclick="this.textContent='Checking...'; this.style.opacity='0.7'; setTimeout(() => window.location.reload(), 100);">Try Again</button>
-        <p id="gps-error-msg" style="color: #fca5a5; font-size: 0.8rem; margin-top: 0.5rem; display: none;">Location is still off or denied.</p>
-      </div>
-      <style>
-        @keyframes gps-pulse { 0%,100%{box-shadow:0 8px 25px rgba(239,68,68,0.3)} 50%{box-shadow:0 8px 40px rgba(239,68,68,0.6)} }
-      </style>
-    `;
-    // Force body overflow hidden
-    document.body.style.overflow = 'hidden';
-    document.body.appendChild(overlay);
-  };
-
-  // Step 1: Check Permissions API instantly
-  if (navigator.permissions) {
-    navigator.permissions.query({ name: 'geolocation' }).then(result => {
-      if (result.state === 'denied') { showBlockScreen(); return; }
-      // Step 2: Try actual GPS with short timeout
-      navigator.geolocation.getCurrentPosition(
-        () => {}, // Success — do nothing, main flow handles it
-        (err) => { if (err.code === 1 || err.code === 2) showBlockScreen(); }, // Block on Denied or Unavailable
-        { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
-      );
-      result.onchange = () => { if (result.state === 'denied') showBlockScreen(); };
-    }).catch(() => {
-      // Permissions API not available — just try GPS directly
-      navigator.geolocation.getCurrentPosition(
-        () => {},
-        (err) => { if (err.code === 1 || err.code === 2) showBlockScreen(); },
-        { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
-      );
-    });
-  } else {
-    navigator.geolocation.getCurrentPosition(
-      () => {},
-      (err) => { if (err.code === 1 || err.code === 2) showBlockScreen(); },
-      { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
-    );
-  }
-})();
+// Geolocation check is handled safely inside checkStudentLocation() during main execution flow
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.style.overflow = 'hidden'; // Lock scroll during startup
@@ -329,9 +247,11 @@ function showLocationBanner(text, type) {
 
 function updateLocationBanner() {
   const geo = getGeofence();
+  const banner = document.getElementById('geo-banner');
   if (!geo) {
-    const banner = document.getElementById('geo-banner');
     if (banner) banner.style.display = 'none';
+  } else if (banner && banner.innerHTML === '') {
+    banner.style.display = 'none';
   }
 }
 
@@ -364,10 +284,27 @@ function handleCheckIn(student) {
   const movs = getMovements();
   // Find the open movement (same student, no inTime)
   const openIdx = movs.findLastIndex(m => m.studentId === student.id && !m.inTime);
-  if (openIdx === -1) return; // safety
+  const now = new Date().toISOString();
+  
+  if (openIdx === -1) {
+    // If no open checkout movement exists (e.g. database cleared), write a new completed check-in record
+    const movId = (typeof firebaseDB !== 'undefined' && firebaseDB) 
+                  ? firebaseDB.ref('movements').push().key 
+                  : generateId();
+    addMovement({
+      id: movId,
+      studentId: student.id,
+      outTime: now,
+      inTime: now,
+      date: todayStr(),
+    }).then(() => {
+      startDebounce();
+      renderStudentUI(student);
+    });
+    return;
+  }
 
   const openMov = movs[openIdx];
-  const now = new Date().toISOString();
   updateMovement(openMov.id, { inTime: now }).then(() => {
     startDebounce();
     renderStudentUI(student);
