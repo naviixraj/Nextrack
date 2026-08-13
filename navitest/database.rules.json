@@ -19,16 +19,16 @@
       }
     },
     "messages": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      ".read": "true",
+      ".write": "true"
     },
     "geofence": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      ".read": "true",
+      ".write": "true"
     },
     "system": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      ".read": "true",
+      ".write": "true"
     },
     "password_resets": {
       ".read": "true",
