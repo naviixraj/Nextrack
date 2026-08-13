@@ -216,10 +216,10 @@ function renderStudentUI(student) {
   const liveLabel = document.getElementById('stu-live-status');
   if (liveLabel) {
     if (status === 'IN') {
-      liveLabel.textContent = '🏡 Currently Inside...';
+      liveLabel.textContent = 'Currently Inside';
       liveLabel.className = 'live-status-label status-in';
     } else {
-      liveLabel.textContent = '🏃 Currently Outside...';
+      liveLabel.textContent = 'Currently Outside';
       liveLabel.className = 'live-status-label status-out';
     }
   }

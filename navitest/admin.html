@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    if (localStorage.getItem('nexTrackTheme') === 'light') {
+      document.documentElement.classList.add('light-theme');
+    }
+  </script>
+  <link rel="icon" href="icon-512.png?v=85">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Admin Dashboard — Monitor student movements, manage accounts, and view analytics.">
+  <title>NexTrack — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- PWA & Mobile Optimization -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon-512.png?v=85">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css?v=106">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body class="dashboard-page admin-page">
+
+  <!-- Professional Startup Loader -->
+  <div id="startup-loader" class="startup-overlay">
+    <div class="startup-content">
+      <div class="startup-logo-wrap">
+        <div class="startup-logo-glow"></div>
+        <div class="startup-logo-inner">
+          <img src="irn.png?v=85" class="startup-logo-img" alt="Titans Logo">
+        </div>
+      </div>
+      <h1 class="startup-title">NexTrack Admin</h1>
+      <p class="startup-subtitle">Enterprise Intelligence v63</p>
+      <div class="startup-msg-box">
+        <div id="startup-msg" class="startup-msg">Initializing Secure Session...</div>
+      </div>
+    </div>
+    <div class="startup-footer">Powered by Team Titans</div>
+  </div>
+
+  <!-- Background -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- Top Bar -->
+  <header class="topbar glass">
+    <div class="topbar-brand" style="gap: 0.8rem;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#grad3)" stroke-width="2">
+        <defs><linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/></linearGradient></defs>
+        <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      <div style="display: flex; flex-direction: column; align-items: center; line-height: 1;">
+        <span style="font-size: 1.25rem; font-weight: 800; letter-spacing: 0.5px;">NexTrack</span>
+        <small class="admin-label" style="margin-left: 0; margin-top: 3px; font-size: 0.6rem; padding: 2px 8px; border-radius: 6px;">ADMIN</small>
+      </div>
+      <div id="sync-indicator" class="sync-dot" title="Live Sync Active"></div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="openAdminProfile()">👤 Profile</button>
+      <button class="btn btn-ghost chat-btn" id="chat-toggle-btn" onclick="toggleChat()">💬 Chat <span class="chat-badge" id="chat-badge" style="display:none;">0</span></button>
+      
+      <div class="admin-menu-container">
+        <button class="btn btn-ghost btn-dots" id="admin-menu-trigger" onclick="toggleAdminMenu(event)">⋮</button>
+        <div class="admin-dropdown glass" id="admin-dropdown-menu">
+          <button class="dropdown-item" onclick="showDevelopers()">👨‍💻 Developers</button>
+          <button class="dropdown-item" onclick="showSupport()">🛠️ Support</button>
+          <button class="dropdown-item" onclick="manualCheckForUpdate()">🚀 Check for Update</button>
+          <button class="dropdown-item" onclick="pushGlobalUpdate()">🌍 Push Global Update</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item text-danger" onclick="logout()">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <!-- ═══ Status Cards ═══ -->
+    <section class="cards-row">
+      <div class="stat-card glass" id="total-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-body">
+          <span class="stat-value" id="card-total">0</span>
+          <span class="stat-label">Total Registered</span>
+        </div>
+      </div>
+      <div class="stat-card glass card-inside" id="inside-card">
+        <div class="stat-icon">🏠</div>
+        <div class="stat-body">
+          <span class="stat-value" id="card-inside">0</span>
+          <span class="stat-label">Currently Inside</span>
+        </div>
+      </div>
+      <div class="stat-card glass card-outside" id="outside-card" onclick="showOutsideStudents()" style="cursor:pointer;" title="Click to view list">
+        <div class="stat-icon">🚶</div>
+        <div class="stat-body">
+          <span class="stat-value" id="card-outside">0</span>
+          <span class="stat-label">Currently Outside</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Global Year Filter -->
+    <div class="year-filter-bar glass">
+      <button class="year-filter-btn active" data-year="All">All</button>
+      <button class="year-filter-btn" data-year="1st Year">1st Year</button>
+      <button class="year-filter-btn" data-year="2nd Year">2nd Year</button>
+      <button class="year-filter-btn" data-year="3rd Year">3rd Year</button>
+      <button class="year-filter-btn" data-year="4th Year">4th Year</button>
+    </div>
+
+    <nav class="admin-tabs-bar glass">
+      <button class="admin-tab active" data-panel="panel-monitor">📊 Monitoring</button>
+      <button class="admin-tab" data-panel="panel-directory">📁 Directory</button>
+      <button class="admin-tab" data-panel="panel-history">📜 History</button>
+      <button class="admin-tab" data-panel="panel-admins">👥 Admins</button>
+      <button class="admin-tab" data-panel="panel-settings">⚙️ Settings</button>
+    </nav>
+
+    <!-- ═══ PANEL: Monitoring ═══ -->
+    <section class="tab-panel active" id="panel-monitor">
+      <!-- Date Filters -->
+      <div class="date-filters">
+        <button class="date-filter-btn active" id="filter-today">Today</button>
+        <button class="date-filter-btn" id="filter-yesterday">Yesterday</button>
+        <div class="date-custom-wrap">
+          <input type="date" id="filter-custom-date" class="date-input">
+          <button class="date-filter-btn" id="filter-custom-btn">Go</button>
+        </div>
+        <span class="date-label" id="table-date-label"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="monitor-table monitor-table-bw">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Room</th>
+              <th>Out-Time</th>
+              <th>In-Time</th>
+              <th>Duration</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="monitor-body">
+            <tr><td colspan="8" class="empty-row">No movements recorded</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ PANEL: Directory ═══ -->
+    <section class="tab-panel" id="panel-directory">
+      <div class="recovery-search-bar">
+        <input type="text" id="directory-search" placeholder="🔍 Search by Name, ID, Room, or Phone..." class="search-input" oninput="searchDirectory()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Photo</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Room</th>
+              <th>Phone</th>
+              <th>Last Updated</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="directory-body">
+            <tr><td colspan="8" class="empty-row">No students</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ PANEL: History ═══ -->
+    <section class="tab-panel" id="panel-history">
+      <div class="recovery-search-bar">
+        <input type="text" id="history-search" placeholder="Search student by ID, Name, or Room..." class="search-input" oninput="searchStudentHistory()">
+      </div>
+      <div id="history-search-results"></div>
+    </section>
+
+    <!-- ═══ PANEL: Admins ═══ -->
+    <section class="tab-panel" id="panel-admins">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 style="font-size:1rem;">Registered Admins</h3>
+        <button class="btn btn-primary btn-small" onclick="registerNewAdmin()">+ New Admin</button>
+      </div>
+      <div id="admin-list-body"></div>
+    </section>
+
+    <!-- ═══ PANEL: Settings ═══ -->
+    <section class="tab-panel" id="panel-settings">
+      <div class="settings-section glass" id="geofence-settings-block" style="padding:1.5rem;border-radius:14px;">
+        <h3 style="font-size:1rem;margin-bottom:1rem;">📍 Hostel Geofence Settings</h3>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">Set your hostel's GPS coordinates and radius. Students can only check-in when inside this zone. They will be auto-checked-in when they open the app within the zone.</p>
+        <div class="form-row" style="margin-bottom:0.8rem;">
+          <div class="form-group">
+            <label for="geo-lat">Latitude</label>
+            <input type="number" id="geo-lat" step="any" placeholder="e.g. 13.0827">
+          </div>
+          <div class="form-group">
+            <label for="geo-lng">Longitude</label>
+            <input type="number" id="geo-lng" step="any" placeholder="e.g. 80.2707">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:1rem;">
+          <div class="form-group">
+            <label for="geo-radius">Radius (meters)</label>
+            <input type="number" id="geo-radius" placeholder="100" min="10" max="5000">
+          </div>
+          <div class="form-group" style="justify-content:flex-end;">
+            <button class="btn btn-accent btn-small" onclick="detectMyLocation()" style="margin-top:auto;">📱 Use My Location</button>
+          </div>
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-primary btn-small" onclick="saveGeofenceSettings()">Save Geofence</button>
+          <button class="btn btn-warning btn-small" onclick="clearGeofenceSettings()">🗑 Remove Geofence</button>
+        </div>
+        <div id="geo-status" style="margin-top:1rem;font-size:0.82rem;"></div>
+      </div>
+
+
+      <div style="text-align: center; margin-top: 2rem; margin-bottom: 2rem; color: #888; font-size: 0.9rem; font-weight: bold;">
+        App Version: v143
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Floating Chat Panel -->
+  <div class="chat-floating-panel" id="chat-panel" style="display:none;">
+    <div class="chat-container glass">
+      <div class="chat-header">
+        <h3>💬 Hostel Group Chat</h3>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <button class="btn btn-ghost btn-small" onclick="deleteAllChats()" style="font-size:0.7rem;padding:0.3rem 0.5rem;color:#ef4444;">🗑 Clear All</button>
+          <button class="modal-x-btn" onclick="toggleChat()" style="position:static;font-size:1.3rem;">&times;</button>
+        </div>
+      </div>
+      <div class="chat-messages" id="admin-chat-messages">
+        <div class="chat-empty">No messages yet. Start the conversation!</div>
+      </div>
+      <form class="chat-input-bar" id="admin-chat-form" onsubmit="sendAdminMessage(event)">
+        <input type="text" id="admin-chat-input" placeholder="Type a message..." autocomplete="off" required>
+        <button type="submit" class="btn btn-primary btn-small">➤</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Message Context Menu -->
+  <div class="msg-context-menu" id="msg-context-menu" style="display:none;">
+    <button onclick="editSelectedMessage()">✏️ Edit</button>
+    <button onclick="deleteSelectedMessage()">🗑️ Delete</button>
+  </div>
+
+  <!-- Outside Students Modal -->
+  <div class="modal-overlay" id="outside-modal">
+    <div class="modal glass" style="max-width:500px;">
+      <button class="modal-x-btn" onclick="document.getElementById('outside-modal').classList.remove('visible')">&times;</button>
+      <h3 style="margin-bottom:1rem;">🚶 Students Currently Outside</h3>
+      <div id="outside-list"></div>
+    </div>
+  </div>
+
+  <!-- Student Detail Modal -->
+  <div class="modal-overlay" id="student-detail-modal">
+    <div class="modal glass student-detail-modal">
+      <button class="modal-x-btn" onclick="closeStudentModal()">&times;</button>
+      <div class="detail-header">
+        <div class="detail-photo-wrap" id="detail-photo"></div>
+        <div class="detail-name-wrap">
+          <h2 id="detail-name">—</h2>
+          <span class="status-badge badge-in" id="detail-status">IN</span>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-item"><span class="detail-label">Registration No.</span><span class="detail-value" id="detail-id">—</span></div>
+        <div class="detail-item"><span class="detail-label">Room</span><span class="detail-value" id="detail-room">—</span></div>
+        <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value" id="detail-phone">—</span></div>
+        <div class="detail-item"><span class="detail-label">Last Updated</span><span class="detail-value" id="detail-updated">—</span></div>
+      </div>
+      <div class="detail-actions">
+        <a href="#" id="detail-call-btn" class="btn btn-primary btn-small">📞 Call</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Edit Student Modal -->
+  <div class="modal-overlay" id="admin-edit-modal">
+    <div class="modal glass" style="max-width:440px;">
+      <button class="modal-x-btn" onclick="closeAdminEditModal()">&times;</button>
+      <h3 style="margin-bottom:1rem;">✏️ Edit Student Profile</h3>
+      <div id="admin-edit-alert" style="display:none;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.82rem;font-weight:500;margin-bottom:1rem;"></div>
+      <form id="admin-edit-form">
+        <div class="form-group" style="text-align:center;">
+          <div class="detail-photo-wrap" id="edit-stu-photo" style="margin:0 auto 0.8rem;"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-stu-name">Name</label>
+            <input type="text" id="edit-stu-name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-stu-id">Registration No.</label>
+            <input type="text" id="edit-stu-id" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-stu-age">Age</label>
+            <input type="number" id="edit-stu-age" min="15" max="99">
+          </div>
+          <div class="form-group">
+            <label for="edit-stu-dept">Department</label>
+            <input type="text" id="edit-stu-dept">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-stu-room">Room No.</label>
+          <input type="text" id="edit-stu-room" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-stu-phone">Phone</label>
+            <input type="tel" id="edit-stu-phone" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-stu-email">Email</label>
+            <input type="email" id="edit-stu-email" required placeholder="example@gmail.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-stu-year">Year</label>
+          <select id="edit-stu-year" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(100,120,255,0.12);border-radius:8px;color:#e8ecf5;font-family:inherit;font-size:0.92rem;outline:none;cursor:pointer;">
+            <option value="">Select Year</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+        <div class="modal-btns">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-ghost" onclick="closeAdminEditModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Photo Lightbox -->
+  <div class="lightbox-overlay" id="photo-lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Full size photo">
+  </div>
+
+  <!-- Admin Profile Modal -->
+  <div class="modal-overlay" id="admin-profile-modal">
+    <div class="modal glass" style="max-width:420px;">
+      <button class="modal-x-btn" onclick="closeAdminProfile()">&times;</button>
+      <h3 style="margin-bottom:1.2rem;">Admin Profile</h3>
+      <form id="admin-profile-form">
+        <div class="form-group" style="text-align:center;">
+          <div class="detail-photo-wrap" id="admin-avatar" style="margin:0 auto 0.8rem;"></div>
+          <label for="admin-photo-input" class="btn btn-small btn-accent" style="cursor:pointer;">📷 Change Photo</label>
+          <input type="file" id="admin-photo-input" accept="image/*" style="display:none;">
+        </div>
+        <div class="form-group">
+          <label for="admin-prof-id">Admin ID</label>
+          <input type="text" id="admin-prof-id" required>
+        </div>
+        <div class="form-group">
+          <label for="admin-prof-name">Name</label>
+          <input type="text" id="admin-prof-name" required>
+        </div>
+        <div class="form-group">
+          <label for="admin-prof-phone">Phone</label>
+          <input type="tel" id="admin-prof-phone" required>
+        </div>
+        <div class="form-group">
+          <label for="admin-prof-email">Email</label>
+          <input type="email" id="admin-prof-email" required placeholder="admin@example.com">
+        </div>
+        
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.1);margin:1.5rem 0;">
+        <h4 style="margin-bottom:1rem;font-size:0.95rem;">Change Password</h4>
+        
+        <div class="form-group">
+          <label for="admin-prof-old-pwd">Old Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="admin-prof-old-pwd" placeholder="Required to change password">
+            <button type="button" class="pwd-toggle" data-target="admin-prof-old-pwd" aria-label="Toggle visibility">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="admin-prof-new-pwd">New Password</label>
+            <div class="pwd-wrap">
+              <input type="password" id="admin-prof-new-pwd" placeholder="Min 4 chars">
+              <button type="button" class="pwd-toggle" data-target="admin-prof-new-pwd" aria-label="Toggle visibility">
+                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="admin-prof-confirm-pwd">Confirm New</label>
+            <div class="pwd-wrap">
+              <input type="password" id="admin-prof-confirm-pwd" placeholder="Confirm new">
+              <button type="button" class="pwd-toggle" data-target="admin-prof-confirm-pwd" aria-label="Toggle visibility">
+                <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right;margin-bottom:1.5rem;">
+          <a href="#" onclick="document.getElementById('admin-profile-modal').classList.remove('visible'); setTimeout(() => document.getElementById('forgot-modal').classList.add('visible'), 300); return false;" style="font-size:0.8rem;color:var(--accent-primary);text-decoration:none;">Forgot Password?</a>
+        </div>
+        <div class="modal-btns">
+          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-ghost" onclick="closeAdminProfile()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Premium Add Admin Modal -->
+  <div class="modal-overlay" id="add-admin-modal">
+    <div class="modal glass" style="max-width:420px;">
+      <button class="modal-x-btn" onclick="document.getElementById('add-admin-modal').classList.remove('visible')">&times;</button>
+      <h3 style="margin-bottom:1.2rem;">✨ New Admin</h3>
+      <form id="add-admin-form">
+        <div class="form-group">
+          <label for="add-admin-id">Admin Login ID</label>
+          <input type="text" id="add-admin-id" required placeholder="e.g. warden123">
+        </div>
+        <div class="form-group">
+          <label for="add-admin-name">Full Name</label>
+          <input type="text" id="add-admin-name" required placeholder="e.g. John Doe">
+        </div>
+        <div class="form-group">
+          <label for="add-admin-year">Allocated Year</label>
+          <select id="add-admin-year" required style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(100,120,255,0.12);border-radius:8px;color:#e8ecf5;font-family:inherit;font-size:0.92rem;outline:none;cursor:pointer;">
+            <option value="" disabled selected>Select Year Allocation...</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="add-admin-pwd">Initial Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="add-admin-pwd" required placeholder="Min 4 chars">
+            <button type="button" class="pwd-toggle" data-target="add-admin-pwd" aria-label="Toggle visibility">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="modal-btns">
+          <button type="submit" class="btn btn-primary">Create Admin</button>
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('add-admin-modal').classList.remove('visible')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Premium Edit Admin Modal -->
+  <div class="modal-overlay" id="edit-admin-modal">
+    <div class="modal glass" style="max-width:420px;">
+      <button class="modal-x-btn" onclick="document.getElementById('edit-admin-modal').classList.remove('visible')">&times;</button>
+      <h3 style="margin-bottom:1.2rem;">✏️ Edit Sub-Admin</h3>
+      <form id="edit-admin-form">
+        <input type="hidden" id="edit-admin-target-id">
+        <div class="form-group">
+          <label for="edit-admin-name">Name</label>
+          <input type="text" id="edit-admin-name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-admin-year">Allocated Year</label>
+          <select id="edit-admin-year" required style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(100,120,255,0.12);border-radius:8px;color:#e8ecf5;font-family:inherit;font-size:0.92rem;outline:none;cursor:pointer;">
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.1);margin:1.5rem 0;">
+        <h4 style="margin-bottom:1rem;font-size:0.95rem;color:var(--danger);">Security Verification</h4>
+        <div class="form-group">
+          <label for="edit-admin-master-pwd">Your Master Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="edit-admin-master-pwd" required placeholder="Required to save changes">
+            <button type="button" class="pwd-toggle" data-target="edit-admin-master-pwd" aria-label="Toggle visibility">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="modal-btns">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('edit-admin-modal').classList.remove('visible')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Secure Delete Admin Modal -->
+  <div class="modal-overlay" id="delete-admin-modal">
+    <div class="modal glass" style="max-width:400px;text-align:center;">
+      <h3 style="margin-bottom:1rem;color:#ef4444;">⚠️ Delete Admin</h3>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1.5rem;">Are you absolutely sure you want to permanently delete admin <strong id="delete-admin-target-label" style="color:#fff;"></strong>? This cannot be undone.</p>
+      <form id="delete-admin-form">
+        <input type="hidden" id="delete-admin-target-id">
+        <div class="form-group" style="text-align:left;">
+          <label for="delete-admin-master-pwd">Verify Your Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="delete-admin-master-pwd" required placeholder="Enter Master Password">
+            <button type="button" class="pwd-toggle" data-target="delete-admin-master-pwd" aria-label="Toggle visibility">
+              <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="modal-btns" style="justify-content:center;margin-top:1.5rem;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('delete-admin-modal').classList.remove('visible')">Cancel</button>
+          <button type="submit" class="btn" style="background:#ef4444;color:#fff;">Yes, Delete Admin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- About Developers Modal -->
+  <div class="modal-overlay" id="developers-modal">
+    <div class="modal glass dev-modal">
+      <button class="modal-x-btn" onclick="closeDevelopersModal()">&times;</button>
+      <div class="dev-modal-header">
+        <h2>"Meet the Titans"</h2>
+        <p class="dev-modal-subtitle">First Year Students · 2026</p>
+      </div>
+
+      <div class="dev-brand-icon-wrap">
+        <img src="irn.png" alt="Titans Logo">
+      </div>
+
+      <div class="dev-quote-box">
+        <p>
+          "As first-year students, Team Titans is driven by a passion to modernize hostel management. Led by myself, Naveenraj, our team—Vishnu Varathan, Rishab, and Maheshwaran—is dedicated to building a smarter, safer NexTrack experience for our fellow students."
+        </p>
+        <div class="dev-quote-author">
+          <span>— Naveenraj, Team Leader</span>
+        </div>
+      </div>
+
+      <div class="dev-stats-grid">
+        <div class="dev-stat-card dev-stat-project">
+          <div class="dev-stat-title">Project Year</div>
+          <div class="dev-stat-value">2026</div>
+        </div>
+        <div class="dev-stat-card dev-stat-version">
+          <div class="dev-stat-title">Current Version</div>
+          <div class="dev-stat-value">v105</div>
+        </div>
+      </div>
+
+      <div class="dev-members-section">
+        <div class="dev-members-title">Team Members</div>
+        <div class="dev-members-list">
+          <span class="dev-member-leader">Naveenraj (Leader)</span>
+          <span class="dev-member">Vishnu Varathan</span>
+          <span class="dev-member">Rishab</span>
+          <span class="dev-member">Maheshwaran</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="closeDevelopersModal()" style="margin-top:2rem; width:100%;">Close</button>
+    </div>
+  </div>
+
+  <!-- Support Modal -->
+  <div class="modal-overlay" id="support-modal">
+    <div class="modal glass" style="max-width:440px; text-align:center; padding: 2.5rem 2rem; border-radius: 32px;">
+      <button class="modal-x-btn" onclick="closeSupportModal()">&times;</button>
+      
+      <div style="margin-bottom:2rem;">
+        <div style="display:inline-flex; align-items:center; gap:0.5rem; background:rgba(52, 211, 153, 0.15); color:var(--green); padding:0.4rem 1rem; border-radius:50px; font-size:0.75rem; font-weight:800; margin-bottom:1.2rem; border:1px solid rgba(52, 211, 153, 0.2);">
+          <span style="width:8px; height:8px; background:var(--green); border-radius:50%; box-shadow:0 0 10px var(--green);"></span>
+          RESPONSE TIME: ~24 HOURS
+        </div>
+        
+        <div class="brand-icon-wrap" style="width:90px; height:90px; margin: 0 auto 1.2rem; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
+          <img src="irn.png?v=85" alt="Support" style="width:100%; height:100%; object-fit:contain; transform: scale(1.1);">
+        </div>
+        <h2 style="font-size:1.7rem; font-weight:900; color: var(--text-primary); letter-spacing:-0.5px;">Engineering Support</h2>
+        <p style="font-size:0.9rem; color:var(--text-secondary); margin-top:0.4rem;">Official Titans Technical Desk</p>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr; gap:1rem; margin-bottom:2rem; text-align:left;">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:1.2rem; position:relative; overflow:hidden;">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:0.8rem;">Technical Lead</div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div style="width:40px; height:40px; border-radius:10px; background:var(--accent-grad); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👨‍💻</div>
+            <div>
+              <div style="font-size:1rem; font-weight:800; color:var(--text-primary);">Naveenraj</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Lead Systems Architect</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:20px; padding:1.2rem;">
+          <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:0.8rem;">Engineering Team</div>
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid rgba(255,255,255,0.1);">
+              <img src="irn.png" class="eng-team-logo" alt="Titans">
+            </div>
+            <div>
+              <div style="font-size:1rem; font-weight:800; color:var(--text-primary);">Titans</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Class of 2026 · Development</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:rgba(239, 68, 68, 0.05); border:1px solid rgba(239, 68, 68, 0.1); border-radius:15px; padding:1rem; margin-bottom:1.8rem; text-align:left;">
+        <p style="font-size:0.82rem; line-height:1.5; color:var(--text-secondary);">
+          ⚠️ <strong>Guideline:</strong> Please include your <strong>System Role</strong> and a <strong>Screenshot</strong> of any errors for a faster resolution.
+        </p>
+      </div>
+
+      <a href="mailto:nextrack.lim@gmail.com?subject=[NexTrack-Support]%20Technical%20Issue%20Report" class="btn btn-primary btn-full" style="text-decoration:none; height:55px; border-radius:18px; font-size:1rem; letter-spacing:0.5px; box-shadow:0 8px 20px rgba(102,126,234,0.3);">
+        📩 Open Support Ticket
+      </a>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-top:1.2rem;">Direct Email: nextrack.lim@gmail.com</p>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js?v=143"></script>
+  <script src="js/data.js?v=143"></script>
+  <script src="js/admin.js?v=143"></script>
+  <script src="js/pwa-v32.js?v=143"></script>
+</body>
+</html>

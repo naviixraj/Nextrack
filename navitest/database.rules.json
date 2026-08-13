@@ -23,7 +23,7 @@
       ".write": "auth != null"
     },
     "geofence": {
-      ".read": "true",
+      ".read": "auth != null",
       ".write": "auth != null"
     },
     "system": {

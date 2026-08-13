@@ -357,32 +357,6 @@ html.light-theme .topbar-actions .btn-ghost:hover {
 .badge-in  { background: var(--green-bg); color: var(--green); }
 .badge-out { background: var(--orange-bg); color: var(--orange); }
 
-/* Live Status Banner Above Profile */
-.live-status-label {
-  text-align: center;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  font-size: 0.92rem;
-  letter-spacing: 0.5px;
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(10px);
-  margin-bottom: 0.5rem;
-  transition: var(--transition);
-}
-.live-status-label.status-in {
-  background: rgba(52, 211, 153, 0.12);
-  color: var(--green);
-  border-color: rgba(52, 211, 153, 0.3);
-  box-shadow: 0 4px 15px rgba(52, 211, 153, 0.08);
-}
-.live-status-label.status-out {
-  background: rgba(251, 146, 60, 0.12);
-  color: var(--orange);
-  border-color: rgba(251, 146, 60, 0.3);
-  box-shadow: 0 4px 15px rgba(251, 146, 60, 0.08);
-}
-
 /* Action Buttons */
 .stu-actions {
   display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
