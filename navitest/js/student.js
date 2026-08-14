@@ -370,8 +370,14 @@ function handleCheckOut(student) {
 /* ── Check-In (Row-Match Rule) ───────────────── */
 function handleCheckIn(student) {
   const movs = getMovements();
-  // Find the open movement (same student, no inTime)
-  const openIdx = movs.findLastIndex(m => m.studentId === student.id && !m.inTime);
+  // Find the open movement (same student, no inTime) using a backward-compatible loop
+  let openIdx = -1;
+  for (let i = movs.length - 1; i >= 0; i--) {
+    if (movs[i].studentId === student.id && !movs[i].inTime) {
+      openIdx = i;
+      break;
+    }
+  }
   if (openIdx === -1) return; // safety
 
   const openMov = movs[openIdx];
@@ -912,10 +918,13 @@ function startMotionGuard(student) {
     return;
   }
 
+  // If already watching, do not clear and reset to prevent duplicate geolocation hooks
+  if (motionWatcher) {
+    return;
+  }
+
   // Refined message to clearly indicate detection is in progress
   showLocationBanner('📡 Detecting Location Signal...', 'detecting');
-
-  if (motionWatcher) navigator.geolocation.clearWatch(motionWatcher);
 
   // ── Success Handler (Shared) ──
   const onLocationSuccess = (pos) => {
@@ -923,9 +932,15 @@ function startMotionGuard(student) {
       clearTimeout(window.code2GraceTimer);
       window.code2GraceTimer = null;
     }
+    
+    const status = getCurrentStatus(student.id);
+    // Dual accuracy threshold: strict (150m) if already IN to prevent false checkouts,
+    // lenient (250m) if OUT to make auto check-in easier indoors.
+    const maxAccuracy = (status === 'IN') ? 150 : 250;
+    
     // Ignore inaccurate location fixes (e.g. cellular triangulation indoors) to avoid false check-outs
-    if (pos.coords.accuracy > 150) {
-      console.warn(`📡 Ignoring inaccurate location: ±${Math.round(pos.coords.accuracy)}m`);
+    if (pos.coords.accuracy > maxAccuracy) {
+      console.warn(`📡 Ignoring inaccurate location: ±${Math.round(pos.coords.accuracy)}m (limit: ${maxAccuracy}m)`);
       showLocationBanner(`⚠️ Weak GPS Accuracy (±${Math.round(pos.coords.accuracy)}m). Optimizing...`, 'warning');
       return;
     }
@@ -937,7 +952,6 @@ function startMotionGuard(student) {
     // NOTE: Removed continuous updateStudent location_status ping to preserve database storage and bandwidth
 
     const result = checkGeofence(studentLocation.lat, studentLocation.lng);
-    const status = getCurrentStatus(student.id);
 
     if (result) {
       const geo = getGeofence();
