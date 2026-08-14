@@ -962,21 +962,21 @@ function startMotionGuard(student) {
 
       if (status === 'IN') {
         if (result.distance < checkOutRadius) {
-          showLocationBanner(`🏡 Inside hostel zone`, 'inside');
+          showLocationBanner(`🏡 Inside hostel zone (Dist: ${result.distance}m, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'inside');
         } else {
-          showLocationBanner(`🚶 Outside hostel`, 'outside');
+          showLocationBanner(`🚶 Outside hostel (Dist: ${result.distance}m, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'outside');
           if (!debounceTimer) {
             handleCheckOut(student); // Auto check-out
           }
         }
       } else { // status === 'OUT'
         if (result.distance <= checkInRadius) {
-          showLocationBanner(`🏡 Inside hostel zone`, 'inside');
+          showLocationBanner(`🏡 Inside hostel zone (Dist: ${result.distance}m, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'inside');
           if (!debounceTimer) {
             handleCheckIn(student); // Auto check-in
           }
         } else {
-          showLocationBanner(`🚶 Outside hostel`, 'outside');
+          showLocationBanner(`🚶 Outside hostel (Dist: ${result.distance}m, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'outside');
         }
       }
     }
