@@ -252,7 +252,9 @@ function updateMovement(movId, updates) {
 /** Get movements for a specific date string (YYYY-MM-DD) */
 function getMovementsByDate(dateStr) {
   return fbMovements.filter(m => {
-    if (!m || !m.outTime) return false;
+    if (!m) return false;
+    if (m.date === dateStr) return true;
+    if (!m.outTime) return false;
     const d = new Date(m.outTime);
     if (isNaN(d.getTime())) return false;
     const mDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

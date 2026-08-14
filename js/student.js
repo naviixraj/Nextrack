@@ -958,15 +958,23 @@ function startMotionGuard(student) {
       const checkInRadius = geo.radius;
       const checkOutRadius = geo.radius + 50; // Hysteresis: add 50m to check-out
 
-      if (result.distance <= checkInRadius) {
-        showLocationBanner(`📍 Inside hostel zone`, 'inside');
-        if (status === 'OUT' && !debounceTimer) {
-          handleCheckIn(student); // Auto check-in
+      if (status === 'IN') {
+        if (result.distance < checkOutRadius) {
+          showLocationBanner(`🏡 Inside hostel zone`, 'inside');
+        } else {
+          showLocationBanner(`🚶 Outside hostel`, 'outside');
+          if (!debounceTimer) {
+            handleCheckOut(student); // Auto check-out
+          }
         }
-      } else if (result.distance >= checkOutRadius) {
-        showLocationBanner(`🚶 Outside hostel`, 'outside');
-        if (status === 'IN' && !debounceTimer) {
-          handleCheckOut(student); // Auto check-out
+      } else { // status === 'OUT'
+        if (result.distance <= checkInRadius) {
+          showLocationBanner(`🏡 Inside hostel zone`, 'inside');
+          if (!debounceTimer) {
+            handleCheckIn(student); // Auto check-in
+          }
+        } else {
+          showLocationBanner(`🚶 Outside hostel`, 'outside');
         }
       }
     }
