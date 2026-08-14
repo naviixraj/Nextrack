@@ -142,9 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
       initHistoryFilters();
       renderStudentUI(student);
 
-      // ── Geolocation Check ──
-      checkStudentLocation(student);
-
       // The Magic: Live UI updates via Cloud Sync
       window.addEventListener('db_updated', () => {
         const liveStudent = getStudentById(session.userId);
@@ -250,6 +247,9 @@ function renderStudentUI(student) {
 
   renderTodayHistory(student.id);
   updateLocationBanner();
+
+  // Re-evaluate location tracking on every UI render (handles late loading of Firebase configurations)
+  checkStudentLocation(student);
 }
 
 /* ── Geolocation Check ───────────────────────── */
