@@ -956,7 +956,9 @@ function startMotionGuard(student) {
     if (result) {
       const geo = getGeofence();
       const checkInRadius = geo.radius;
-      const checkOutRadius = geo.radius + 50; // Hysteresis: add 50m to check-out
+      // Dynamic Hysteresis: 20% of geofence radius, minimum 5m, maximum 50m
+      const buffer = Math.min(50, Math.max(5, Math.round(geo.radius * 0.2)));
+      const checkOutRadius = geo.radius + buffer;
 
       if (status === 'IN') {
         if (result.distance < checkOutRadius) {
