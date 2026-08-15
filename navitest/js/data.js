@@ -242,10 +242,24 @@ function saveMovements(arr) {
 }
 
 function addMovement(mov) {
+  // Optimistic local update to prevent race conditions during UI renders
+  const exists = fbMovements.some(m => m.id === mov.id);
+  if (!exists) {
+    fbMovements.push(mov);
+    localStorage.setItem(DB.MOVEMENTS, JSON.stringify(fbMovements));
+    window.dispatchEvent(new Event('db_updated'));
+  }
   return firebaseDB.ref('movements/' + mov.id).set(mov);
 }
 
 function updateMovement(movId, updates) {
+  // Optimistic local update to prevent race conditions during UI renders
+  const idx = fbMovements.findIndex(m => m.id === movId);
+  if (idx !== -1) {
+    fbMovements[idx] = { ...fbMovements[idx], ...updates };
+    localStorage.setItem(DB.MOVEMENTS, JSON.stringify(fbMovements));
+    window.dispatchEvent(new Event('db_updated'));
+  }
   return firebaseDB.ref('movements/' + movId).update(updates);
 }
 
