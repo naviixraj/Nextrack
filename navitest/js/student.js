@@ -982,6 +982,10 @@ function startMotionGuard(student) {
     if (pos.coords.accuracy > maxAccuracy) {
       console.warn(`📡 Ignoring inaccurate location: ±${Math.round(pos.coords.accuracy)}m (limit: ${maxAccuracy}m)`);
       showLocationBanner(`⚠️ Weak GPS Accuracy (±${Math.round(pos.coords.accuracy)}m). Optimizing...`, 'warning');
+      if (!initialLocSyncDone) {
+        initialLocSyncDone = true;
+        renderStudentUI(student);
+      }
       return;
     }
 
@@ -1032,6 +1036,13 @@ function startMotionGuard(student) {
   const onLocationError = (err) => {
     geoCheckDone = true;
     console.warn(`🛑 GPS Error (${err.code}): ${err.message}`);
+    
+    // Resolve syncing state on error to fallback to database status
+    if (!initialLocSyncDone) {
+      initialLocSyncDone = true;
+      renderStudentUI(student);
+    }
+
     if (err.code === 1) { // Permission Denied
       showPermissionDeniedModal(student);
       updateStudent(student.id, {
@@ -1059,7 +1070,7 @@ function startMotionGuard(student) {
     navigator.geolocation.getCurrentPosition(
       onLocationSuccess,
       onLocationError,
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 7000 }
     );
   };
 
