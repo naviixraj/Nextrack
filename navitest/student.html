@@ -391,6 +391,46 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
+  <div id="debug-log-console" style="position: fixed; bottom: 0; left: 0; right: 0; height: 160px; background: rgba(0,0,0,0.9); color: #39ff14; font-family: monospace; font-size: 11px; overflow-y: auto; z-index: 100000000; padding: 8px; border-top: 2px solid #39ff14; line-height: 1.4;">
+    <div style="font-weight: bold; border-bottom: 1px solid rgba(57, 255, 20, 0.3); padding-bottom: 4px; margin-bottom: 4px;">🖥️ NexTrack Mobile Debug Console</div>
+  </div>
+  <script>
+    (function() {
+      const consoleDiv = document.getElementById('debug-log-console');
+      const log = console.log;
+      const warn = console.warn;
+      const error = console.error;
+      
+      function appendLog(msg, color) {
+        const line = document.createElement('div');
+        line.style.color = color || '#39ff14';
+        line.style.marginBottom = '3px';
+        line.style.wordBreak = 'break-all';
+        line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+        consoleDiv.appendChild(line);
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+      }
+      
+      console.log = function() {
+        log.apply(console, arguments);
+        appendLog(Array.from(arguments).join(' '), '#39ff14');
+      };
+      console.warn = function() {
+        warn.apply(console, arguments);
+        appendLog(Array.from(arguments).join(' '), '#ffaa00');
+      };
+      console.error = function() {
+        error.apply(console, arguments);
+        appendLog(Array.from(arguments).join(' '), '#ff3333');
+      };
+      
+      // Initial state dump
+      setTimeout(function() {
+        console.log("System status: Online=" + navigator.onLine + ", HTTPS=" + (location.protocol === 'https:'));
+      }, 500);
+    })();
+  </script>
+
   <!-- Custom Scripts -->
   <script src="js/firebase-config.js?v=147"></script>
   <script src="js/data.js?v=147"></script>
