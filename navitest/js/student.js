@@ -276,7 +276,7 @@ function renderStudentUI(student) {
     btnOut.disabled = true;
   }
 
-  renderTodayHistory(student.id);
+  renderHistory(student.id);
   updateLocationBanner();
 }
 

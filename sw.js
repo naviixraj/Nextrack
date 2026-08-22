@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nextrack-v131';
+const CACHE_NAME = 'nextrack-v132';
 const ASSETS = [
   '/',
   '/index.html',
