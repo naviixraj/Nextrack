@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
   <script>
+    window.onerror = function(msg, url, line, col, error) {
+      var errText = msg + '\nFile: ' + url + '\nLine: ' + line + ':' + col;
+      alert("🚨 NexTrack JavaScript Error:\n" + errText);
+      return false;
+    };
     if (localStorage.getItem('nexTrackTheme') === 'light') {
       document.documentElement.classList.add('light-theme');
     }
@@ -387,9 +392,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <!-- Custom Scripts -->
-  <script src="js/firebase-config.js?v=146"></script>
-  <script src="js/data.js?v=146"></script>
-  <script src="js/student.js?v=146"></script>
-  <script src="js/pwa-v32.js?v=146"></script>
+  <script src="js/firebase-config.js?v=147"></script>
+  <script src="js/data.js?v=147"></script>
+  <script src="js/student.js?v=147"></script>
+  <script src="js/pwa-v32.js?v=147"></script>
 </body>
 </html>
