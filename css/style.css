@@ -356,6 +356,7 @@ html.light-theme .topbar-actions .btn-ghost:hover {
 }
 .badge-in  { background: var(--green-bg); color: var(--green); }
 .badge-out { background: var(--orange-bg); color: var(--orange); }
+.badge-offline { background: rgba(156, 163, 175, 0.12); color: #9ca3af; }
 
 /* Live Status Banner Above Profile */
 .live-status-label {

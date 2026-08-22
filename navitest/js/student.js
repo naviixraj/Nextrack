@@ -6,6 +6,7 @@ let debounceTimer = null;
 let debounceSeconds = 0;
 let studentLocation = null; // { lat, lng } or null
 let geoCheckDone = false;
+let initialLocSyncDone = false;
 
 // ── IMMEDIATE GPS CHECK (runs before everything, even the startup loader) ──
 // This catches GPS-off / permission-denied before the student even sees the UI
@@ -221,14 +222,25 @@ function renderStudentUI(student) {
 
   const status = getCurrentStatus(student.id);
   const badge = document.getElementById('stu-status');
-  badge.textContent = status;
-  badge.className = 'status-badge ' + (status === 'IN' ? 'badge-in' : 'badge-out');
+  if (!navigator.onLine) {
+    badge.textContent = 'OFFLINE';
+    badge.className = 'status-badge badge-offline';
+  } else if (!initialLocSyncDone) {
+    badge.textContent = 'SYNCING';
+    badge.className = 'status-badge badge-offline';
+  } else {
+    badge.textContent = status;
+    badge.className = 'status-badge ' + (status === 'IN' ? 'badge-in' : 'badge-out');
+  }
 
   // Update live status banner above profile
   const liveLabel = document.getElementById('stu-live-status');
   if (liveLabel) {
     if (!navigator.onLine) {
       liveLabel.textContent = '📡 Connection Offline';
+      liveLabel.className = 'live-status-label status-offline';
+    } else if (!initialLocSyncDone) {
+      liveLabel.textContent = '📡 Syncing Location...';
       liveLabel.className = 'live-status-label status-offline';
     } else if (status === 'IN') {
       liveLabel.textContent = '🏡 Currently inside';
@@ -936,7 +948,7 @@ if (typeof listenForMessages === 'function') {
 // Initial badge check
 document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });
 /* ── Smart Motion Guard (Geofencing) ── */
-let motionWatcher = null;
+let locationInterval = null;
 
 function startMotionGuard(student) {
   const geo = getGeofence();
@@ -946,8 +958,8 @@ function startMotionGuard(student) {
     return;
   }
 
-  // If already watching, do not clear and reset to prevent duplicate geolocation hooks
-  if (motionWatcher) {
+  // If already watching, do not clear and reset
+  if (locationInterval) {
     return;
   }
 
@@ -976,6 +988,12 @@ function startMotionGuard(student) {
     console.log(`📍 Location Sync: ${pos.coords.latitude}, ${pos.coords.longitude} (±${Math.round(pos.coords.accuracy)}m)`);
     studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     geoCheckDone = true;
+    
+    // Set initial sync flag to true and refresh UI to clear "SYNCING" text
+    if (!initialLocSyncDone) {
+      initialLocSyncDone = true;
+      renderStudentUI(student);
+    }
     
     // NOTE: Removed continuous updateStudent location_status ping to preserve database storage and bandwidth
 
@@ -1010,10 +1028,10 @@ function startMotionGuard(student) {
     }
   };
 
-  // ── Error Handler for Continuous Watch (after page loaded) ──
+  // ── Error Handler for Geolocation ──
   const onLocationError = (err) => {
     geoCheckDone = true;
-    console.warn(`🛑 GPS Watch Error (${err.code}): ${err.message}`);
+    console.warn(`🛑 GPS Error (${err.code}): ${err.message}`);
     if (err.code === 1) { // Permission Denied
       showPermissionDeniedModal(student);
       updateStudent(student.id, {
@@ -1036,65 +1054,20 @@ function startMotionGuard(student) {
     }
   };
 
-  // ── Error Handler for Initial Check (STRICT but ignoring timeout) ──
-  const onInitialCheckError = (err) => {
-    console.warn(`🚫 Initial GPS Check Failed (${err.code}): ${err.message}`);
-    if (err.code === 1) { // Permission Denied
-      showPermissionDeniedModal(student);
-      updateStudent(student.id, {
-        location_status: 'REFUSED',
-        last_security_check: new Date().toISOString()
-      }).catch(e => console.error('DB sync failed:', e));
-    } else if (err.code === 2) { // Position Unavailable
-      showLocationBanner('📡 GPS Signal Weak. Searching...', 'warning');
-      startContinuousWatch();
-      if (!window.code2GraceTimer) {
-        window.code2GraceTimer = setTimeout(() => {
-          showPermissionDeniedModal(student);
-          updateStudent(student.id, {
-            location_status: 'REFUSED',
-            last_security_check: new Date().toISOString()
-          }).catch(e => console.error('DB sync failed:', e));
-        }, 30000); // 30 second grace period
-      }
-    } else {
-      showLocationBanner('📡 GPS Signal Weak. Searching...', 'warning');
-      startContinuousWatch(); // Keep trying instead of blocking
-    }
-  };
-
-  // ── INSTANT CHECK: Use Permissions API first (zero delay) ──
   const runGeoCheck = () => {
-    startContinuousWatch();
+    if (!navigator.onLine) return;
+    navigator.geolocation.getCurrentPosition(
+      onLocationSuccess,
+      onLocationError,
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    );
   };
 
-  if (navigator.permissions) {
-    navigator.permissions.query({ name: 'geolocation' }).then(result => {
-      if (result.state === 'denied') {
-        // INSTANT — browser already denied, no GPS call needed
-        onInitialCheckError({ code: 1, message: 'Permission denied by browser settings' });
-        return;
-      }
-      runGeoCheck();
-      // Watch for mid-session permission revocation
-      result.onchange = () => {
-        if (result.state === 'denied') {
-          onInitialCheckError({ code: 1, message: 'Permission revoked mid-session' });
-        }
-      };
-    }).catch(() => runGeoCheck());
-  } else {
-    runGeoCheck();
-  }
+  // Run immediately on start
+  runGeoCheck();
 
-  function startContinuousWatch() {
-    if (motionWatcher) navigator.geolocation.clearWatch(motionWatcher);
-    motionWatcher = navigator.geolocation.watchPosition(
-      onLocationSuccess,
-      onLocationError, // lenient — code 3 = just weak signal
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-    );
-  }
+  // Set up 60-second periodic timer
+  locationInterval = setInterval(runGeoCheck, 60000);
 }
 
 function showPermissionDeniedModal(student) {
