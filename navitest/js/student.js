@@ -285,9 +285,9 @@ function checkStudentLocation(student) {
   if (!navigator.onLine) {
     geoCheckDone = true;
     showLocationBanner('⚠️ Offline: Location tracking suspended until reconnected.', 'warning');
-    if (motionWatcher) {
-      navigator.geolocation.clearWatch(motionWatcher);
-      motionWatcher = null;
+    if (locationInterval) {
+      clearInterval(locationInterval);
+      locationInterval = null;
     }
     return;
   }
@@ -295,12 +295,20 @@ function checkStudentLocation(student) {
   const geo = getGeofence();
   if (!geo) {
     geoCheckDone = true;
+    if (!initialLocSyncDone) {
+      initialLocSyncDone = true;
+      renderStudentUI(student);
+    }
     updateLocationBanner();
     return;
   }
 
   if (!navigator.geolocation) {
     geoCheckDone = true;
+    if (!initialLocSyncDone) {
+      initialLocSyncDone = true;
+      renderStudentUI(student);
+    }
     showLocationBanner('⚠️ GPS not supported on this browser.', 'warning');
     return;
   }
@@ -309,6 +317,10 @@ function checkStudentLocation(student) {
   const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   if (!isSecure) {
     geoCheckDone = true;
+    if (!initialLocSyncDone) {
+      initialLocSyncDone = true;
+      renderStudentUI(student);
+    }
     showLocationBanner('⚠️ <strong>Secure Connection Required:</strong> Geolocation is blocked on non-HTTPS sites.', 'warning');
     return;
   }
