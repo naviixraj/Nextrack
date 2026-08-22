@@ -984,19 +984,28 @@ function startMotionGuard(student) {
     }
     
     const status = getCurrentStatus(student.id);
+    const result = checkGeofence(pos.coords.latitude, pos.coords.longitude);
+    const distance = result ? result.distance : 0;
+    const checkOutRadius = geo.radius + 30;
+
     // Dual accuracy threshold: strict (150m) if already IN to prevent false checkouts,
     // lenient (250m) if OUT to make auto check-in easier indoors.
     const maxAccuracy = (status === 'IN') ? 150 : 250;
     
-    // Ignore inaccurate location fixes (e.g. cellular triangulation indoors) to avoid false check-outs
+    // Ignore inaccurate location fixes unless they are far enough away to guarantee they are outside
     if (pos.coords.accuracy > maxAccuracy) {
-      console.warn(`📡 Ignoring inaccurate location: ±${Math.round(pos.coords.accuracy)}m (limit: ${maxAccuracy}m)`);
-      showLocationBanner(`⚠️ Weak GPS Accuracy (±${Math.round(pos.coords.accuracy)}m). Optimizing...`, 'warning');
-      if (!initialLocSyncDone) {
-        initialLocSyncDone = true;
-        renderStudentUI(student);
+      const isDefinitiveOutside = result && (distance > (pos.coords.accuracy + checkOutRadius));
+      if (!isDefinitiveOutside) {
+        console.warn(`📡 Ignoring inaccurate location: ±${Math.round(pos.coords.accuracy)}m (limit: ${maxAccuracy}m)`);
+        showLocationBanner(`⚠️ Weak GPS Accuracy (±${Math.round(pos.coords.accuracy)}m). Optimizing...`, 'warning');
+        if (!initialLocSyncDone) {
+          initialLocSyncDone = true;
+          renderStudentUI(student);
+        }
+        return;
+      } else {
+        console.log(`📡 Weak GPS Accuracy (±${Math.round(pos.coords.accuracy)}m) bypassed: Distance (${distance}m) guarantees user is outside.`);
       }
-      return;
     }
 
     console.log(`📍 Location Sync: ${pos.coords.latitude}, ${pos.coords.longitude} (±${Math.round(pos.coords.accuracy)}m)`);
@@ -1011,13 +1020,8 @@ function startMotionGuard(student) {
     
     // NOTE: Removed continuous updateStudent location_status ping to preserve database storage and bandwidth
 
-    const result = checkGeofence(studentLocation.lat, studentLocation.lng);
-
     if (result) {
-      const geo = getGeofence();
       const checkInRadius = geo.radius;
-      // Flat Hysteresis: Extra 30 meters buffer for checkouts to account for GPS drift
-      const checkOutRadius = geo.radius + 30;
 
       // Diagnostic message including coordinates, calculated distance, and thresholds
       const coordStats = `[Loc: ${studentLocation.lat.toFixed(5)}, ${studentLocation.lng.toFixed(5)}] Dist: ${result.distance}m, Limit: ${status === 'IN' ? checkOutRadius : checkInRadius}m`;
