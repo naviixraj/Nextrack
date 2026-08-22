@@ -153,6 +153,21 @@ document.addEventListener('DOMContentLoaded', () => {
           renderStudentUI(liveStudent);
         }
       });
+
+      // Real-Time Connection status listeners
+      window.addEventListener('online', () => {
+        const liveStudent = getStudentById(session.userId);
+        if (liveStudent) {
+          renderStudentUI(liveStudent);
+        }
+      });
+
+      window.addEventListener('offline', () => {
+        const liveStudent = getStudentById(session.userId);
+        if (liveStudent) {
+          renderStudentUI(liveStudent);
+        }
+      });
     } catch (err) {
       console.error("🚨 Student Hub Sync Error:", err);
     } finally {
@@ -212,7 +227,10 @@ function renderStudentUI(student) {
   // Update live status banner above profile
   const liveLabel = document.getElementById('stu-live-status');
   if (liveLabel) {
-    if (status === 'IN') {
+    if (!navigator.onLine) {
+      liveLabel.textContent = '📡 Connection Offline';
+      liveLabel.className = 'live-status-label status-offline';
+    } else if (status === 'IN') {
       liveLabel.textContent = '🏡 Currently inside';
       liveLabel.className = 'live-status-label status-in';
     } else {
@@ -254,6 +272,16 @@ function renderStudentUI(student) {
 
 /* ── Geolocation Check ───────────────────────── */
 function checkStudentLocation(student) {
+  if (!navigator.onLine) {
+    geoCheckDone = true;
+    showLocationBanner('⚠️ Offline: Location tracking suspended until reconnected.', 'warning');
+    if (motionWatcher) {
+      navigator.geolocation.clearWatch(motionWatcher);
+      motionWatcher = null;
+    }
+    return;
+  }
+
   const geo = getGeofence();
   if (!geo) {
     geoCheckDone = true;
@@ -1037,21 +1065,7 @@ function startMotionGuard(student) {
 
   // ── INSTANT CHECK: Use Permissions API first (zero delay) ──
   const runGeoCheck = () => {
-    // If we just unlocked the screen, GPS is warming up. Go straight to continuous watch.
-    if (sessionStorage.getItem('gps_just_confirmed')) {
-      sessionStorage.removeItem('gps_just_confirmed'); // Consume the flag
-      startContinuousWatch();
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        onLocationSuccess(pos);
-        startContinuousWatch();
-      },
-      onInitialCheckError, // ANY failure on initial check = show lock screen
-      { enableHighAccuracy: false, maximumAge: 0, timeout: 5000 }
-    );
+    startContinuousWatch();
   };
 
   if (navigator.permissions) {
@@ -1078,7 +1092,7 @@ function startMotionGuard(student) {
     motionWatcher = navigator.geolocation.watchPosition(
       onLocationSuccess,
       onLocationError, // lenient — code 3 = just weak signal
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
     );
   }
 }

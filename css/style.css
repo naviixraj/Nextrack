@@ -382,6 +382,12 @@ html.light-theme .topbar-actions .btn-ghost:hover {
   border-color: rgba(251, 146, 60, 0.3);
   box-shadow: 0 4px 15px rgba(251, 146, 60, 0.08);
 }
+.live-status-label.status-offline {
+  background: rgba(156, 163, 175, 0.12);
+  color: #9ca3af;
+  border-color: rgba(156, 163, 175, 0.3);
+  box-shadow: 0 4px 15px rgba(156, 163, 175, 0.08);
+}
 
 /* Action Buttons */
 .stu-actions {
