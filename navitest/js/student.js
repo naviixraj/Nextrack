@@ -1006,27 +1006,29 @@ function startMotionGuard(student) {
     if (result) {
       const geo = getGeofence();
       const checkInRadius = geo.radius;
-      // Dynamic Hysteresis: 20% of geofence radius, minimum 5m, maximum 50m
-      const buffer = Math.min(50, Math.max(5, Math.round(geo.radius * 0.2)));
-      const checkOutRadius = geo.radius + buffer;
+      // Flat Hysteresis: Extra 30 meters buffer for checkouts to account for GPS drift
+      const checkOutRadius = geo.radius + 30;
+
+      // Diagnostic message including coordinates, calculated distance, and thresholds
+      const coordStats = `[Loc: ${studentLocation.lat.toFixed(5)}, ${studentLocation.lng.toFixed(5)}] Dist: ${result.distance}m, Limit: ${status === 'IN' ? checkOutRadius : checkInRadius}m`;
 
       if (status === 'IN') {
         if (result.distance < checkOutRadius) {
-          showLocationBanner(`🏡 Inside hostel zone (Dist: ${result.distance}m, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'inside');
+          showLocationBanner(`🏡 Inside hostel zone (${coordStats}, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'inside');
         } else {
-          showLocationBanner(`🚶 Outside hostel (Dist: ${result.distance}m, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'outside');
+          showLocationBanner(`🚶 Outside hostel (${coordStats}, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'outside');
           if (!debounceTimer) {
             handleCheckOut(student); // Auto check-out
           }
         }
       } else { // status === 'OUT'
         if (result.distance <= checkInRadius) {
-          showLocationBanner(`🏡 Inside hostel zone (Dist: ${result.distance}m, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'inside');
+          showLocationBanner(`🏡 Inside hostel zone (${coordStats}, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'inside');
           if (!debounceTimer) {
             handleCheckIn(student); // Auto check-in
           }
         } else {
-          showLocationBanner(`🚶 Outside hostel (Dist: ${result.distance}m, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'outside');
+          showLocationBanner(`🚶 Outside hostel (${coordStats}, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'outside');
         }
       }
     }
@@ -1067,9 +1069,33 @@ function startMotionGuard(student) {
 
   const runGeoCheck = () => {
     if (!navigator.onLine) return;
+    
+    let hasResponded = false;
+    
+    // Custom 7-second watchdog safety timer to bypass native browser API locks
+    const watchdog = setTimeout(() => {
+      if (!hasResponded) {
+        hasResponded = true;
+        console.warn("⏳ GPS Watchdog Timer Expired: Browser Geolocation API hung.");
+        onLocationError({ code: 3, message: "Watchdog timeout" });
+      }
+    }, 7000);
+
     navigator.geolocation.getCurrentPosition(
-      onLocationSuccess,
-      onLocationError,
+      (pos) => {
+        if (!hasResponded) {
+          hasResponded = true;
+          clearTimeout(watchdog);
+          onLocationSuccess(pos);
+        }
+      },
+      (err) => {
+        if (!hasResponded) {
+          hasResponded = true;
+          clearTimeout(watchdog);
+          onLocationError(err);
+        }
+      },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 7000 }
     );
   };
