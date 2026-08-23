@@ -43,6 +43,42 @@
   --transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --select-bg-light: #f5f5f5;   /* light background */
+  --select-text-light: #333;   /* dark text */
+  --select-bg-dark: #2c2c2c;   /* dark background */
+  --select-text-dark: #e0e0e0; /* light text */
+  --select-bg-light: #f5f5f5;   /* light background */
+  --select-text-light: #333;   /* dark text */
+} 
+
+/* Year selection dropdown theming */
+#add-admin-year, #edit-admin-year {
+  background: var(--select-bg-dark) !important;
+  color: var(--select-text-dark) !important;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.8rem;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+html.light-theme #add-admin-year {
+  background: var(--select-bg-light) !important;
+  color: var(--select-text-light) !important;
+}
+
+
+
+/* Options styling for year selects */
+#add-admin-year option,
+#edit-admin-year option {
+  background: var(--select-bg-dark) !important;
+  color: var(--select-text-dark) !important;
+}
+
+html.light-theme #add-admin-year option,
+html.light-theme #edit-admin-year option {
+  background: var(--select-bg-light) !important;
+  color: var(--select-text-light) !important;
 }
 
 /* ── Reset & Base ────────────────────────────────── */
