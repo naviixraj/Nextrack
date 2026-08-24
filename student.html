@@ -189,7 +189,7 @@
         </div>
         <div class="form-group">
           <label for="profile-stu-id">Registration No.</label>
-          <input type="text" id="profile-stu-id" required>
+          <input type="text" id="profile-stu-id" readonly required>
         </div>
         <div class="form-group">
           <label for="profile-name">Name</label>
@@ -268,7 +268,7 @@
           <p id="profile-pwd-msg" style="font-size:0.75rem; color:#ef4444; margin-top:0.5rem; display:none;"></p>
         </div>
         <div class="modal-btns">
-          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="submit" id="btn-save-profile" class="btn btn-primary">Save</button>
           <button type="button" class="btn btn-ghost" id="modal-cancel-btn" onclick="document.getElementById('profile-modal').classList.remove('visible')">Cancel</button>
         </div>
       </form>

@@ -658,30 +658,14 @@ function showProfileModal(student, forced = false) {
     };
  
     if (newId !== oldId) {
-      const students = getStudents();
-      const existing = students.find(s => s.id === newId);
-      if (existing) { 
-        pwdMsg.textContent = '⚠️ That Registration No. is already taken.';
-        pwdMsg.style.display = 'block';
-        return; 
-      }
-      const idx = students.findIndex(s => s.id === oldId);
-      if (idx !== -1) {
-        const fullStudentData = { ...students[idx], ...updates, id: newId };
-        firebaseDB.ref('students/' + newId).set(fullStudentData).then(() => {
-          firebaseDB.ref('students/' + oldId).remove();
-        });
-        // Update movements individually
-        const movements = getMovements().filter(m => m.studentId === oldId);
-        movements.forEach(m => {
-          firebaseDB.ref('movements/' + m.id).update({ studentId: newId });
-        });
-        setSession({ userId: newId, role: 'student' });
-        student.id = newId;
-      }
-    } else {
-      updateStudent(oldId, updates);
-    }
+  // Registration number changes are not allowed
+  pwdMsg.textContent = '⚠️ Registration number cannot be changed.';
+  pwdMsg.style.display = 'block';
+  return;
+} else {
+  // Proceed with normal update
+  updateStudent(oldId, updates);
+}
  
     overlay.classList.remove('visible');
     // Important: Update the local student object with the new updates

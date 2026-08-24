@@ -1979,6 +1979,8 @@ html.light-theme .dev-version-badge { background: rgba(0,0,0,0.05); border-color
 /* IN/OUT Badges Light Theme */
 html.light-theme .badge-in { background: rgba(16, 185, 129, 0.15) !important; color: #047857 !important; border-color: rgba(16, 185, 129, 0.4) !important; }
 html.light-theme .badge-out { background: rgba(245, 158, 11, 0.15) !important; color: #b45309 !important; border-color: rgba(245, 158, 11, 0.4) !important; }
+html.dark-theme .badge-in { background: rgba(16, 185, 129, 0.3) !important; color: #047857 !important; border-color: rgba(16, 185, 129, 0.5) !important; }
+html.dark-theme .badge-out { background: rgba(245, 158, 11, 0.3) !important; color: #b45309 !important; border-color: rgba(245, 158, 11, 0.5) !important; }
 
 /* Geo Banners Light Theme (Detecting, Warning, Inside, Outside) */
 html.light-theme .geo-banner { color: #1e293b; border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); background: rgba(255, 255, 255, 0.9); }
