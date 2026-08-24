@@ -423,6 +423,18 @@ html.light-theme .inside-badge {
   color: var(--badge-text-light) !important;
   font-weight: 600 !important;
 }
+
+/* Light theme specific badge overrides for profile badges */
+html.light-theme .live-status-label.outside-badge {
+  background: var(--outside-badge-bg-light) !important;
+  color: var(--badge-text-light) !important;
+  font-weight: 600 !important;
+}
+html.light-theme .status-badge.inside-badge {
+  background: var(--inside-badge-bg-light) !important;
+  color: var(--badge-text-light) !important;
+  font-weight: 600 !important;
+}
 .live-status-label.status-in {
   background: rgba(52, 211, 153, 0.12);
   color: var(--green);
