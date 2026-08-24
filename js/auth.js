@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const user = students.find(s => s.id.toLowerCase() === uid.toLowerCase());
 
       if (!user) {
-        loginMsg.textContent = `❌ Invalid ID. (Loaded accounts: ${students.map(s => s.id).join(', ') || 'none'})`;
+        loginMsg.textContent = `❌ Invalid ID.`;
         loginMsg.className = 'form-msg error';
         forgotPwdLink.style.display = 'none';
         return;
