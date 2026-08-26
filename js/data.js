@@ -168,6 +168,19 @@ async function initCloudSync(onReadyCallback) {
       const raw = snap.val() ? Object.values(snap.val()) : [];
       fbStudents = raw.map(sanitizeStudent);
       localStorage.setItem(DB.STUDENTS, JSON.stringify(fbStudents));
+      
+      // 🔒 Global Session Enforcer: If student session is active, check UUID match live
+      const session = getSession();
+      if (session && session.role === 'student') {
+        const liveUser = fbStudents.find(s => s.id === session.userId);
+        const localUuid = localStorage.getItem('nextrack_device_uuid');
+        if (!liveUser || !liveUser.device_uuid || liveUser.device_uuid !== localUuid) {
+          clearSession();
+          window.location.href = 'index.html';
+          return;
+        }
+      }
+      
       window.dispatchEvent(new Event('db_updated'));
     });
     firebaseDB.ref('movements').on('value', snap => {

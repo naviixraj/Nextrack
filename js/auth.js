@@ -22,9 +22,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // If we already have a session, don't even wait for Cloud Sync or Loader
   const quickSession = getSession();
   if (quickSession) {
-    if (quickSession.role === 'admin') window.location.href = 'admin.html';
-    else window.location.href = 'student.html';
-    return;
+    if (quickSession.role === 'admin') {
+      window.location.href = 'admin.html';
+      return;
+    } else {
+      // Fetch students list (pre-loaded from cache)
+      const students = getStudents();
+      const localUser = students.find(s => s.id === quickSession.userId);
+      const localUuid = localStorage.getItem('nextrack_device_uuid');
+      
+      // If student is bound to a different UUID in DB, force clear session
+      if (localUser && localUser.device_uuid && localUser.device_uuid !== localUuid) {
+        clearSession();
+      } else if (!localUuid) {
+        clearSession();
+      } else {
+        window.location.href = 'student.html';
+        return;
+      }
+    }
   }
 
   async function handleResetLink(token) {
@@ -103,9 +119,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Re-check session after sync just in case
     const session = getSession();
     if (session) {
-      if (session.role === 'admin') window.location.href = 'admin.html';
-      else window.location.href = 'student.html';
-      return;
+      if (session.role === 'admin') {
+        window.location.href = 'admin.html';
+        return;
+      } else {
+        const students = getStudents();
+        const localUser = students.find(s => s.id === session.userId);
+        const localUuid = localStorage.getItem('nextrack_device_uuid');
+        if (localUser && localUser.device_uuid && localUser.device_uuid !== localUuid) {
+          clearSession();
+        } else if (!localUuid) {
+          clearSession();
+        } else {
+          window.location.href = 'student.html';
+          return;
+        }
+      }
     }
 
     // No session: Fade out loader fast
@@ -284,6 +313,110 @@ document.addEventListener('DOMContentLoaded', () => {
         setSession({ userId: user.id, role: 'admin', hash: user.password });
         window.location.href = 'admin.html';
       } else {
+        // 🔒 Device UUID Handshake / Proxy protection
+        let clientUuid = localStorage.getItem('nextrack_device_uuid');
+        if (!clientUuid) {
+          clientUuid = 'web-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+          localStorage.setItem('nextrack_device_uuid', clientUuid);
+        }
+
+        if (!user.device_uuid) {
+          // First time logging in: Bind device UUID automatically
+          user.device_uuid = clientUuid;
+          await updateStudent(user.id, { device_uuid: clientUuid });
+        } else if (user.device_uuid !== clientUuid) {
+          // Device Mismatch!
+          loginMsg.innerHTML = '';
+          
+          let alertBanner = document.getElementById('login-mismatch-banner');
+          if (!alertBanner) {
+            alertBanner = document.createElement('div');
+            alertBanner.id = 'login-mismatch-banner';
+            alertBanner.style.cssText = 'background:rgba(239, 68, 68, 0.08); border:1px solid rgba(239, 68, 68, 0.2); padding:1rem; border-radius:12px; margin-top:1rem; text-align:left; color:var(--text-primary); font-size:0.85rem;';
+            loginForm.insertBefore(alertBanner, loginMsg);
+          }
+
+          alertBanner.innerHTML = `
+            <div style="font-weight:800; color:#f87171; margin-bottom:0.4rem; display:flex; align-items:center; gap:6px;">
+              ⚠️ Security Alert: Device Mismatch
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.4; margin-bottom:0.8rem;">
+              This account is registered on another device. Unauthorized login has been blocked to prevent tracking spoofing and proxy entries.
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" id="btn-request-relink" class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.75rem; border-radius:6px; margin:0; width:auto; box-shadow:none;">Request Device Re-Link</button>
+              <button type="button" id="btn-cancel-relink" class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.75rem; border-radius:6px; margin:0; width:auto; box-shadow:none; background:rgba(255,255,255,0.05); color:var(--text-secondary); border:1px solid var(--glass-border);">Cancel</button>
+            </div>
+          `;
+
+          const reqBtn = document.getElementById('btn-request-relink');
+          const cancelBtn = document.getElementById('btn-cancel-relink');
+
+          cancelBtn.onclick = () => {
+            alertBanner.remove();
+          };
+
+          reqBtn.onclick = async () => {
+            reqBtn.textContent = 'Sending Request...';
+            reqBtn.disabled = true;
+            try {
+              await firebaseDB.ref('device_reset_requests/' + user.id).set({
+                studentId: user.id,
+                studentName: user.name,
+                studentPhoto: user.photo || '',
+                dept: user.department || 'General',
+                year: user.year || 'N/A',
+                room: user.room || '—',
+                requestedUuid: clientUuid,
+                timestamp: new Date().toISOString()
+              });
+              alertBanner.innerHTML = `
+                <div style="font-weight:800; color:var(--yellow); margin-bottom:0.4rem; display:flex; align-items:center; gap:6px;">
+                  ⏳ Request Pending
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.4;">
+                  A device reset request has been sent to the Warden. Please wait for approval on this screen. This page will automatically unlock once approved.
+                </div>
+              `;
+
+              // Watch database for real-time approval
+              const listenerRef = firebaseDB.ref('students/' + user.id + '/device_uuid');
+              listenerRef.on('value', (snap) => {
+                if (snap.val() === clientUuid) {
+                  listenerRef.off();
+                  firebaseDB.ref('device_reset_requests/' + user.id).off();
+                  setSession({ userId: user.id, role: 'student' });
+                  window.location.href = 'student.html';
+                }
+              });
+
+              // Watch for rejection status updates
+              firebaseDB.ref('device_reset_requests/' + user.id + '/status').on('value', (snap) => {
+                if (snap.val() === 'REJECTED') {
+                  firebaseDB.ref('device_reset_requests/' + user.id + '/status').off();
+                  listenerRef.off();
+                  alertBanner.innerHTML = `
+                    <div style="font-weight:800; color:#f87171; margin-bottom:0.4rem; display:flex; align-items:center; gap:6px;">
+                      ❌ Device Re-Link Request Declined
+                    </div>
+                    <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.4; margin-bottom:0.8rem;">
+                      Your request to register this new device has been rejected by the Warden. Access on this device remains restricted.
+                    </div>
+                    <button type="button" onclick="location.reload()" class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.75rem; border-radius:6px; margin:0; width:auto; box-shadow:none; background:rgba(255,255,255,0.05); color:var(--text-secondary); border:1px solid var(--glass-border);">Okay</button>
+                  `;
+                }
+              });
+
+            } catch (err) {
+              console.error('Request failed:', err);
+              reqBtn.textContent = 'Request Device Re-Link';
+              reqBtn.disabled = false;
+              alert('Network error. Please try again.');
+            }
+          };
+          return;
+        }
+
         setSession({ userId: user.id, role: 'student' });
         window.location.href = 'student.html';
       }

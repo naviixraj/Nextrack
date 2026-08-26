@@ -134,42 +134,81 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // ── 90-Day Rule ──
-      const daysSinceUpdate = Math.floor((Date.now() - new Date(student.last_updated).getTime()) / 86400000);
-      if (daysSinceUpdate > 90) {
-        showProfileModal(student, true);
+      // 🔒 Force session reset if this device has no bound local UUID key
+      const localUuid = localStorage.getItem('nextrack_device_uuid');
+      if (!localUuid) {
+        clearSession();
+        window.location.href = 'index.html';
+        return;
       }
 
-      initHistoryFilters();
-      renderStudentUI(student);
-      checkStudentLocation(student);
-
-      // The Magic: Live UI updates via Cloud Sync
-      window.addEventListener('db_updated', () => {
-        const liveStudent = getStudentById(session.userId);
-        if (!liveStudent) {
-          // Admin deleted you!
+      // 🔒 Verify live database UUID matches the local one immediately on load (directly from Firebase node)
+      firebaseDB.ref('students/' + session.userId).once('value').then((snap) => {
+        const liveData = snap.val();
+        if (!liveData || !liveData.device_uuid || liveData.device_uuid !== localUuid) {
           clearSession();
           window.location.href = 'index.html';
-        } else {
-          renderStudentUI(liveStudent);
+          return;
         }
+
+        // Initialize dashboard only if UUID matches
+        runStudentDashboardInit(student, localUuid);
+
+      }).catch(err => {
+        // Fallback to local checks if offline
+        if (!student.device_uuid || student.device_uuid !== localUuid) {
+          clearSession();
+          window.location.href = 'index.html';
+          return;
+        }
+        runStudentDashboardInit(student, localUuid);
       });
 
-      // Real-Time Connection status listeners
-      window.addEventListener('online', () => {
-        const liveStudent = getStudentById(session.userId);
-        if (liveStudent) {
-          renderStudentUI(liveStudent);
+      function runStudentDashboardInit(studentData, localUuid) {
+        // ── 90-Day Rule ──
+        const daysSinceUpdate = Math.floor((Date.now() - new Date(studentData.last_updated).getTime()) / 86400000);
+        if (daysSinceUpdate > 90) {
+          showProfileModal(studentData, true);
         }
-      });
 
-      window.addEventListener('offline', () => {
-        const liveStudent = getStudentById(session.userId);
-        if (liveStudent) {
-          renderStudentUI(liveStudent);
-        }
-      });
+        initHistoryFilters();
+        renderStudentUI(studentData);
+        checkStudentLocation(studentData);
+
+        // The Magic: Live UI updates via Cloud Sync
+        window.addEventListener('db_updated', () => {
+          const liveStudent = getStudentById(session.userId);
+          if (!liveStudent) {
+            // Admin deleted you!
+            clearSession();
+            window.location.href = 'index.html';
+          } else {
+            // Real-time UUID termination check
+            if (liveStudent.device_uuid && liveStudent.device_uuid !== localUuid) {
+              alert('⚠️ Session Terminated: Your account has been registered and logged in on another device.');
+              clearSession();
+              window.location.href = 'index.html';
+              return;
+            }
+            renderStudentUI(liveStudent);
+          }
+        });
+
+        // Real-Time Connection status listeners
+        window.addEventListener('online', () => {
+          const liveStudent = getStudentById(session.userId);
+          if (liveStudent) {
+            renderStudentUI(liveStudent);
+          }
+        });
+
+        window.addEventListener('offline', () => {
+          const liveStudent = getStudentById(session.userId);
+          if (liveStudent) {
+            renderStudentUI(liveStudent);
+          }
+        });
+      }
     } catch (err) {
       console.error("🚨 Student Hub Sync Error:", err);
     } finally {

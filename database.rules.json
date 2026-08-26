@@ -33,6 +33,10 @@
     "password_resets": {
       ".read": "true",
       ".write": "true"
+    },
+    "device_reset_requests": {
+      ".read": "true",
+      ".write": "true"
     }
   }
 }

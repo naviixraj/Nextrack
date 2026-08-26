@@ -987,10 +987,57 @@ window.refreshDashboard = function () {
   searchDirectory();
   renderAdminList();
 
-  // Reactive: If the outside modal is open, refresh it now!
+  // Reactive: If the outside modal is open, refresh its contents without resetting modal class
   const outsideModal = document.getElementById('outside-modal');
   if (outsideModal && outsideModal.classList.contains('visible')) {
-    window.showOutsideStudents();
+    let students = getStudents().filter(s => s.role !== 'admin');
+    if (globalYearFilter !== 'All') {
+      students = students.filter(s => s.year === globalYearFilter);
+    }
+    const movements = getMovements();
+    const outsideList = [];
+
+    students.forEach(s => {
+      const isWait = s.location_status === 'REFUSED';
+      const stuMovs = movements.filter(m => m.studentId === s.id);
+      const latest = stuMovs.length > 0 ? stuMovs[stuMovs.length - 1] : null;
+      const isOut = latest && !latest.inTime;
+
+      if (isOut || isWait) {
+        outsideList.push({ 
+          student: s, 
+          outTime: isOut ? latest.outTime : (latest ? latest.inTime : new Date().toISOString()) 
+        });
+      }
+    });
+
+    const container = document.getElementById('outside-list');
+    if (container) {
+      if (outsideList.length === 0) {
+        container.innerHTML = '<p class="empty-row">All students are inside. 🎉</p>';
+      } else {
+        container.innerHTML = outsideList.map(item => {
+          const s = item.student;
+          const isBlocked = s.location_status === 'REFUSED';
+          const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '<span class="table-avatar-placeholder">👤</span>';
+          
+          return `
+            <div class="recovery-card ${isBlocked ? 'location-refused' : ''}" onclick="document.getElementById('outside-modal').classList.remove('visible'); showStudentDetail('${s.id}');" style="cursor:pointer; position:relative; overflow:hidden;">
+              ${isBlocked ? '<div class="blocked-badge">📍 GPS BLOCKED</div>' : ''}
+              <div style="display:flex;align-items:center;gap:0.8rem;">
+                ${photo}
+                <div class="recovery-info">
+                  <strong>${s.name}</strong>
+                  ${isBlocked ? '<div class="blocked-subtitle">location turn off</div>' : ''}
+                  <span class="recovery-meta">Room ${s.room} · Out since ${formatTime(item.outTime)}</span>
+                </div>
+              </div>
+              <a href="tel:${s.phone}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>
+            </div>
+          `;
+        }).join('');
+      }
+    }
   }
 };
 
@@ -1435,3 +1482,97 @@ window.pushGlobalUpdate = function() {
       .catch(e => alert('❌ Error: ' + e));
   }
 };
+
+/* ── Device Reset Requests (Warden Panel) ── */
+window.showResetRequests = function () {
+  const modal = document.getElementById('reset-requests-modal');
+  if (modal) {
+    modal.classList.add('visible');
+    listenToResetRequests();
+  }
+};
+
+window.closeResetRequestsModal = function () {
+  const modal = document.getElementById('reset-requests-modal');
+  if (modal) modal.classList.remove('visible');
+  // Detach listener when closed
+  if (typeof firebaseDB !== 'undefined') {
+    firebaseDB.ref('device_reset_requests').off();
+  }
+};
+
+function listenToResetRequests() {
+  if (typeof firebaseDB === 'undefined') return;
+  const container = document.getElementById('reset-requests-list');
+
+  firebaseDB.ref('device_reset_requests').on('value', (snap) => {
+    const data = snap.val();
+    if (!data) {
+      container.innerHTML = '<p class="empty-row" style="color:var(--text-muted); text-align:center; padding:2rem 0;">No pending device reset requests.</p>';
+      return;
+    }
+
+    // Filter out requests that are rejected (only show active pending ones)
+    const requests = Object.values(data).filter(r => r && r.status !== 'REJECTED');
+    
+    if (requests.length === 0) {
+      container.innerHTML = '<p class="empty-row" style="color:var(--text-muted); text-align:center; padding:2rem 0;">No pending device reset requests.</p>';
+      return;
+    }
+
+    container.innerHTML = requests.map(r => {
+      const photo = r.studentPhoto ? `<img src="${r.studentPhoto}" class="request-profile-pic">` : '<span class="request-profile-pic" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);font-size:1.2rem;">👤</span>';
+      
+      return `
+        <div class="request-card">
+          <div style="display:flex; align-items:center;">
+            ${photo}
+            <div class="request-info">
+              <span class="request-name">${r.studentName}</span>
+              <span class="request-details">${r.dept} · ${r.year} · Rm ${r.room}</span>
+            </div>
+          </div>
+          <div class="request-actions">
+            <button class="request-btn request-btn-reject" onclick="handleResetDecision('${r.studentId}', false)" title="Reject Request">❌</button>
+            <button class="request-btn request-btn-approve" onclick="handleResetDecision('${r.studentId}', true)" title="Approve Request">✔</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  });
+}
+
+window.handleResetDecision = async function (studentId, isApproved) {
+  if (typeof firebaseDB === 'undefined') return;
+
+  try {
+    if (isApproved) {
+      // 1. Get request details to retrieve the new requested UUID
+      const reqSnap = await firebaseDB.ref('device_reset_requests/' + studentId).once('value');
+      if (reqSnap.exists()) {
+        const reqData = reqSnap.val();
+        
+        // 2. Overwrite student's registered device_uuid in DB with new one
+        await firebaseDB.ref('students/' + studentId).update({
+          device_uuid: reqData.requestedUuid
+        });
+      }
+      // 3. Delete the request from backlog node
+      await firebaseDB.ref('device_reset_requests/' + studentId).remove();
+    } else {
+      // 4. Mark status as REJECTED in database so student login page shows it
+      await firebaseDB.ref('device_reset_requests/' + studentId).update({
+        status: 'REJECTED'
+      });
+      // 5. Clean up the node after 5 minutes so it doesn't clutter DB
+      setTimeout(() => {
+        firebaseDB.ref('device_reset_requests/' + studentId).remove().catch(e => {});
+      }, 300000);
+    }
+    
+  } catch (err) {
+    console.error('Failed to update device reset request:', err);
+    alert('Failed to process. Please try again.');
+  }
+};
+
