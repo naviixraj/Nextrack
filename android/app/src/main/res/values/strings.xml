@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NexTrack</string>
+    <string name="title_activity_main">NexTrack</string>
+    <string name="package_name">com.nextrack.app</string>
+    <string name="custom_url_scheme">com.nextrack.app</string>
+</resources>
