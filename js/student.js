@@ -200,6 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (liveStudent) {
             renderStudentUI(liveStudent);
           }
+          if (window.processOfflineQueue) {
+            window.processOfflineQueue();
+          }
         });
 
         window.addEventListener('offline', () => {
@@ -208,6 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
             renderStudentUI(liveStudent);
           }
         });
+
+        // Run an initial check for offline queue sync on load
+        if (navigator.onLine && window.processOfflineQueue) {
+          window.processOfflineQueue();
+        }
       }
     } catch (err) {
       console.error("🚨 Student Hub Sync Error:", err);
@@ -445,13 +453,27 @@ function handleCheckOut(student) {
   const movId = (typeof firebaseDB !== 'undefined' && firebaseDB) 
                 ? firebaseDB.ref('movements').push().key 
                 : generateId();
-  addMovement({
+                
+  const movement = {
     id: movId,
     studentId: student.id,
     outTime: now,
     inTime: null,
     date: todayStr(),
-  });
+  };
+
+  if (!navigator.onLine) {
+    enqueueOfflineEvent({ type: 'CHECKOUT', data: movement });
+    showLocationBanner('⚠️ Offline: Checked out locally. Will sync when online.', 'warning');
+    // Add to optimistic local movements arrays so UI changes immediately
+    fbMovements.push(movement);
+    localStorage.setItem('smt_movements', JSON.stringify(fbMovements));
+    startDebounce();
+    renderStudentUI(student);
+    return;
+  }
+
+  addMovement(movement);
   startDebounce();
   renderStudentUI(student);
 }
@@ -471,11 +493,66 @@ function handleCheckIn(student) {
 
   const openMov = movs[openIdx];
   const now = new Date().toISOString();
+
+  if (!navigator.onLine) {
+    enqueueOfflineEvent({ type: 'CHECKIN', data: { id: openMov.id, inTime: now } });
+    showLocationBanner('⚠️ Offline: Checked in locally. Will sync when online.', 'warning');
+    // Optimistic update locally
+    openMov.inTime = now;
+    localStorage.setItem('smt_movements', JSON.stringify(fbMovements));
+    startDebounce();
+    renderStudentUI(student);
+    return;
+  }
+
   updateMovement(openMov.id, { inTime: now }).then(() => {
     startDebounce();
     renderStudentUI(student);
   });
 }
+
+/* ── Offline Queue Management ────────────────── */
+function enqueueOfflineEvent(event) {
+  const queue = JSON.parse(localStorage.getItem('nextrack_offline_queue') || '[]');
+  queue.push(event);
+  localStorage.setItem('nextrack_offline_queue', JSON.stringify(queue));
+}
+
+window.processOfflineQueue = async function() {
+  if (!navigator.onLine || typeof firebaseDB === 'undefined' || !firebaseDB) return;
+  const queue = JSON.parse(localStorage.getItem('nextrack_offline_queue') || '[]');
+  if (queue.length === 0) return;
+
+  console.log(`📡 Connection restored. Processing ${queue.length} offline events...`);
+  
+  for (const event of queue) {
+    try {
+      if (event.type === 'CHECKOUT') {
+        await firebaseDB.ref('movements/' + event.data.id).set(event.data);
+      } else if (event.type === 'CHECKIN') {
+        await firebaseDB.ref('movements/' + event.data.id).update({
+          inTime: event.data.inTime
+        });
+      }
+    } catch (e) {
+      console.error('Failed to sync offline event, keeping in queue:', e);
+      return; // Stop processing and retry later if network write failed
+    }
+  }
+
+  // Clear queue on successful sync
+  localStorage.removeItem('nextrack_offline_queue');
+  console.log('✅ Offline queue synced successfully!');
+  
+  // Force fetch movements from Firebase to sync local cache
+  firebaseDB.ref('movements').once('value').then(snap => {
+    if (snap.val()) {
+      fbMovements = Object.values(snap.val());
+      localStorage.setItem('smt_movements', JSON.stringify(fbMovements));
+      window.dispatchEvent(new Event('db_updated'));
+    }
+  });
+};
 
 /* ── 60-Second Debounce Timer ────────────────── */
 function startDebounce() {
@@ -982,16 +1059,56 @@ if (typeof listenForMessages === 'function') {
 document.addEventListener('DOMContentLoaded', () => { setTimeout(updateChatBadge, 300); });
 /* ── Smart Motion Guard (Geofencing) ── */
 let locationInterval = null;
+let bgWatcherId = null;
 
 function startMotionGuard(student) {
   const geo = getGeofence();
-  if (!geo || !navigator.geolocation) {
+  if (!geo) {
     geoCheckDone = true;
     updateLocationBanner();
     return;
   }
 
-  // If already watching, do not clear and reset
+  // ── Native Mobile Background Geolocation Check ──
+  const isCapacitor = typeof window.Capacitor !== 'undefined';
+  
+  if (isCapacitor) {
+    const BackgroundGeolocation = window.Capacitor.Plugins.BackgroundGeolocation;
+    if (BackgroundGeolocation) {
+      console.log('📡 Initializing native background geolocation module...');
+      
+      // Request permission and start listening
+      BackgroundGeolocation.addWatcher({
+        backgroundMessage: 'Tracking geofence boundary.',
+        backgroundTitle: 'NexTrack Running',
+        requestPermissions: true,
+        stale: false,
+        distanceFilter: 10 // Pings when moving by 10 meters
+      }, (pos, err) => {
+        if (err) {
+          console.error('🛑 Native Background GPS Error:', err);
+          return;
+        }
+        if (pos) {
+          onLocationSuccess({
+            coords: {
+              latitude: pos.latitude,
+              longitude: pos.longitude,
+              accuracy: pos.accuracy || 10
+            }
+          });
+        }
+      }).then(watcherId => {
+        bgWatcherId = watcherId;
+        console.log('✅ Background Geolocation watcher registered:', bgWatcherId);
+      }).catch(e => {
+        console.warn('⚠️ Native Location Permission initialization failed:', e);
+      });
+      return;
+    }
+  }
+
+  // If already watching in browser, do not clear and reset
   if (locationInterval) {
     return;
   }

@@ -1,0 +1,6 @@
+[
+	{
+		"pkg": "@capgo/background-geolocation",
+		"classpath": "com.capgo.capacitor_background_geolocation.BackgroundGeolocation"
+	}
+]

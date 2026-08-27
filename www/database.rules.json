@@ -1,0 +1,42 @@
+{
+  "rules": {
+    "students": {
+      ".read": "true",
+      "$student_id": {
+        ".write": "true"
+      }
+    },
+    "movements": {
+      ".read": "true",
+      "$movement_id": {
+        ".write": "true"
+      }
+    },
+    "admin_logins": {
+      ".read": "true",
+      "$admin_id": {
+        ".write": "true"
+      }
+    },
+    "messages": {
+      ".read": "true",
+      ".write": "true"
+    },
+    "geofence": {
+      ".read": "true",
+      ".write": "true"
+    },
+    "system": {
+      ".read": "true",
+      ".write": "true"
+    },
+    "password_resets": {
+      ".read": "true",
+      ".write": "true"
+    },
+    "device_reset_requests": {
+      ".read": "true",
+      ".write": "true"
+    }
+  }
+}
