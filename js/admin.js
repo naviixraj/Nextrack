@@ -130,6 +130,37 @@ function applyRoleRestrictions() {
   }
 }
 
+function getStudentOutsideStatus(s, movements) {
+  if (!s) return { isOutside: false, isOut: false, isGpsBlocked: false, latest: null };
+
+  const isGpsBlocked = Boolean(
+    s.location_status && (
+      s.location_status === 'REFUSED' || 
+      s.location_status === 'REFUSED_LOCATION' || 
+      s.location_status === 'DENIED' ||
+      s.location_status === 'LOCATION_DISABLED'
+    )
+  );
+  
+  const allMovs = movements || getMovements();
+  const stuMovs = allMovs.filter(m => 
+    m && m.studentId && String(m.studentId).toLowerCase() === String(s.id).toLowerCase()
+  );
+
+  const latest = stuMovs.length > 0 
+    ? stuMovs.reduce((prev, curr) => new Date(curr.outTime || 0) > new Date(prev.outTime || 0) ? curr : prev)
+    : null;
+
+  const isOut = Boolean(latest && !latest.inTime);
+
+  return { 
+    isOutside: isOut || isGpsBlocked, 
+    isOut, 
+    isGpsBlocked, 
+    latest 
+  };
+}
+
 function renderCards() {
   let students = getStudents().filter(s => s.role !== 'admin');
   if (globalYearFilter !== 'All') {
@@ -138,15 +169,10 @@ function renderCards() {
   const movements = getMovements();
   const total = students.length;
 
-  // A student is "outside" if their latest movement has no inTime OR they blocked GPS
   let outsideCount = 0;
   students.forEach(s => {
-    const isWait = s.location_status === 'REFUSED';
-    const stuMovs = movements.filter(m => m.studentId === s.id);
-    const latest = stuMovs.length > 0 ? stuMovs[stuMovs.length - 1] : null;
-    const isOut = latest && !latest.inTime;
-
-    if (isOut || isWait) outsideCount++;
+    const status = getStudentOutsideStatus(s, movements);
+    if (status.isOutside) outsideCount++;
   });
 
   const insideCount = total - outsideCount;
@@ -173,15 +199,15 @@ window.showOutsideStudents = function () {
   const outsideList = [];
 
   students.forEach(s => {
-    const isWait = s.location_status === 'REFUSED';
-    const stuMovs = movements.filter(m => m.studentId === s.id);
-    const latest = stuMovs.length > 0 ? stuMovs[stuMovs.length - 1] : null;
-    const isOut = latest && !latest.inTime;
-
-    if (isOut || isWait) {
+    const statusInfo = getStudentOutsideStatus(s, movements);
+    if (statusInfo.isOutside) {
+      const outTime = statusInfo.isOut 
+        ? statusInfo.latest.outTime 
+        : (statusInfo.latest ? statusInfo.latest.outTime : new Date().toISOString());
       outsideList.push({ 
         student: s, 
-        outTime: isOut ? latest.outTime : (latest ? latest.inTime : new Date().toISOString()) 
+        outTime: outTime,
+        statusInfo: statusInfo
       });
     }
   });
@@ -192,18 +218,29 @@ window.showOutsideStudents = function () {
   } else {
     container.innerHTML = outsideList.map(item => {
       const s = item.student;
-      const isBlocked = s.location_status === 'REFUSED';
+      const isBlocked = item.statusInfo.isGpsBlocked;
+      const isOut = item.statusInfo.isOut;
       const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '<span class="table-avatar-placeholder">👤</span>';
       
+      let badgeLabel = '🚶 OUTSIDE HOSTEL';
+      let subtitleLabel = `Out since ${formatTime(item.outTime)}`;
+      if (isBlocked && isOut) {
+        badgeLabel = '📍 OUTSIDE + GPS OFF';
+        subtitleLabel = 'Location turned off while outside';
+      } else if (isBlocked) {
+        badgeLabel = '📍 GPS TURNED OFF';
+        subtitleLabel = 'Location permissions refused';
+      }
+
       return `
         <div class="recovery-card ${isBlocked ? 'location-refused' : ''}" onclick="document.getElementById('outside-modal').classList.remove('visible'); showStudentDetail('${s.id}');" style="cursor:pointer; position:relative; overflow:hidden;">
-          ${isBlocked ? '<div class="blocked-badge">📍 GPS BLOCKED</div>' : ''}
-          <div style="display:flex;align-items:center;gap:0.8rem;">
+          <div class="blocked-badge" style="background:${isBlocked ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)'}; color:${isBlocked ? '#f87171' : '#fbbf24'}; border:1px solid ${isBlocked ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 158, 11, 0.4)'};">${badgeLabel}</div>
+          <div style="display:flex;align-items:center;gap:0.8rem;margin-top:0.4rem;">
             ${photo}
             <div class="recovery-info">
               <strong>${s.name}</strong>
-              ${isBlocked ? '<div class="blocked-subtitle">location turn off</div>' : ''}
-              <span class="recovery-meta">Room ${s.room} · Out since ${formatTime(item.outTime)}</span>
+              <div class="blocked-subtitle" style="color:${isBlocked ? '#f87171' : 'var(--text-secondary)'}; font-size:0.75rem; font-weight:600;">${subtitleLabel}</div>
+              <span class="recovery-meta">Dept: ${s.dept || 'N/A'} · Rm ${s.room}</span>
             </div>
           </div>
           <a href="tel:${s.phone}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>
@@ -998,15 +1035,15 @@ window.refreshDashboard = function () {
     const outsideList = [];
 
     students.forEach(s => {
-      const isWait = s.location_status === 'REFUSED';
-      const stuMovs = movements.filter(m => m.studentId === s.id);
-      const latest = stuMovs.length > 0 ? stuMovs[stuMovs.length - 1] : null;
-      const isOut = latest && !latest.inTime;
-
-      if (isOut || isWait) {
+      const statusInfo = getStudentOutsideStatus(s, movements);
+      if (statusInfo.isOutside) {
+        const outTime = statusInfo.isOut 
+          ? statusInfo.latest.outTime 
+          : (statusInfo.latest ? statusInfo.latest.outTime : new Date().toISOString());
         outsideList.push({ 
           student: s, 
-          outTime: isOut ? latest.outTime : (latest ? latest.inTime : new Date().toISOString()) 
+          outTime: outTime,
+          statusInfo: statusInfo
         });
       }
     });
@@ -1018,18 +1055,29 @@ window.refreshDashboard = function () {
       } else {
         container.innerHTML = outsideList.map(item => {
           const s = item.student;
-          const isBlocked = s.location_status === 'REFUSED';
+          const isBlocked = item.statusInfo.isGpsBlocked;
+          const isOut = item.statusInfo.isOut;
           const photo = s.photo ? `<img src="${s.photo}" class="table-avatar">` : '<span class="table-avatar-placeholder">👤</span>';
           
+          let badgeLabel = '🚶 OUTSIDE HOSTEL';
+          let subtitleLabel = `Out since ${formatTime(item.outTime)}`;
+          if (isBlocked && isOut) {
+            badgeLabel = '📍 OUTSIDE + GPS OFF';
+            subtitleLabel = 'Location turned off while outside';
+          } else if (isBlocked) {
+            badgeLabel = '📍 GPS TURNED OFF';
+            subtitleLabel = 'Location permissions refused';
+          }
+
           return `
             <div class="recovery-card ${isBlocked ? 'location-refused' : ''}" onclick="document.getElementById('outside-modal').classList.remove('visible'); showStudentDetail('${s.id}');" style="cursor:pointer; position:relative; overflow:hidden;">
-              ${isBlocked ? '<div class="blocked-badge">📍 GPS BLOCKED</div>' : ''}
-              <div style="display:flex;align-items:center;gap:0.8rem;">
+              <div class="blocked-badge" style="background:${isBlocked ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)'}; color:${isBlocked ? '#f87171' : '#fbbf24'}; border:1px solid ${isBlocked ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 158, 11, 0.4)'};">${badgeLabel}</div>
+              <div style="display:flex;align-items:center;gap:0.8rem;margin-top:0.4rem;">
                 ${photo}
                 <div class="recovery-info">
                   <strong>${s.name}</strong>
-                  ${isBlocked ? '<div class="blocked-subtitle">location turn off</div>' : ''}
-                  <span class="recovery-meta">Room ${s.room} · Out since ${formatTime(item.outTime)}</span>
+                  <div class="blocked-subtitle" style="color:${isBlocked ? '#f87171' : 'var(--text-secondary)'}; font-size:0.75rem; font-weight:600;">${subtitleLabel}</div>
+                  <span class="recovery-meta">Dept: ${s.dept || 'N/A'} · Rm ${s.room}</span>
                 </div>
               </div>
               <a href="tel:${s.phone}" class="call-btn" onclick="event.stopPropagation();">📞 Call</a>
