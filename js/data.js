@@ -8,6 +8,16 @@ const DB = {
   SESSION: 'smt_session',
 };
 
+// ── Debounced Event Dispatcher (Eliminates DOM Thrashing) ──
+let dbUpdateFrameTimer = null;
+function notifyDbUpdated() {
+  if (dbUpdateFrameTimer) return;
+  dbUpdateFrameTimer = requestAnimationFrame(() => {
+    window.dispatchEvent(new Event('db_updated'));
+    dbUpdateFrameTimer = null;
+  });
+}
+
 /* ── Helpers ─────────────────────────────────── */
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -181,21 +191,21 @@ async function initCloudSync(onReadyCallback) {
         }
       }
       
-      window.dispatchEvent(new Event('db_updated'));
+      notifyDbUpdated();
     });
     firebaseDB.ref('movements').on('value', snap => {
       fbMovements = snap.val() ? Object.values(snap.val()) : [];
       localStorage.setItem(DB.MOVEMENTS, JSON.stringify(fbMovements));
-      window.dispatchEvent(new Event('db_updated'));
+      notifyDbUpdated();
     });
     firebaseDB.ref('admin_logins').on('value', snap => {
       fbAdminLogins = snap.val() ? Object.values(snap.val()) : [];
-      window.dispatchEvent(new Event('db_updated'));
+      notifyDbUpdated();
     });
     firebaseDB.ref('geofence').on('value', snap => {
       fbGeofence = snap.val() || null;
       localStorage.setItem('smt_geofence', JSON.stringify(fbGeofence));
-      window.dispatchEvent(new Event('db_updated'));
+      notifyDbUpdated();
     });
 
     // Await seeding to avoid race conditions during login checks

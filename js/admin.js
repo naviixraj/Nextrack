@@ -422,23 +422,29 @@ function renderDirectory(filteredStudents) {
   }).join('');
 }
 
+let directorySearchTimer = null;
 window.searchDirectory = function() {
-  const query = document.getElementById('directory-search').value.toLowerCase().trim();
-  const students = getStudents().filter(s => s.role !== 'admin');
-  
-  if (!query) {
-    renderDirectory();
-    return;
-  }
+  if (directorySearchTimer) clearTimeout(directorySearchTimer);
+  directorySearchTimer = setTimeout(() => {
+    const input = document.getElementById('directory-search');
+    if (!input) return;
+    const query = input.value.toLowerCase().trim();
+    const students = getStudents().filter(s => s.role !== 'admin');
+    
+    if (!query) {
+      renderDirectory();
+      return;
+    }
 
-  const filtered = students.filter(s => 
-    (s.id || '').toLowerCase().includes(query) || 
-    (s.name || '').toLowerCase().includes(query) || 
-    (s.room || '').toLowerCase().includes(query) ||
-    (s.phone && s.phone.includes(query))
-  ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const filtered = students.filter(s => 
+      (s.id || '').toLowerCase().includes(query) || 
+      (s.name || '').toLowerCase().includes(query) || 
+      (s.room || '').toLowerCase().includes(query) ||
+      (s.phone && s.phone.includes(query))
+    ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-  renderDirectory(filtered);
+    renderDirectory(filtered);
+  }, 150);
 };
 
 /* ═══════════════════════════════════════════════
