@@ -232,7 +232,9 @@ function saveStudents(arr) {
 }
 
 function getStudentById(id) {
-  return fbStudents.find(s => s.id === id) || null;
+  if (!id) return null;
+  const targetId = String(id).toLowerCase();
+  return fbStudents.find(s => s && s.id && String(s.id).toLowerCase() === targetId) || null;
 }
 
 function addStudent(student) {

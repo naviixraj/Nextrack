@@ -433,9 +433,11 @@ function updateLocationBanner() {
 }
 
 function getCurrentStatus(studentId) {
-  const movs = getMovements().filter(m => m.studentId === studentId);
+  if (!studentId) return 'IN';
+  const targetId = String(studentId).toLowerCase();
+  const movs = getMovements().filter(m => m && m.studentId && String(m.studentId).toLowerCase() === targetId);
   if (movs.length === 0) return 'IN';
-  const latest = movs[movs.length - 1];
+  const latest = movs.reduce((prev, curr) => new Date(curr.outTime || 0) > new Date(prev.outTime || 0) ? curr : prev);
   return latest.inTime ? 'IN' : 'OUT';
 }
 
