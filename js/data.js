@@ -367,13 +367,19 @@ function geoDistance(lat1, lon1, lat2, lon2) {
 
 /**
  * Check if given coordinates are inside the geofence
- * Returns { inside: bool, distance: number (meters) } or null if no geofence
+ * Returns { inside: bool, distance: number (meters), effectiveDistance: number } or null if no geofence
  */
-function checkGeofence(lat, lng) {
+function checkGeofence(lat, lng, accuracy = 0) {
   const geo = getGeofence();
   if (!geo || !geo.lat || !geo.lng || !geo.radius) return null;
-  const dist = geoDistance(lat, lng, geo.lat, geo.lng);
-  return { inside: dist <= geo.radius, distance: Math.round(dist) };
+  const rawDist = geoDistance(lat, lng, geo.lat, geo.lng);
+  // Subtract half of GPS inaccuracy to compensate for indoor location jitter
+  const effectiveDist = Math.max(0, rawDist - (accuracy * 0.5));
+  return { 
+    inside: effectiveDist <= geo.radius, 
+    distance: Math.round(rawDist),
+    effectiveDistance: Math.round(effectiveDist)
+  };
 }
 
 /* ── Seed / Init ─────────────────────────────── */

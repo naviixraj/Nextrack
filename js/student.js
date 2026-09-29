@@ -1007,31 +1007,34 @@ function startMotionGuard(student) {
     }
     
     const status = getCurrentStatus(student.id);
-    const result = checkGeofence(pos.coords.latitude, pos.coords.longitude);
+    const accuracy = pos.coords.accuracy || 0;
+    const result = checkGeofence(pos.coords.latitude, pos.coords.longitude, accuracy);
     const distance = result ? result.distance : 0;
-    const checkOutRadius = geo.radius + 30;
+    const effectiveDistance = result ? result.effectiveDistance : distance;
+    
+    // 20m indoor hysteresis buffer
+    const checkInRadius = geo.radius + 20;
+    const checkOutRadius = geo.radius + 40;
 
     // Dual accuracy threshold: strict (150m) if already IN to prevent false checkouts,
     // lenient (250m) if OUT to make auto check-in easier indoors.
     const maxAccuracy = (status === 'IN') ? 150 : 250;
     
     // Ignore inaccurate location fixes unless they are far enough away to guarantee they are outside
-    if (pos.coords.accuracy > maxAccuracy) {
-      const isDefinitiveOutside = result && (distance > (pos.coords.accuracy + checkOutRadius));
+    if (accuracy > maxAccuracy) {
+      const isDefinitiveOutside = result && (effectiveDistance > checkOutRadius);
       if (!isDefinitiveOutside) {
-        console.warn(`📡 Ignoring inaccurate location: ±${Math.round(pos.coords.accuracy)}m (limit: ${maxAccuracy}m)`);
-        showLocationBanner(`⚠️ Weak GPS Accuracy (±${Math.round(pos.coords.accuracy)}m). Optimizing...`, 'warning');
+        console.warn(`📡 Ignoring inaccurate location: ±${Math.round(accuracy)}m (limit: ${maxAccuracy}m)`);
+        showLocationBanner(`⚠️ Weak GPS Accuracy (±${Math.round(accuracy)}m). Optimizing... <button onclick="recalibrateStudentGPS()" style="margin-left:8px; padding:2px 8px; font-size:0.75rem; border-radius:6px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; cursor:pointer;">📍 Recalibrate GPS</button>`, 'warning');
         if (!initialLocSyncDone) {
           initialLocSyncDone = true;
           renderStudentUI(student);
         }
         return;
-      } else {
-        console.log(`📡 Weak GPS Accuracy (±${Math.round(pos.coords.accuracy)}m) bypassed: Distance (${distance}m) guarantees user is outside.`);
       }
     }
 
-    console.log(`📍 Location Sync: ${pos.coords.latitude}, ${pos.coords.longitude} (±${Math.round(pos.coords.accuracy)}m)`);
+    console.log(`📍 Location Sync: ${pos.coords.latitude}, ${pos.coords.longitude} (Raw Dist: ${distance}m, Effective: ${effectiveDistance}m, ±${Math.round(accuracy)}m)`);
     studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     geoCheckDone = true;
     
@@ -1040,32 +1043,29 @@ function startMotionGuard(student) {
       initialLocSyncDone = true;
       renderStudentUI(student);
     }
-    
-    // NOTE: Removed continuous updateStudent location_status ping to preserve database storage and bandwidth
 
     if (result) {
-      const checkInRadius = geo.radius;
-
-      // Diagnostic message including coordinates, calculated distance, and thresholds
-      const coordStats = `[Loc: ${studentLocation.lat.toFixed(5)}, ${studentLocation.lng.toFixed(5)}] Dist: ${result.distance}m, Limit: ${status === 'IN' ? checkOutRadius : checkInRadius}m`;
+      // Diagnostic message including raw distance, effective distance, and radius limit
+      const coordStats = `Dist: ${effectiveDistance}m (Raw: ${distance}m), Limit: ${status === 'IN' ? checkOutRadius : checkInRadius}m, Acc: ±${Math.round(accuracy)}m`;
+      const recalibrateBtn = `<button onclick="recalibrateStudentGPS()" style="margin-left:8px; padding:2px 8px; font-size:0.75rem; border-radius:6px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; cursor:pointer;">📍 Recalibrate</button>`;
 
       if (status === 'IN') {
-        if (result.distance < checkOutRadius) {
-          showLocationBanner(`🏡 Inside hostel zone (${coordStats}, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'inside');
+        if (effectiveDistance < checkOutRadius) {
+          showLocationBanner(`🏡 Inside hostel zone (${coordStats}) ${recalibrateBtn}`, 'inside');
         } else {
-          showLocationBanner(`🚶 Outside hostel (${coordStats}, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'outside');
+          showLocationBanner(`🚶 Outside hostel (${coordStats}) ${recalibrateBtn}`, 'outside');
           if (!debounceTimer) {
             handleCheckOut(student); // Auto check-out
           }
         }
       } else { // status === 'OUT'
-        if (result.distance <= checkInRadius) {
-          showLocationBanner(`🏡 Inside hostel zone (${coordStats}, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'inside');
+        if (effectiveDistance <= checkInRadius) {
+          showLocationBanner(`🏡 Inside hostel zone (${coordStats}) ${recalibrateBtn}`, 'inside');
           if (!debounceTimer) {
             handleCheckIn(student); // Auto check-in
           }
         } else {
-          showLocationBanner(`🚶 Outside hostel (${coordStats}, Acc: ±${Math.round(pos.coords.accuracy)}m)`, 'outside');
+          showLocationBanner(`🚶 Outside hostel (${coordStats}) ${recalibrateBtn}`, 'outside');
         }
       }
     }
@@ -1218,3 +1218,27 @@ document.addEventListener('click', (e) => {
   if (!input) return;
   input.type = input.type === 'password' ? 'text' : 'password';
 });
+
+// ── GPS Recalibration Helper ──
+window.recalibrateStudentGPS = function() {
+  if (!navigator.geolocation) {
+    alert('GPS is not supported on this device.');
+    return;
+  }
+  showLocationBanner('📡 Force Recalibrating High-Accuracy GPS...', 'detecting');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      console.log('📍 GPS Recalibrated successfully:', pos.coords);
+      const session = getSession();
+      if (session) {
+        const student = getStudentById(session.userId);
+        if (student) checkStudentLocation(student);
+      }
+    },
+    (err) => {
+      console.warn('⚠️ Recalibration warning:', err);
+      alert('Unable to improve GPS accuracy. Ensure Location Services and Wi-Fi/GPS are enabled.');
+    },
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 }
+  );
+};
