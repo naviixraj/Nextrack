@@ -462,7 +462,7 @@ function handleCheckIn(student) {
   // Find the open movement (same student, no inTime) using a backward-compatible loop
   let openIdx = -1;
   for (let i = movs.length - 1; i >= 0; i--) {
-    if (movs[i].studentId === student.id && !movs[i].inTime) {
+    if (movs[i] && movs[i].studentId && String(movs[i].studentId).toLowerCase() === String(student.id).toLowerCase() && !movs[i].inTime) {
       openIdx = i;
       break;
     }
@@ -472,6 +472,10 @@ function handleCheckIn(student) {
   const openMov = movs[openIdx];
   const now = new Date().toISOString();
   updateMovement(openMov.id, { inTime: now }).then(() => {
+    if (student.location_status && student.location_status !== 'ACTIVE') {
+      student.location_status = 'ACTIVE';
+      updateStudent(student.id, { location_status: 'ACTIVE' }).catch(e => console.error('DB sync failed:', e));
+    }
     startDebounce();
     renderStudentUI(student);
   });
@@ -1038,6 +1042,12 @@ function startMotionGuard(student) {
     studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     geoCheckDone = true;
     
+    // Clear location_status in DB if it was previously set to REFUSED / DENIED
+    if (student && student.location_status && student.location_status !== 'ACTIVE') {
+      student.location_status = 'ACTIVE';
+      updateStudent(student.id, { location_status: 'ACTIVE' }).catch(e => console.error('DB sync failed:', e));
+    }
+
     // Set initial sync flag to true and refresh UI to clear "SYNCING" text
     if (!initialLocSyncDone) {
       initialLocSyncDone = true;
