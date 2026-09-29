@@ -191,6 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
               return;
             }
             renderStudentUI(liveStudent);
+            if (typeof window.evaluateStudentGeofence === 'function') {
+              window.evaluateStudentGeofence(liveStudent);
+            }
           }
         });
 
@@ -1041,7 +1044,7 @@ function startMotionGuard(student) {
     }
 
     console.log(`📍 Location Sync: ${pos.coords.latitude}, ${pos.coords.longitude} (Raw Dist: ${distance}m, Effective: ${effectiveDistance}m, ±${Math.round(accuracy)}m)`);
-    studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    studentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: accuracy };
     geoCheckDone = true;
     
     // Clear location_status in DB if it was previously set to REFUSED / DENIED
@@ -1253,4 +1256,29 @@ window.recalibrateStudentGPS = function() {
     },
     { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 }
   );
+};
+
+// ── Dynamic Radius Re-Evaluation ──
+window.evaluateStudentGeofence = function(student) {
+  const geo = getGeofence();
+  if (!geo || !studentLocation || !studentLocation.lat || !studentLocation.lng) return;
+
+  const status = getCurrentStatus(student.id);
+  const accuracy = studentLocation.accuracy || 10;
+  const result = checkGeofence(studentLocation.lat, studentLocation.lng, accuracy);
+  if (!result) return;
+
+  const effectiveDistance = result.effectiveDistance;
+  const checkInRadius = geo.radius + 20;
+  const checkOutRadius = geo.radius + 40;
+
+  if (status === 'IN') {
+    if (effectiveDistance >= checkOutRadius) {
+      if (!debounceTimer) handleCheckOut(student);
+    }
+  } else {
+    if (effectiveDistance <= checkInRadius) {
+      if (!debounceTimer) handleCheckIn(student);
+    }
+  }
 };
