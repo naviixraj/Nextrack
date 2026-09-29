@@ -1521,15 +1521,23 @@ function listenToResetRequests() {
     }
 
     container.innerHTML = requests.map(r => {
-      const photo = r.studentPhoto ? `<img src="${r.studentPhoto}" class="request-profile-pic">` : '<span class="request-profile-pic" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);font-size:1.2rem;">👤</span>';
+      const studentName = r.studentName || 'Student';
+      const initial = studentName.charAt(0).toUpperCase();
+      const photoHtml = r.studentPhoto 
+        ? `<img src="${r.studentPhoto}" class="request-profile-pic" alt="${studentName}">` 
+        : `<div class="request-profile-pic request-profile-placeholder">${initial}</div>`;
       
       return `
         <div class="request-card">
-          <div style="display:flex; align-items:center;">
-            ${photo}
+          <div class="request-main">
+            <div class="request-avatar-wrapper">
+              ${photoHtml}
+            </div>
             <div class="request-info">
-              <span class="request-name">${r.studentName}</span>
-              <span class="request-details">${r.dept} · ${r.year} · Rm ${r.room}</span>
+              <span class="request-name">${studentName}</span>
+              <span class="request-dept">${r.dept || 'Department'}</span>
+              <span class="request-year">${r.year || 'N/A'}</span>
+              <span class="request-room">Room: ${r.room || '—'}</span>
             </div>
           </div>
           <div class="request-actions">
